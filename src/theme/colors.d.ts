@@ -1,0 +1,23 @@
+declare const colors: {
+  readonly navy: string;
+  readonly teal: string;
+  readonly sky: string;
+  readonly midnight: string;
+  readonly 'light-teal': string;
+  readonly gray: string;
+  readonly 'dark-gray': string;
+  readonly white: string;
+  readonly primary: string;
+  readonly 'primary-pressed': string;
+  readonly accent: string;
+  readonly background: string;
+  readonly surface: string;
+  readonly 'surface-dark': string;
+  readonly border: string;
+  readonly foreground: string;
+  readonly muted: string;
+  readonly danger: string;
+  readonly success: string;
+  readonly warning: string;
+};
+export = colors;

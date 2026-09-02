@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Ligo",
+    "slug": "ligo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.ligo.coach"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#EBF4FB",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "app.ligo.coach"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#EBF4FB"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0A3D62"
+        }
+      ]
+    ],
+    "scheme": "ligo",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

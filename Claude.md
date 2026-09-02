@@ -96,6 +96,8 @@ After every change, run in this order:
   TS reads it through `src/theme/tokens.ts` (for Skia charts, navigation theme, icon `color` props).
 - `gray` is a single flat brand neutral, **not** a scale — `bg-gray-100` does not exist.
 - `danger` / `success` / `warning` are functional tokens for feedback states only, not brand colors.
+- Third-party brand colors (the Google "G", etc.) are fixed by their owners and are the one
+  exception — they live in `src/theme/brandLogos.ts`, never inline in a component.
 
 ### Semantic Mapping
 
@@ -233,6 +235,7 @@ library without discussion — add or extend an `LI*` primitive instead.
 |---------------------------------------------------|-----------------------------|
 | LIButton, LIInput, LICard, LIBadge, LIAvatar…     | `src/components/ui/`        |
 | LIModal, LISelect, LIForm*, LITable, LIChart      | `src/components/`           |
+| LIBrandMark, LIGoogleIcon                         | `src/components/ui/`        |
 | Screen sections (DashboardContent, RosterList…)   | `src/screens/<screen>/`     |
 
 `npx @react-native-reusables/cli@latest add <component>` can scaffold new primitives — rename the
@@ -295,9 +298,15 @@ Use `persist` with the MMKV storage adapter only for data that must survive app 
 - Keyboard handling via `KeyboardAvoidingView` wrapper in `LIForm`, tested on both platforms
 - Platform differences via `Platform.select` or `.ios.tsx` / `.android.tsx` files — never untested `Platform.OS` branches in render
 - Env vars via `src/lib/env.ts` reading `process.env.EXPO_PUBLIC_*` (public only — secrets never ship in the bundle)
+- Import from the specific module in `src/components/` (`@/components/LIForm`), never a barrel —
+  there is deliberately no `src/components/index.ts`, because `LIChart` pulls in Skia + d3 and a
+  barrel would drag that into every screen that imports a form
+- `@/components/ui` is a barrel and is fine to use — those primitives are all lightweight
 - Tabs come from `expo-router/js-tabs` — `Tabs` from `expo-router` is deprecated in SDK 57
 - MMKV v4 is a factory: `createMMKV({ id })`, and the delete method is `remove()`, not `delete()`
-- `@testing-library/react-native` v14 `render` returns a promise — `await render(...)` or queries throw
+- `@testing-library/react-native` v14 is async: `await render(...)` (or queries throw
+  "`render` function has not been called") **and** `await` every `fireEvent.*` call, or React
+  reports overlapping `act()` calls and events land out of order
 - `jest/resolver.js` exists so Reanimated 4's worklets module resolves under Jest — don't remove it
 
 ## Don't

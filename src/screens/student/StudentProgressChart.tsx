@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 
 import type { ApiVolumePoint } from '@/api/types';
-import { LIChart } from '@/components';
+import { LIChart } from '@/components/LIChart';
 import { LICard, LISkeleton, LIText } from '@/components/ui';
 
 interface StudentProgressChartProps {

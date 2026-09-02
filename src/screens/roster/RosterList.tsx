@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import type { ApiStudent, StudentStatus } from '@/api/types';
-import { LISelect } from '@/components';
+import { LISelect } from '@/components/LISelect';
 import { LIEmptyState, LIList } from '@/components/ui';
 
 import StudentRow from './StudentRow';

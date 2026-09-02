@@ -10,7 +10,7 @@ import {
 } from 'react-hook-form';
 import { View } from 'react-native';
 
-import { LIInput, LIText } from '@/components/ui';
+import { LIInput, LIText, type LIInputProps } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export interface LIFormProps<TValues extends FieldValues> {
@@ -110,6 +110,10 @@ export interface LIFormInputProps<TValues extends FieldValues> {
   readonly keyboardType?: 'default' | 'email-address' | 'numeric';
   readonly autoCapitalize?: 'none' | 'sentences' | 'words';
   readonly description?: string;
+  readonly variant?: LIInputProps['variant'];
+  readonly inputSize?: LIInputProps['inputSize'];
+  readonly returnKeyType?: 'next' | 'done' | 'go';
+  readonly onSubmitEditing?: () => void;
 }
 
 /** The common case: a text field bound to the form. */
@@ -121,6 +125,10 @@ export function LIFormInput<TValues extends FieldValues>({
   keyboardType = 'default',
   autoCapitalize = 'sentences',
   description,
+  variant,
+  inputSize,
+  returnKeyType,
+  onSubmitEditing,
 }: LIFormInputProps<TValues>) {
   const {
     control,
@@ -143,6 +151,10 @@ export function LIFormInput<TValues extends FieldValues>({
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          variant={variant}
+          inputSize={inputSize}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
           error={message}
           hint={description}
         />

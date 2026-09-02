@@ -47,7 +47,7 @@ src/app/            Routes. Dumb composers — they fetch, then hand data down.
   (tabs)/           Today, Roster, Programs, Settings — shown when signed in
   student/[id].tsx  Student detail
 src/screens/        All screen UI, one folder per screen, incl. its skeleton
-src/components/     LIForm, LISelect, LIModal, LITable, LIChart
+src/components/     LIForm, LISelect, LIModal, LITable, LIChart (import directly, no barrel)
 src/components/ui/  LI primitives — the only place RN primitives are imported
 src/api/            axios client, query keys, one module per resource, mocks/
 src/store/          Zustand: auth, settings, session draft, toasts
@@ -74,3 +74,6 @@ The skeleton is complete and runs; these are deliberately left as next steps:
 - **Session reminders** — `expo-notifications` is installed and configured, and the settings
   toggle persists, but nothing schedules a notification yet
 - **Student messaging / form cues** — cues exist on exercises but aren't sendable
+- **Google / passkey sign-in** — both buttons are built and wired to handlers, but no OAuth client
+  ID or passkey relying party is configured, so they surface a "not connected yet" toast. Email +
+  password is the working path.

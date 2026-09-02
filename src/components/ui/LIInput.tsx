@@ -1,10 +1,35 @@
+import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, useState } from 'react';
 import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { cn } from '@/lib/utils';
 import { tokens } from '@/theme/tokens';
 
-export interface LIInputProps extends Omit<TextInputProps, 'className' | 'placeholderTextColor'> {
+const field = cva('flex-row items-center rounded-2xl px-4', {
+  variants: {
+    variant: {
+      /** Bordered on white — the default for labelled forms. */
+      outline: 'border border-gray bg-white',
+      /** Filled neutral surface, no visible border — label-less auth fields. */
+      filled: 'border border-transparent bg-gray',
+    },
+    inputSize: {
+      md: 'h-12',
+      lg: 'h-14',
+    },
+    invalid: {
+      true: 'border-danger',
+      false: '',
+    },
+  },
+  defaultVariants: { variant: 'outline', inputSize: 'md', invalid: false },
+});
+
+type FieldVariants = Omit<VariantProps<typeof field>, 'invalid'>;
+
+export interface LIInputProps
+  extends Omit<TextInputProps, 'className' | 'placeholderTextColor'>,
+    FieldVariants {
   readonly label?: string;
   readonly error?: string;
   readonly hint?: string;
@@ -12,7 +37,17 @@ export interface LIInputProps extends Omit<TextInputProps, 'className' | 'placeh
 }
 
 export const LIInput = forwardRef<TextInput, LIInputProps>(function LIInput(
-  { label, error, hint, containerClassName, secureTextEntry, ...inputProps },
+  {
+    label,
+    error,
+    hint,
+    containerClassName,
+    variant = 'outline',
+    inputSize = 'md',
+    secureTextEntry,
+    placeholder,
+    ...inputProps
+  },
   ref,
 ) {
   const [revealed, setRevealed] = useState(false);
@@ -22,22 +57,24 @@ export const LIInput = forwardRef<TextInput, LIInputProps>(function LIInput(
     <View className={cn('gap-1.5', containerClassName)}>
       {label ? <Text className="text-caption font-semibold text-navy">{label}</Text> : null}
 
-      <View
-        className={cn(
-          'h-12 flex-row items-center rounded-2xl border bg-white px-4',
-          error ? 'border-danger' : 'border-gray',
-        )}
-      >
+      <View className={field({ variant, inputSize, invalid: Boolean(error) })}>
         <TextInput
           ref={ref}
           className="flex-1 text-p text-dark-gray"
+          placeholder={placeholder}
           placeholderTextColor={tokens.muted}
           secureTextEntry={isPassword && !revealed}
-          accessibilityLabel={label}
+          // Label-less fields still need a name for screen readers.
+          accessibilityLabel={label ?? placeholder}
           {...inputProps}
         />
         {isPassword ? (
-          <Pressable onPress={() => setRevealed((current) => !current)} hitSlop={8}>
+          <Pressable
+            onPress={() => setRevealed((current) => !current)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+          >
             <Text className="text-caption font-semibold text-navy">
               {revealed ? 'Hide' : 'Show'}
             </Text>

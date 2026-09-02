@@ -1,7 +1,7 @@
 import { ScrollView, View } from 'react-native';
 
 import type { ApiProgram, ApiStudent, ApiVolumePoint } from '@/api/types';
-import { LITable } from '@/components';
+import { LITable } from '@/components/LITable';
 import { LIAvatar, LIBadge, LICard, LIText } from '@/components/ui';
 import { formatPercent, formatSessionDay, formatWeight } from '@/lib/format';
 import { useSettingsStore } from '@/store/settingsStore';

@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { ScrollView, Switch, View } from 'react-native';
 
 import type { ApiCoach } from '@/api/types';
-import { LISelect } from '@/components';
+import { LISelect } from '@/components/LISelect';
 import { LIButton, LICard, LIDivider, LIText } from '@/components/ui';
 import type { WeightUnit } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';

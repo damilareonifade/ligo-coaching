@@ -65,24 +65,5 @@
     "doctor": "expo-doctor",
     "bundle:check": "expo export --platform ios --output-dir .expo/bundle-check --clear"
   },
-  "private": true,
-  "jest": {
-    "preset": "jest-expo",
-    "setupFilesAfterEnv": [
-      "<rootDir>/jest.setup.ts"
-    ],
-    "transformIgnorePatterns": [
-      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|nativewind|react-native-css|react-native-css-interop|react-native-reanimated|react-native-worklets|react-native-gesture-handler|react-native-safe-area-context|react-native-svg|@shopify/flash-list|@gorhom/bottom-sheet|victory-native|lucide-react-native))",
-      "/node_modules/react-native-reanimated/plugin/",
-      "/node_modules/@react-native/babel-preset/"
-    ],
-    "collectCoverageFrom": [
-      "src/**/*.{ts,tsx}",
-      "!src/**/*.d.ts"
-    ],
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
-    },
-    "resolver": "<rootDir>/jest/resolver.js"
-  }
+  "private": true
 }

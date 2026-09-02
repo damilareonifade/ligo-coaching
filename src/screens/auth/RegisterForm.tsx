@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import { useRegisterMutation } from '@/api/auth';
 import { errorMessage } from '@/api/client';
-import { LIForm, LIFormInput } from '@/components';
+import { LIForm, LIFormInput } from '@/components/LIForm';
 import { LIButton, LIText } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';

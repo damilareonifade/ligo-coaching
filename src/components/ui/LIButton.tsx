@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { cn } from '@/lib/utils';
 import { tokens } from '@/theme/tokens';
 
-const button = cva('flex-row items-center justify-center rounded-pill gap-2', {
+const button = cva('flex-row items-center justify-center gap-2', {
   variants: {
     variant: {
       primary: 'bg-navy active:bg-midnight',
@@ -13,18 +13,24 @@ const button = cva('flex-row items-center justify-center rounded-pill gap-2', {
       outline: 'border border-navy bg-transparent active:bg-sky',
       ghost: 'bg-transparent active:bg-sky',
       danger: 'bg-danger active:opacity-90',
+      /** Third-party sign-in: white card on a tinted surface. */
+      social: 'border border-gray bg-white active:bg-sky',
     },
     size: {
       sm: 'h-9 px-4',
       md: 'h-12 px-6',
       lg: 'h-14 px-8',
     },
+    shape: {
+      pill: 'rounded-pill',
+      rounded: 'rounded-2xl',
+    },
     fullWidth: {
       true: 'w-full',
       false: '',
     },
   },
-  defaultVariants: { variant: 'primary', size: 'md', fullWidth: false },
+  defaultVariants: { variant: 'primary', size: 'md', shape: 'pill', fullWidth: false },
 });
 
 const label = cva('font-semibold', {
@@ -35,6 +41,7 @@ const label = cva('font-semibold', {
       outline: 'text-navy',
       ghost: 'text-navy',
       danger: 'text-white',
+      social: 'text-dark-gray',
     },
     size: {
       sm: 'text-caption',
@@ -62,6 +69,7 @@ export function LIButton({
   onPress,
   variant = 'primary',
   size = 'md',
+  shape = 'pill',
   fullWidth = false,
   loading = false,
   disabled = false,
@@ -78,7 +86,11 @@ export function LIButton({
       disabled={isInactive}
       accessibilityRole="button"
       accessibilityState={{ disabled: isInactive, busy: loading }}
-      className={cn(button({ variant, size, fullWidth }), isInactive && 'opacity-50', className)}
+      className={cn(
+        button({ variant, size, shape, fullWidth }),
+        isInactive && 'opacity-50',
+        className,
+      )}
       testID={testID}
     >
       {loading ? (

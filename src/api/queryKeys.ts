@@ -47,6 +47,20 @@ export const queryKeys = {
     data: ['client', 'data'] as const,
     health: ['client', 'health'] as const,
   },
+  /** The coach's feed — one payload, already grouped. See src/api/coachActivity.ts. */
+  coachActivity: ['coach', 'activity'] as const,
+  /**
+   * The coach's inbox and threads — see src/api/coachMessages.ts. `inboxAll` is
+   * the prefix over every search variant, so invalidating it refreshes the list
+   * whatever is typed in the box. `thread` is deliberately a sibling of it, not
+   * a child: sending a message invalidates the inbox and must not cancel the
+   * open thread's own query while its optimistic bubble is on screen.
+   */
+  coachMessages: {
+    inboxAll: ['coach', 'messages', 'inbox'] as const,
+    inbox: (query: string) => ['coach', 'messages', 'inbox', query] as const,
+    thread: (clientId: string) => ['coach', 'messages', 'thread', clientId] as const,
+  },
   clientChat: ['client', 'chat'] as const,
   clientCheckIns: ['client', 'check-ins'] as const,
 } as const;

@@ -470,8 +470,8 @@ export interface ApiClientHealth {
 }
 
 /* ------------------------------------------------------------------ *
- * Coach chat. One thread per attachment — there is no group chat and
- * no second coach, so the thread needs no id of its own.
+ * Chat. The same shape from both seats: a client's one thread with
+ * their coach, and a coach's thread with one client.
  * ------------------------------------------------------------------ */
 
 export interface ApiChatMessage {
@@ -479,7 +479,12 @@ export interface ApiChatMessage {
   readonly text: string;
   /** Pre-composed display stamp, e.g. "Mon 09:12". */
   readonly when: string;
-  readonly from: 'me' | 'coach';
+  /**
+   * Side-neutral on purpose. One thread is rendered from two seats — what the
+   * client calls "the coach" is "me" to the coach — so the sender is named
+   * relative to whoever is reading, never by role.
+   */
+  readonly from: 'me' | 'them';
 }
 
 export interface ApiClientChat {
@@ -581,4 +586,69 @@ export interface ApiRoster {
   readonly clients: readonly ApiRosterClient[];
   readonly labels: readonly ApiRosterLabel[];
   readonly inviteCode: string;
+}
+
+/* ------------------------------------------------------------------ *
+ * Coach activity. Everything that happened across the roster, newest
+ * first. Four of the eight kinds are access changes — a client giving
+ * or taking back what the coach can see — and the feed is where that
+ * gets announced, so they are never quietly folded in with a session.
+ * ------------------------------------------------------------------ */
+
+export type ActivityKind =
+  | 'session-done'
+  | 'session-missed'
+  | 'message'
+  | 'permission-granted'
+  | 'permission-revoked'
+  | 'attached'
+  | 'detached'
+  | 'check-in';
+
+export interface ApiActivityItem {
+  readonly id: string;
+  readonly kind: ActivityKind;
+  readonly clientId: string;
+  readonly clientName: string;
+  readonly initials: string;
+  readonly title: string;
+  readonly body: string;
+  /** Pre-composed stamp: "2h" | "1d" | "1w". */
+  readonly when: string;
+  readonly unread: boolean;
+}
+
+export interface ApiActivityGroup {
+  readonly id: string;
+  /** Already uppercase — "TODAY" | "EARLIER THIS WEEK". */
+  readonly title: string;
+  readonly items: readonly ApiActivityItem[];
+}
+
+/* ------------------------------------------------------------------ *
+ * Coach messages. One conversation per attached client. Messaging is
+ * the one channel permissions never close, so an entry here says
+ * nothing about what that client shares — `accessLabel` does.
+ * ------------------------------------------------------------------ */
+
+export interface ApiInboxEntry {
+  readonly clientId: string;
+  readonly name: string;
+  readonly initials: string;
+  /** Last message in the thread, from either side. */
+  readonly preview: string;
+  readonly when: string;
+  readonly unread: boolean;
+  /** Derived from the roster's `access` — see `accessLabel` in src/lib/roster.ts. */
+  readonly accessLabel: string;
+}
+
+export interface ApiCoachThread {
+  readonly clientId: string;
+  readonly name: string;
+  readonly initials: string;
+  readonly accessLabel: string;
+  /** `true` once the client detaches: the history stays, the composer goes. */
+  readonly archived: boolean;
+  readonly messages: readonly ApiChatMessage[];
 }

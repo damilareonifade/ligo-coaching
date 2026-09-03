@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Dumbbell,
   House,
+  MessageCircle,
   Settings,
   TrendingUp,
   User,
@@ -15,7 +16,7 @@ import { tokens } from '@/theme/tokens';
 
 /**
  * One tab bar, two audiences. Both roles keep Today first; everything after it
- * swaps — the coach gets Roster/Programs/Settings, the client gets
+ * swaps — the coach gets Roster/Programs/Messages/Settings, the client gets
  * Train/Food/Progress/Profile. The two last tabs are not interchangeable:
  * Settings is the coach's app-level screen, Profile is the client's own
  * account, so each role hides the other's. Hidden tabs stay mounted with
@@ -80,6 +81,17 @@ export default function TabsLayout() {
           title: 'Programs',
           href: isClient ? null : '/programs',
           tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
+        }}
+      />
+      {/* Coach-side only. The client's messaging is one thread reached from
+          their Today card, not a tab — a coach has forty conversations, a
+          client has one. */}
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          href: isClient ? null : '/messages',
+          tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} />,
         }}
       />
       <Tabs.Screen

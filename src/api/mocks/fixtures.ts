@@ -1,6 +1,10 @@
 import type {
+  ApiActivityGroup,
+  ApiChatMessage,
   ApiCheckIn,
   ApiClientChat,
+  ApiCoachThread,
+  ApiInboxEntry,
   ApiClientData,
   ApiClientHealth,
   ApiClientProfile,
@@ -28,8 +32,10 @@ import type {
   RosterAttention,
   StudentStatus,
 } from '@/api/types';
+import { markActivityRead } from '@/lib/activity';
+import { appendOwnMessage, filterInbox, withLatestPreview } from '@/lib/messages';
 import { assignedLabel, filterExerciseOptions } from '@/lib/programs';
-import { deriveRosterStats, withLabelCounts } from '@/lib/roster';
+import { accessLabel, deriveRosterStats, withLabelCounts } from '@/lib/roster';
 
 /** Dates are generated relative to now so the demo always reads as "today". */
 const now = new Date();
@@ -981,7 +987,7 @@ const initialChat: ApiClientChat = {
   messages: [
     {
       id: 'msg-1',
-      from: 'coach',
+      from: 'them',
       text: 'How did the shoulder feel on the incline work?',
       when: 'Mon 09:12',
     },
@@ -993,7 +999,7 @@ const initialChat: ApiClientChat = {
     },
     {
       id: 'msg-3',
-      from: 'coach',
+      from: 'them',
       text: "I'll add a set to the incline next week and hold the bench where it is.",
       when: 'Mon 09:34',
     },
@@ -1005,7 +1011,7 @@ const initialChat: ApiClientChat = {
     },
     {
       id: 'msg-5',
-      from: 'coach',
+      from: 'them',
       text: "That'll be doing a lot of the work. Keep the protein where it is.",
       when: 'Wed 07:48',
     },
@@ -1312,17 +1318,6 @@ const rosterClients: readonly ApiRosterClient[] = [
     attention: 'quiet',
     access: 'min',
     labelId: 'trial',
-  },
-  {
-    id: 'rc-ben',
-    name: 'Ben Jarvis',
-    initials: 'BJ',
-    daysAgo: 16,
-    when: '2w',
-    meta: 'Messaging only · nothing shared',
-    attention: 'quiet',
-    access: 'none',
-    labelId: 'online',
   },
   {
     id: 'rc-marek',
@@ -1822,4 +1817,304 @@ export function mockCreateExercise(input: MockCreateExerciseInput): void {
     },
     ...exerciseState,
   ];
+}
+
+/* ------------------------------------------------------------------ *
+ * Coach activity. Everything that happened across the roster, grouped
+ * the way a coach reads it: what needs him now, then what he missed.
+ *
+ * Half of this feed is access — clients giving and taking back what he
+ * can see. That is deliberate. A coach who only ever hears about
+ * sessions learns nothing about the boundary he is working inside.
+ * ------------------------------------------------------------------ */
+
+const initialActivity: readonly ApiActivityGroup[] = [
+  {
+    id: 'today',
+    title: 'TODAY',
+    items: [
+      {
+        id: 'act-1',
+        kind: 'session-done',
+        clientId: 'rc-maya',
+        clientName: 'Maya Andersson',
+        initials: 'MA',
+        title: 'Maya finished Upper A',
+        body: '7 of 7 sets · 48 min · one PR on bench',
+        when: '2h',
+        unread: true,
+      },
+      {
+        id: 'act-2',
+        kind: 'permission-revoked',
+        clientId: 'rc-elif',
+        clientName: 'Elif Kaya',
+        initials: 'EK',
+        title: 'Elif hid her health profile',
+        body: 'You can still see workouts and nutrition.',
+        when: '4h',
+        unread: true,
+      },
+      {
+        id: 'act-3',
+        kind: 'session-missed',
+        clientId: 'rc-amir',
+        clientName: 'Amir Haddad',
+        initials: 'AH',
+        title: 'Amir missed Push day',
+        body: 'Second planned day missed this week.',
+        when: '6h',
+        unread: false,
+      },
+      {
+        id: 'act-4',
+        kind: 'check-in',
+        clientId: 'rc-lena',
+        clientName: 'Lena Chen',
+        initials: 'LC',
+        title: 'Lena logged August check-in',
+        body: '82.4 kg · waist down 0.7 cm · note attached',
+        when: '8h',
+        unread: false,
+      },
+    ],
+  },
+  {
+    id: 'earlier',
+    title: 'EARLIER THIS WEEK',
+    items: [
+      {
+        id: 'act-5',
+        kind: 'attached',
+        clientId: 'rc-hana',
+        clientName: 'Hana Watanabe',
+        initials: 'HW',
+        title: 'Hana attached',
+        body: 'She shared nutrition only.',
+        when: '1d',
+        unread: false,
+      },
+      {
+        id: 'act-6',
+        kind: 'permission-granted',
+        clientId: 'rc-priya',
+        clientName: 'Priya Bhatt',
+        initials: 'PB',
+        title: 'Priya granted monthly check-ins',
+        body: 'Includes logging on her behalf.',
+        when: '2d',
+        unread: false,
+      },
+      {
+        id: 'act-7',
+        kind: 'message',
+        clientId: 'rc-tomas',
+        clientName: 'Tomas Lindqvist',
+        initials: 'TL',
+        title: 'Tomas replied',
+        body: '"Shoulder felt fine on the incline work."',
+        when: '3d',
+        unread: false,
+      },
+      {
+        id: 'act-8',
+        kind: 'detached',
+        clientId: 'rc-ben',
+        clientName: 'Ben Jarvis',
+        initials: 'BJ',
+        title: 'Ben detached',
+        body: 'His data went with him. The thread stays readable.',
+        when: '4d',
+        unread: false,
+      },
+    ],
+  },
+];
+
+let activityState: readonly ApiActivityGroup[] = initialActivity;
+
+export function mockActivity(): readonly ApiActivityGroup[] {
+  return activityState;
+}
+
+/** Mirrors POST /coach/activity/:id/read. Reading is per item, never per group. */
+export function mockMarkActivityRead(itemId: string): void {
+  activityState = markActivityRead(activityState, itemId);
+}
+
+/* ------------------------------------------------------------------ *
+ * Coach messages — the inbox and one thread per client.
+ *
+ * `accessLabel` is read off the roster rather than authored here. Two
+ * sources of truth for what a client shares is exactly how a coach
+ * ends up looking at a stale "Full access" on someone who revoked it.
+ * ------------------------------------------------------------------ */
+
+function rosterAccessLabel(clientId: string): string {
+  const client = rosterState.clients.find((candidate) => candidate.id === clientId);
+  // An unattached client can still have a readable thread — see `archived`.
+  return client ? accessLabel[client.access] : 'Messaging only';
+}
+
+interface InboxSeed {
+  readonly clientId: string;
+  readonly name: string;
+  readonly initials: string;
+  readonly preview: string;
+  readonly when: string;
+  readonly unread: boolean;
+}
+
+/** Newest first — the order the coach reads, and the order a reply re-sorts to. */
+const inboxSeeds: readonly InboxSeed[] = [
+  {
+    clientId: 'rc-maya',
+    name: 'Maya Andersson',
+    initials: 'MA',
+    preview: 'Felt strong today — bench moved well.',
+    when: '2h',
+    unread: true,
+  },
+  {
+    clientId: 'rc-priya',
+    name: 'Priya Bhatt',
+    initials: 'PB',
+    preview: 'Can we drop the incline volume?',
+    when: '5h',
+    unread: true,
+  },
+  {
+    clientId: 'rc-tomas',
+    name: 'Tomas Lindqvist',
+    initials: 'TL',
+    preview: 'Shoulder felt fine on the incline work.',
+    when: '1d',
+    unread: false,
+  },
+  {
+    clientId: 'rc-dara',
+    name: 'Dara Owusu',
+    initials: 'DO',
+    preview: "Thanks — I'll try that warm-up.",
+    when: '3d',
+    unread: false,
+  },
+  {
+    clientId: 'rc-ben',
+    name: 'Ben Jarvis',
+    initials: 'BJ',
+    preview: 'Cheers for everything.',
+    when: '1w',
+    unread: false,
+  },
+];
+
+let inboxState: readonly ApiInboxEntry[] = inboxSeeds.map((seed) => ({
+  ...seed,
+  accessLabel: rosterAccessLabel(seed.clientId),
+}));
+
+/**
+ * Threads. `from: 'me'` is the coach here — the same field the client's app
+ * reads as themselves. Maya's is the far side of the thread in `initialChat`:
+ * the shoulder, the incline, the sleep, seen from the seat that asked.
+ */
+const initialThreads: readonly ApiCoachThread[] = [
+  {
+    clientId: 'rc-maya',
+    name: 'Maya Andersson',
+    initials: 'MA',
+    accessLabel: rosterAccessLabel('rc-maya'),
+    archived: false,
+    messages: [
+      { id: 'cm-maya-1', from: 'me', text: 'How did the shoulder feel on the incline work?', when: 'Mon 09:12' },
+      { id: 'cm-maya-2', from: 'them', text: 'Much better. No pinch at all on the top set.', when: 'Mon 09:31' },
+      {
+        id: 'cm-maya-3',
+        from: 'me',
+        text: "I'll add a set to the incline next week and hold the bench where it is.",
+        when: 'Mon 09:34',
+      },
+      { id: 'cm-maya-4', from: 'them', text: 'Sounds good. Sleep has been better too — 7h most nights.', when: 'Tue 21:04' },
+      { id: 'cm-maya-5', from: 'me', text: "That'll be doing a lot of the work. Keep the protein where it is.", when: 'Wed 07:48' },
+      { id: 'cm-maya-6', from: 'them', text: 'Felt strong today — bench moved well.', when: 'Today 16:20' },
+    ],
+  },
+  {
+    clientId: 'rc-priya',
+    name: 'Priya Bhatt',
+    initials: 'PB',
+    accessLabel: rosterAccessLabel('rc-priya'),
+    archived: false,
+    messages: [
+      { id: 'cm-priya-1', from: 'me', text: 'You cut two sets short on Push yesterday — anything going on?', when: 'Tue 18:02' },
+      { id: 'cm-priya-2', from: 'them', text: 'Elbow was grumbling by the third incline set, so I stopped.', when: 'Tue 18:20' },
+      { id: 'cm-priya-3', from: 'me', text: 'Right call. Stopping early beats training through it.', when: 'Tue 18:24' },
+      { id: 'cm-priya-4', from: 'them', text: 'It settled overnight. Fine on pressing today.', when: 'Wed 08:11' },
+      { id: 'cm-priya-5', from: 'me', text: "Good. Let's keep the pressing and take the pressure off the elbow elsewhere.", when: 'Wed 08:30' },
+      { id: 'cm-priya-6', from: 'them', text: 'Can we drop the incline volume?', when: 'Today 13:05' },
+    ],
+  },
+  {
+    clientId: 'rc-tomas',
+    name: 'Tomas Lindqvist',
+    initials: 'TL',
+    accessLabel: rosterAccessLabel('rc-tomas'),
+    archived: false,
+    messages: [
+      { id: 'cm-tomas-1', from: 'me', text: 'Week 9 done. How is the shoulder holding up under the volume?', when: 'Sun 10:40' },
+      { id: 'cm-tomas-2', from: 'them', text: 'Shoulder felt fine on the incline work.', when: 'Sun 11:02' },
+      { id: 'cm-tomas-3', from: 'me', text: 'Then we hold the plan as written for week 10.', when: 'Sun 11:15' },
+    ],
+  },
+  {
+    clientId: 'rc-dara',
+    name: 'Dara Owusu',
+    initials: 'DO',
+    accessLabel: rosterAccessLabel('rc-dara'),
+    archived: false,
+    messages: [
+      { id: 'cm-dara-1', from: 'them', text: 'Knees feel cold on the first squat set. Normal?', when: 'Thu 07:30' },
+      { id: 'cm-dara-2', from: 'me', text: 'Common enough. Two easy sets of 10 before you load up, and give it five minutes.', when: 'Thu 08:04' },
+      { id: 'cm-dara-3', from: 'them', text: "Thanks — I'll try that warm-up.", when: 'Thu 08:12' },
+    ],
+  },
+  {
+    clientId: 'rc-ben',
+    name: 'Ben Jarvis',
+    initials: 'BJ',
+    // Detached: off the roster, so `rosterAccessLabel` no longer resolves him.
+    accessLabel: 'Detached',
+    archived: true,
+    messages: [
+      { id: 'cm-ben-1', from: 'them', text: "I'm going to take a few months off structured training.", when: 'Mon 19:44' },
+      { id: 'cm-ben-2', from: 'me', text: 'Understood. The door is open whenever you want to pick it back up.', when: 'Mon 20:01' },
+      { id: 'cm-ben-3', from: 'them', text: 'Cheers for everything.', when: 'Mon 20:09' },
+    ],
+  },
+];
+
+let threadState: readonly ApiCoachThread[] = initialThreads;
+
+/** Mirrors GET /coach/messages?q= — the search runs server-side. */
+export function mockInbox(query: string): readonly ApiInboxEntry[] {
+  return filterInbox(inboxState, query);
+}
+
+export function mockCoachThread(clientId: string): ApiCoachThread | null {
+  return threadState.find((thread) => thread.clientId === clientId) ?? null;
+}
+
+/**
+ * Mirrors POST /coach/messages/:clientId. The stamp and id are composed
+ * server-side for real. The inbox preview moves with it: a coach who replies
+ * and backs out expects to see their own words on the row.
+ */
+export function mockSendCoachMessage(clientId: string, text: string): void {
+  const message: ApiChatMessage = { id: `cm-${Date.now()}`, from: 'me', text, when: 'now' };
+
+  threadState = threadState.map((thread) =>
+    thread.clientId === clientId ? appendOwnMessage(thread, message) : thread,
+  );
+  inboxState = withLatestPreview(inboxState, clientId, text);
 }

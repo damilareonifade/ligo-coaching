@@ -1,15 +1,17 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
 
-import { useClientChatQuery } from '@/api/clientChat';
+import { useCoachThreadQuery } from '@/api/coachMessages';
 import { LIErrorState, LISafeArea } from '@/components/ui';
 import ChatSkeleton from '@/screens/chat/ChatSkeleton';
-import ChatContent from '@/screens/coach-chat/ChatContent';
+import CoachThreadContent from '@/screens/coach-thread/CoachThreadContent';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — the header owns the top inset, so no safe-area edges here. */
-export default function CoachChatScreen() {
-  const { data, isPending, error, refetch } = useClientChatQuery();
+/** Composer only — the header owns the top inset, so only the bottom edge here. */
+export default function CoachThreadScreen() {
+  const { clientId } = useLocalSearchParams<{ clientId: string }>();
+  const { data, isPending, error, refetch } = useCoachThreadQuery(clientId ?? '');
 
   const refresh = useCallback(() => {
     void refetch();
@@ -33,7 +35,7 @@ export default function CoachChatScreen() {
 
   return (
     <LISafeArea edges={['bottom']}>
-      <ChatContent chat={data} />
+      <CoachThreadContent thread={data} />
     </LISafeArea>
   );
 }

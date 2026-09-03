@@ -3,19 +3,31 @@ import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 
 import { errorMessage } from '@/api/client';
-import { useSendMessageMutation } from '@/api/clientChat';
 import { LIButton, LIInput } from '@/components/ui';
 import { useUiStore } from '@/store/uiStore';
 import { tokens } from '@/theme/tokens';
 
+interface ChatComposerProps {
+  /** Resolves when the message is accepted; rejects to restore the draft. */
+  readonly onSend: (text: string) => Promise<unknown>;
+  readonly isPending: boolean;
+  readonly placeholder?: string;
+}
+
 /**
  * The draft is local state on purpose — it belongs to this screen and nothing
  * else reads it, so it never goes near the store or the query cache.
+ *
+ * The mutation is the caller's: the client posts to their one thread, the coach
+ * posts to a named client's, and neither belongs inside a composer.
  */
-export default function ChatComposer() {
+export default function ChatComposer({
+  onSend,
+  isPending,
+  placeholder = 'Message',
+}: ChatComposerProps) {
   const [text, setText] = useState('');
   const showToast = useUiStore((state) => state.showToast);
-  const { mutateAsync, isPending } = useSendMessageMutation();
 
   const send = useCallback(() => {
     const trimmed = text.trim();
@@ -24,23 +36,23 @@ export default function ChatComposer() {
     // Clear first: the optimistic bubble is already on screen, and a box that
     // stays full reads as a message that did not go.
     setText('');
-    void mutateAsync({ text: trimmed }).catch((error: unknown) => {
+    void onSend(trimmed).catch((error: unknown) => {
       setText(trimmed);
       showToast(errorMessage(error), 'danger');
     });
-  }, [mutateAsync, showToast, text]);
+  }, [onSend, showToast, text]);
 
   return (
     <View className="flex-row items-center gap-2 border-t border-hairline bg-canvas px-4 py-3">
       <LIInput
         containerClassName="flex-1"
         fieldClassName="rounded-pill"
-        placeholder="Message"
+        placeholder={placeholder}
         value={text}
         onChangeText={setText}
         returnKeyType="send"
         onSubmitEditing={send}
-        accessibilityLabel="Message"
+        accessibilityLabel={placeholder}
         testID="chat-composer-input"
       />
       <LIButton

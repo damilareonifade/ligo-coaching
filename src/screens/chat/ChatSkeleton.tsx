@@ -3,7 +3,10 @@ import { View } from 'react-native';
 import { LISkeleton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
-/** Mirrors the header card, an alternating thread, and the composer row. */
+/**
+ * Mirrors the header card, an alternating thread, and the composer row. Shared:
+ * both seats render the same three parts, so they wait on the same shape.
+ */
 const BUBBLES = [
   { mine: false, width: 'w-56' },
   { mine: true, width: 'w-44' },

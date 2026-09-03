@@ -109,6 +109,32 @@ export default function RootLayout() {
                     headerStyle: { backgroundColor: tokens.canvas },
                   }}
                 />
+                {/* The coach's feed. A full screen rather than a tab: it is
+                    read in a sitting and left, and it hands off to the client
+                    it is talking about. */}
+                <Stack.Screen
+                  name="activity"
+                  options={{
+                    headerShown: true,
+                    title: 'Activity',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                {/* One client's thread, off the Messages tab. Titled for the
+                    thread, not the client — their name is the card at the top,
+                    exactly as on the client's own side. */}
+                <Stack.Screen
+                  name="messages/[clientId]"
+                  options={{
+                    headerShown: true,
+                    title: 'Messages',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
                 {/* The coach's own filing system — a roster detail, not a
                     profile setting, so it hangs off the roster route. */}
                 <Stack.Screen

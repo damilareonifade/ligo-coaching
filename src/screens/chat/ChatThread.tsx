@@ -8,7 +8,9 @@ import ChatBubble from './ChatBubble';
 
 interface ChatThreadProps {
   readonly messages: readonly ApiChatMessage[];
-  readonly coachName: string;
+  /** Worded by the caller — the two seats say different things to an empty thread. */
+  readonly emptyMessage: string;
+  readonly testID?: string;
 }
 
 /**
@@ -21,8 +23,11 @@ interface ChatThreadProps {
  * message you just sent appends below the fold. `autoscrollToBottomThreshold`
  * then follows new arrivals only when you are already near the bottom, so it
  * cannot yank the view while you are reading back through history.
+ *
+ * Shared by both seats: the client's thread and the coach's are the same list,
+ * so that behaviour is fixed in one place and cannot drift apart.
  */
-export default function ChatThread({ messages, coachName }: ChatThreadProps) {
+export default function ChatThread({ messages, emptyMessage, testID }: ChatThreadProps) {
   const renderItem = useCallback(
     ({ item }: { item: ApiChatMessage }) => <ChatBubble message={item} />,
     [],
@@ -41,13 +46,8 @@ export default function ChatThread({ messages, coachName }: ChatThreadProps) {
       }}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
-      ListEmptyComponent={
-        <LIEmptyState
-          title="No messages yet"
-          message={`Say hello — ${coachName} will see it the next time he opens Ligo.`}
-        />
-      }
-      testID="chat-thread"
+      ListEmptyComponent={<LIEmptyState title="No messages yet" message={emptyMessage} />}
+      testID={testID ?? 'chat-thread'}
     />
   );
 }

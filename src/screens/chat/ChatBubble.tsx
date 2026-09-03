@@ -12,6 +12,9 @@ interface ChatBubbleProps {
 /**
  * Memoised because it is a recycled FlashList row — a re-render of the thread
  * on every keystroke in the composer must not redraw every bubble in it.
+ *
+ * `from` is read relative to whoever is holding the phone, so this one bubble
+ * serves the client's thread and the coach's without knowing which it is in.
  */
 function ChatBubble({ message }: ChatBubbleProps) {
   const mine = message.from === 'me';

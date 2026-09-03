@@ -40,7 +40,7 @@ function StudentRow({ student, onPress }: StudentRowProps) {
       <View className="gap-1.5">
         <LIProgressBar
           value={student.adherence / 100}
-          tone={student.status === 'at-risk' ? 'danger' : 'accent'}
+          tone={student.status === 'at-risk' ? 'danger' : 'violet'}
           label={`${formatPercent(student.adherence)} adherence`}
         />
         <View className="flex-row justify-between">

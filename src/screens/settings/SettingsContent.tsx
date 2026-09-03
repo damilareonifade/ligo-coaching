@@ -53,7 +53,7 @@ export default function SettingsContent({ coach }: SettingsContentProps) {
           <Switch
             value={reminders}
             onValueChange={setReminders}
-            trackColor={{ true: tokens.teal, false: tokens.gray }}
+            trackColor={{ true: tokens.violet, false: tokens.field }}
             thumbColor={tokens.white}
           />
         </View>

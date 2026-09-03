@@ -14,7 +14,7 @@ interface SessionCardProps {
 
 const statusTone = {
   completed: 'success',
-  scheduled: 'accent',
+  scheduled: 'violet',
   missed: 'danger',
 } as const;
 
@@ -54,7 +54,7 @@ export default function SessionCard({
       <View className="gap-1.5">
         <LIProgressBar
           value={session.totalSets === 0 ? 0 : session.completedSets / session.totalSets}
-          tone={isDone ? 'success' : 'accent'}
+          tone={isDone ? 'success' : 'violet'}
           label={`${session.completedSets} of ${session.totalSets} sets complete`}
         />
         <LIText
@@ -68,7 +68,7 @@ export default function SessionCard({
         <LIButton
           title="Log a set"
           onPress={handleLog}
-          variant="accent"
+          variant="violet"
           size="sm"
           loading={logging}
           fullWidth

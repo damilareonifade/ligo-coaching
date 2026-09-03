@@ -45,7 +45,7 @@ export default function StudentProgressChart({ points, loading }: StudentProgres
         <LIText size="h5" color="primary" text="Weekly volume" />
         <LIText size="caption" color="muted" text="Total load lifted per week (kg)" />
       </View>
-      <LIChart data={sparseLabels} />
+      <LIChart data={sparseLabels} tone="violet" />
     </LICard>
   );
 }

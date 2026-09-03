@@ -19,7 +19,7 @@ export default function ProgramList({ programs, refreshing, onRefresh }: Program
             <LIText size="h5" color="primary" text={item.name} numberOfLines={1} />
             <LIText size="caption" color="muted" text={item.focus} />
           </View>
-          <LIBadge tone="accent" label={`${item.weeks} wks`} />
+          <LIBadge tone="violet" label={`${item.weeks} wks`} />
         </View>
         <LIText
           size="caption"

@@ -7,7 +7,7 @@ export default function RosterSkeleton() {
     <View className="gap-3 px-4 pt-2">
       <View className="flex-row gap-3">
         {[0, 1, 2].map((card) => (
-          <View key={card} className="flex-1 gap-2 rounded-card bg-sky p-3">
+          <View key={card} className="flex-1 gap-2 rounded-card bg-white p-3">
             <LISkeleton className="h-6 w-12" />
             <LISkeleton className="h-3 w-16" />
           </View>

@@ -16,7 +16,7 @@ export default function DashboardSkeleton() {
       </View>
 
       {[0, 1, 2].map((row) => (
-        <View key={row} className="gap-3 rounded-card bg-sky p-4">
+        <View key={row} className="gap-3 rounded-card bg-white p-4">
           <View className="flex-row items-center gap-3">
             <LISkeleton className="h-12 w-12 rounded-pill" />
             <View className="flex-1 gap-2">

@@ -41,7 +41,7 @@ export default function StudentDetailContent({
       </View>
 
       {student.note ? (
-        <LICard className="bg-light-teal gap-1">
+        <LICard className="bg-violet-weak gap-1">
           <LIText size="caption" color="primary" text="Coach note" className="font-semibold" />
           <LIText size="p" color="body" text={student.note} />
         </LICard>

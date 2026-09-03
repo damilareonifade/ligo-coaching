@@ -19,5 +19,14 @@ declare const colors: {
   readonly danger: string;
   readonly success: string;
   readonly warning: string;
+  readonly violet: string;
+  readonly 'violet-pressed': string;
+  readonly 'violet-weak': string;
+  readonly 'violet-line': string;
+  readonly canvas: string;
+  readonly field: string;
+  readonly hairline: string;
+  readonly 'hairline-strong': string;
+  readonly ink: string;
 };
 export = colors;

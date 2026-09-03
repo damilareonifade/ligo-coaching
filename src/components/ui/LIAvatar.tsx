@@ -10,6 +10,8 @@ export interface LIAvatarProps {
   readonly uri?: string | null;
   readonly size?: 'sm' | 'md' | 'lg';
   readonly className?: string;
+  /** Override the initials `Text`'s className — the base `className` only reaches the container. */
+  readonly labelClassName?: string;
 }
 
 const sizeClass = {
@@ -24,7 +26,7 @@ const textClass = {
   lg: 'text-h3',
 } as const;
 
-export function LIAvatar({ name, uri, size = 'md', className }: LIAvatarProps) {
+export function LIAvatar({ name, uri, size = 'md', className, labelClassName }: LIAvatarProps) {
   if (uri) {
     return (
       <LIImage
@@ -38,13 +40,15 @@ export function LIAvatar({ name, uri, size = 'md', className }: LIAvatarProps) {
   return (
     <View
       className={cn(
-        'items-center justify-center rounded-pill bg-light-teal',
+        'items-center justify-center rounded-pill bg-violet-weak',
         sizeClass[size],
         className,
       )}
       accessibilityLabel={name}
     >
-      <Text className={cn('font-bold text-navy', textClass[size])}>{initials(name)}</Text>
+      <Text className={cn('font-bold text-violet', textClass[size], labelClassName)}>
+        {initials(name)}
+      </Text>
     </View>
   );
 }

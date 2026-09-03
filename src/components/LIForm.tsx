@@ -56,8 +56,14 @@ export function LIFormItem({ name, children, className }: LIFormItemProps) {
   );
 }
 
-export function LIFormLabel({ text }: { readonly text: string }) {
-  return <LIText size="caption" color="primary" text={text} className="font-semibold" />;
+export function LIFormLabel({
+  text,
+  className,
+}: {
+  readonly text: string;
+  readonly className?: string;
+}) {
+  return <LIText size="caption" color="primary" text={text} className={cn('font-semibold', className)} />;
 }
 
 export function LIFormDescription({ text }: { readonly text: string }) {
@@ -79,6 +85,7 @@ export function LIFormMessage() {
 export interface LIFormFieldProps<TValues extends FieldValues> {
   readonly name: FieldPath<TValues>;
   readonly label?: string;
+  readonly labelClassName?: string;
   readonly description?: string;
   readonly render: (field: ControllerRenderProps<TValues>) => ReactNode;
 }
@@ -87,6 +94,7 @@ export interface LIFormFieldProps<TValues extends FieldValues> {
 export function LIFormField<TValues extends FieldValues>({
   name,
   label,
+  labelClassName,
   description,
   render,
 }: LIFormFieldProps<TValues>) {
@@ -94,7 +102,7 @@ export function LIFormField<TValues extends FieldValues>({
 
   return (
     <LIFormItem name={name}>
-      {label ? <LIFormLabel text={label} /> : null}
+      {label ? <LIFormLabel text={label} className={labelClassName} /> : null}
       <Controller control={control} name={name} render={({ field }) => <>{render(field)}</>} />
       {description ? <LIFormDescription text={description} /> : null}
       <LIFormMessage />
@@ -105,6 +113,7 @@ export function LIFormField<TValues extends FieldValues>({
 export interface LIFormInputProps<TValues extends FieldValues> {
   readonly name: FieldPath<TValues>;
   readonly label?: string;
+  readonly labelClassName?: string;
   readonly placeholder?: string;
   readonly secureTextEntry?: boolean;
   readonly keyboardType?: 'default' | 'email-address' | 'numeric';
@@ -120,6 +129,7 @@ export interface LIFormInputProps<TValues extends FieldValues> {
 export function LIFormInput<TValues extends FieldValues>({
   name,
   label,
+  labelClassName,
   placeholder,
   secureTextEntry,
   keyboardType = 'default',
@@ -144,6 +154,7 @@ export function LIFormInput<TValues extends FieldValues>({
       render={({ field }) => (
         <LIInput
           label={label}
+          labelClassName={labelClassName}
           placeholder={placeholder}
           value={typeof field.value === 'string' ? field.value : ''}
           onChangeText={field.onChange}

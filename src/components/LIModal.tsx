@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, type ComponentRef, type ReactNode } fro
 import { View } from 'react-native';
 
 import { LIText } from '@/components/ui';
+import { tokens } from '@/theme/tokens';
 
 export interface LIModalProps {
   readonly visible: boolean;
@@ -48,7 +49,7 @@ export function LIModal({ visible, onClose, title, children, snapPoints }: LIMod
       enablePanDownToClose
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: '#F1EFE8' }}
+      handleIndicatorStyle={{ backgroundColor: tokens.hairline }}
     >
       <BottomSheetView>
         <View className="gap-4 px-4 pb-8 pt-2">

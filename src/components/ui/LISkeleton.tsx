@@ -28,7 +28,7 @@ export function LISkeleton({ className }: LISkeletonProps) {
   return (
     <Animated.View
       style={style}
-      className={cn('rounded-lg bg-gray', className)}
+      className={cn('rounded-lg bg-field', className)}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     />

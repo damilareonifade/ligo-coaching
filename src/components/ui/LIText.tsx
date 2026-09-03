@@ -3,6 +3,7 @@ import { Pressable, Text } from 'react-native';
 
 import { cn } from '@/lib/utils';
 import { textColorClass, textSizeClass, type LITextColor, type LITextSize } from '@/theme/typography';
+import { tokens } from '@/theme/tokens';
 
 export interface LITextProps {
   readonly text: string;
@@ -14,6 +15,13 @@ export interface LITextProps {
   readonly link?: boolean;
   readonly linkValue?: string;
   readonly linkHref?: Href;
+  /**
+   * Raw color for the inline link (default `tokens.violet`). `Link`'s `className`
+   * only applies on web — expo-router's own `useInteropClassName` returns
+   * `props.style` unchanged whenever `Platform.OS !== 'web'` — so the link is
+   * styled via `style`, not `className`, to actually render on iOS/Android.
+   */
+  readonly linkColor?: string;
   readonly handleClick?: () => void;
   readonly testID?: string;
 }
@@ -31,6 +39,7 @@ export function LIText({
   link = false,
   linkValue,
   linkHref,
+  linkColor = tokens.violet,
   handleClick,
   testID,
 }: LITextProps) {
@@ -42,7 +51,7 @@ export function LIText({
       {link && linkValue && linkHref ? (
         <>
           {' '}
-          <Link href={linkHref} className="text-teal underline">
+          <Link href={linkHref} style={{ color: linkColor, textDecorationLine: 'underline' }}>
             {linkValue}
           </Link>
         </>

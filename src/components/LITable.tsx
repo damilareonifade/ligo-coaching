@@ -37,7 +37,7 @@ export function LITable<TRow>({
 
   return (
     <View className={cn('overflow-hidden rounded-card bg-white', className)}>
-      <View className="flex-row bg-sky px-4 py-3">
+      <View className="flex-row bg-field px-4 py-3">
         {columns.map((column) => (
           <View key={column.key} style={{ flex: column.flex ?? 1 }}>
             <LIText size="caption" color="primary" text={column.header} className="font-semibold" />

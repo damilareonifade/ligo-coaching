@@ -11,7 +11,7 @@ export interface LICardProps {
 }
 
 export function LICard({ children, className, onPress, testID }: LICardProps) {
-  const classes = cn('rounded-card bg-sky p-4', className);
+  const classes = cn('rounded-card bg-white p-4', className);
 
   if (onPress) {
     return (

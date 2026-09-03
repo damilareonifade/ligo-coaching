@@ -23,7 +23,7 @@ const glyph = {
 export function LIBrandMark({ size = 'md', className }: LIBrandMarkProps) {
   return (
     <View
-      className={cn('items-center justify-center rounded-2xl bg-navy', box[size], className)}
+      className={cn('items-center justify-center rounded-2xl bg-violet', box[size], className)}
       accessibilityRole="image"
       accessibilityLabel="Ligo"
     >

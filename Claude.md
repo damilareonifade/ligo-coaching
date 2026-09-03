@@ -128,6 +128,13 @@ are legacy tokens (see **Legacy Palette** below); don't reach for them in new wo
 - `danger` / `success` / `warning` are functional tokens for feedback states only, not brand colors.
 - Third-party brand colors (the Google "G", etc.) are fixed by their owners and are the one
   exception — they live in `src/theme/brandLogos.ts`, never inline in a component.
+- `label-violet` / `label-amber` / `label-sky` / `label-green` / `label-rose` / `label-slate` are
+  the roster **label swatches** and nothing else. They are data colors for a coach's own filing
+  system — a label identifies a group, it does not state a brand, a status, or a permission. Never
+  use them for UI chrome, and never read a meaning into which swatch a coach picked. They are
+  resolved by name through `src/theme/labelColors.ts` (a `label.color` is a token name, not a hex),
+  and they are the one place a component may pass a raw color through `style` — NativeWind cannot
+  build a class name from runtime data.
 - `LIButton`, `LIBadge`, `LIInput`, and `LIAvatar` all accept an optional `labelClassName` prop for
   overriding their inner text color without touching the shared defaults every other screen relies on.
 - `LIText`'s inline link (`link`/`linkValue`/`linkHref`) is styled via a `linkColor` prop (raw hex,

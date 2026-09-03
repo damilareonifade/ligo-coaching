@@ -109,6 +109,18 @@ export default function RootLayout() {
                     headerStyle: { backgroundColor: tokens.canvas },
                   }}
                 />
+                {/* The coach's own filing system — a roster detail, not a
+                    profile setting, so it hangs off the roster route. */}
+                <Stack.Screen
+                  name="roster/labels"
+                  options={{
+                    headerShown: true,
+                    title: 'Labels',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
                 <Stack.Screen
                   name="profile/notifications"
                   options={{

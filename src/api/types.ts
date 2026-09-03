@@ -473,3 +473,50 @@ export interface ApiMonthlyCheckIns {
   readonly coachName: string;
   readonly note: string;
 }
+
+/* ------------------------------------------------------------------ *
+ * Coach roster. The coach's own view of everyone attached to them —
+ * `access` is what that client granted, never what the coach asked for.
+ * ------------------------------------------------------------------ */
+
+/** Why a row wants the coach's eye. `ok` and `quiet` say nothing on the row. */
+export type RosterAttention = 'live' | 'review' | 'new' | 'ok' | 'quiet';
+
+/** How much the client shares. Set by the client, read-only to the coach. */
+export type RosterAccess = 'full' | 'partial' | 'min' | 'none';
+
+export interface ApiRosterLabel {
+  readonly id: string;
+  readonly name: string;
+  /** A `label-*` token name — see src/theme/labelColors.ts. */
+  readonly color: string;
+  /** Derived from the roster, never authored. */
+  readonly count: number;
+}
+
+export interface ApiRosterClient {
+  readonly id: string;
+  readonly name: string;
+  readonly initials: string;
+  readonly daysAgo: number;
+  /** Pre-composed stamp: "now" | "2h" | "3d" | "2w". */
+  readonly when: string;
+  /** e.g. "Upper/Lower · wk 6 · workouts, nutrition" */
+  readonly meta: string;
+  readonly attention: RosterAttention;
+  readonly access: RosterAccess;
+  readonly labelId: string | null;
+}
+
+export interface ApiRosterStat {
+  readonly id: string;
+  readonly label: string;
+  readonly value: string;
+}
+
+export interface ApiRoster {
+  readonly stats: readonly ApiRosterStat[];
+  readonly clients: readonly ApiRosterClient[];
+  readonly labels: readonly ApiRosterLabel[];
+  readonly inviteCode: string;
+}

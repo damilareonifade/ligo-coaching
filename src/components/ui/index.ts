@@ -9,6 +9,7 @@ export { LIEmptyState, type LIEmptyStateProps } from './LIEmptyState';
 export { LIErrorState, type LIErrorStateProps } from './LIErrorState';
 export { LIGoogleIcon, type LIGoogleIconProps } from './LIGoogleIcon';
 export { LIImage, type LIImageProps } from './LIImage';
+export { LILabelDot, type LILabelDotProps } from './LILabelDot';
 export { LIInput, type LIInputProps } from './LIInput';
 export { LIList } from './LIList';
 export { LIProgressBar, type LIProgressBarProps } from './LIProgressBar';

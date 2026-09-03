@@ -6,6 +6,8 @@ export const queryKeys = {
     detail: (id: string) => ['students', id] as const,
     volume: (id: string) => ['students', id, 'volume'] as const,
   },
+  /** The coach's roster, its labels and its KPIs — one payload, one key. */
+  roster: ['coach', 'roster'] as const,
   sessions: {
     today: ['sessions', 'today'] as const,
     forStudent: (studentId: string) => ['sessions', 'student', studentId] as const,

@@ -14,12 +14,18 @@ import type {
   ApiMonthlyCheckIns,
   ApiNotificationSettings,
   ApiProgram,
+  ApiRoster,
+  ApiRosterClient,
+  ApiRosterLabel,
   ApiSession,
   ApiSessionSet,
   ApiStudent,
   ApiTrainOverview,
   ApiVolumePoint,
+  RosterAttention,
+  StudentStatus,
 } from '@/api/types';
+import { deriveRosterStats, withLabelCounts } from '@/lib/roster';
 
 /** Dates are generated relative to now so the demo always reads as "today". */
 const now = new Date();
@@ -387,9 +393,19 @@ export function mockFinishClientSession(sessionId: string): void {
   mockSessionStore.delete(sessionId);
 }
 
+/** Stable per-id spread. Seeding off one character collides constantly — every
+ *  id ending in the same letter drew the same chart. */
+function hashId(id: string): number {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 31 + id.charCodeAt(index)) % 100000;
+  }
+  return hash;
+}
+
 export function mockVolume(studentId: string): readonly ApiVolumePoint[] {
   // Deterministic per student so the chart is stable across reloads.
-  const seed = studentId.charCodeAt(studentId.length - 1);
+  const seed = hashId(studentId);
   return Array.from({ length: 8 }, (_, index) => {
     const weekStart = new Date(now);
     weekStart.setDate(weekStart.getDate() - (7 - index) * 7);
@@ -1109,4 +1125,307 @@ export function mockSaveCheckIn(entry: ApiCheckIn): void {
 /** Mirrors POST /client/check-ins/coach-edit — write access only, not visibility. */
 export function mockToggleCoachEdit(enabled: boolean): void {
   checkInState = { ...checkInState, coachCanEdit: enabled };
+}
+
+/* ------------------------------------------------------------------ *
+ * Coach roster. `access` is the client's own setting mirrored back to
+ * the coach — the mock never widens it, and neither does the app.
+ * ------------------------------------------------------------------ */
+
+const rosterClients: readonly ApiRosterClient[] = [
+  {
+    id: 'rc-maya',
+    name: 'Maya Andersson',
+    initials: 'MA',
+    daysAgo: 0,
+    when: 'now',
+    meta: 'Upper/Lower · wk 6 · workouts, nutrition',
+    attention: 'live',
+    access: 'partial',
+    labelId: 'prep',
+  },
+  {
+    id: 'rc-priya',
+    name: 'Priya Bhatt',
+    initials: 'PB',
+    daysAgo: 0,
+    when: '2h',
+    meta: 'Push/Pull · wk 3 · cut two sets short',
+    attention: 'review',
+    access: 'full',
+    labelId: 'online',
+  },
+  {
+    id: 'rc-tomas',
+    name: 'Tomas Lindqvist',
+    initials: 'TL',
+    daysAgo: 0,
+    when: '5h',
+    meta: 'Full body · wk 9 · everything shared, can log',
+    attention: 'ok',
+    access: 'full',
+    labelId: 'inperson',
+  },
+  {
+    id: 'rc-sofia',
+    name: 'Sofia Nilsson',
+    initials: 'SN',
+    daysAgo: 0,
+    when: '6h',
+    meta: 'Strength 5×5 · wk 12 · workouts',
+    attention: 'ok',
+    access: 'partial',
+    labelId: 'prep',
+  },
+  {
+    id: 'rc-hana',
+    name: 'Hana Watanabe',
+    initials: 'HW',
+    daysAgo: 0,
+    when: '7h',
+    meta: 'Attached today · nutrition only',
+    attention: 'new',
+    access: 'min',
+    labelId: 'trial',
+  },
+  {
+    id: 'rc-rafa',
+    name: 'Rafa Moreno',
+    initials: 'RM',
+    daysAgo: 0,
+    when: '8h',
+    meta: 'Upper/Lower · wk 2 · workouts, nutrition',
+    attention: 'ok',
+    access: 'partial',
+    labelId: 'online',
+  },
+  {
+    id: 'rc-amir',
+    name: 'Amir Haddad',
+    initials: 'AH',
+    daysAgo: 1,
+    when: '1d',
+    meta: 'Hypertrophy · wk 7 · two planned days missed',
+    attention: 'review',
+    access: 'partial',
+    labelId: 'online',
+  },
+  {
+    id: 'rc-jenna',
+    name: 'Jenna Ruiz',
+    initials: 'JR',
+    daysAgo: 1,
+    when: '1d',
+    meta: 'No program · nutrition only',
+    attention: 'ok',
+    access: 'min',
+    labelId: 'trial',
+  },
+  {
+    id: 'rc-ines',
+    name: 'Ines Silva',
+    initials: 'IS',
+    daysAgo: 1,
+    when: '1d',
+    meta: 'Upper/Lower · wk 4 · everything shared',
+    attention: 'ok',
+    access: 'full',
+    labelId: 'inperson',
+  },
+  {
+    id: 'rc-lena',
+    name: 'Lena Chen',
+    initials: 'LC',
+    daysAgo: 2,
+    when: '2d',
+    meta: 'Push/Pull · wk 8 · everything shared, can log',
+    attention: 'ok',
+    access: 'full',
+    labelId: 'prep',
+  },
+  {
+    id: 'rc-dara',
+    name: 'Dara Owusu',
+    initials: 'DO',
+    daysAgo: 3,
+    when: '3d',
+    meta: 'Messaging only · nothing shared',
+    attention: 'ok',
+    access: 'none',
+    labelId: 'online',
+  },
+  {
+    id: 'rc-tom',
+    name: 'Tom Oyelaran',
+    initials: 'TO',
+    daysAgo: 3,
+    when: '3d',
+    meta: 'Strength 5×5 · wk 1 · workouts',
+    attention: 'ok',
+    access: 'partial',
+    labelId: 'rehab',
+  },
+  {
+    id: 'rc-noah',
+    name: 'Noah Fischer',
+    initials: 'NF',
+    daysAgo: 4,
+    when: '4d',
+    meta: 'No program · nutrition, metrics',
+    attention: 'ok',
+    access: 'partial',
+    labelId: 'rehab',
+  },
+  {
+    id: 'rc-elif',
+    name: 'Elif Kaya',
+    initials: 'EK',
+    daysAgo: 5,
+    when: '5d',
+    meta: 'Full body · wk 5 · health profile hidden',
+    attention: 'ok',
+    access: 'partial',
+    labelId: 'inperson',
+  },
+  {
+    id: 'rc-kai',
+    name: 'Kai Vogt',
+    initials: 'KV',
+    daysAgo: 9,
+    when: '1w',
+    meta: 'Upper/Lower · wk 3 · workouts, metrics',
+    attention: 'quiet',
+    access: 'partial',
+    labelId: 'online',
+  },
+  {
+    id: 'rc-grace',
+    name: 'Grace Osei',
+    initials: 'GO',
+    daysAgo: 11,
+    when: '2w',
+    meta: 'No program · workouts',
+    attention: 'quiet',
+    access: 'min',
+    labelId: 'trial',
+  },
+  {
+    id: 'rc-ben',
+    name: 'Ben Jarvis',
+    initials: 'BJ',
+    daysAgo: 16,
+    when: '2w',
+    meta: 'Messaging only · nothing shared',
+    attention: 'quiet',
+    access: 'none',
+    labelId: 'online',
+  },
+  {
+    id: 'rc-marek',
+    name: 'Marek Kowalski',
+    initials: 'MK',
+    daysAgo: 21,
+    when: '3w',
+    meta: 'Full body · wk 11 · workouts, metrics',
+    attention: 'quiet',
+    access: 'partial',
+    labelId: 'rehab',
+  },
+];
+
+/** Counts are filled in by `composeRoster` — authoring them would go stale. */
+const initialLabels: readonly ApiRosterLabel[] = [
+  { id: 'prep', name: 'Comp prep', color: 'label-violet', count: 0 },
+  { id: 'rehab', name: 'Rehab', color: 'label-amber', count: 0 },
+  { id: 'online', name: 'Online', color: 'label-sky', count: 0 },
+  { id: 'inperson', name: 'In person', color: 'label-green', count: 0 },
+  { id: 'trial', name: 'Trial', color: 'label-slate', count: 0 },
+];
+
+const INVITE_CODE = 'SAM-4KQ2';
+
+function composeRoster(
+  clients: readonly ApiRosterClient[],
+  labels: readonly ApiRosterLabel[],
+): ApiRoster {
+  return {
+    stats: deriveRosterStats(clients),
+    clients,
+    labels: withLabelCounts(labels, clients),
+    inviteCode: INVITE_CODE,
+  };
+}
+
+let rosterState: ApiRoster = composeRoster(rosterClients, initialLabels);
+
+/**
+ * Student detail for a roster row. The roster and the older student fixtures
+ * are two different casts, so without this every row on the roster opened a
+ * "no longer on your roster" error. A real backend has one clients table; the
+ * mock derives the detail from the roster entry so the name on the row is the
+ * name on the screen.
+ */
+export function mockStudentFromRoster(id: string): ApiStudent | null {
+  const client = rosterState.clients.find((candidate) => candidate.id === id);
+  if (!client) return null;
+
+  const status: StudentStatus =
+    client.attention === 'review' ? 'at-risk' : client.attention === 'quiet' ? 'inactive' : 'on-track';
+
+  // Adherence tracks how the client is doing, not how recently they opened the
+  // app — deriving it from `daysAgo` gave every client seen today the same 96%,
+  // and put a reassuring number next to someone flagged for review. Anchor it
+  // to `attention` and spread it deterministically so no two rows are twins.
+  const base: Record<RosterAttention, number> = {
+    live: 88,
+    ok: 86,
+    new: 72,
+    review: 61,
+    quiet: 48,
+  };
+  const adherence = Math.min(99, base[client.attention] + (hashId(client.id) % 9));
+
+  return {
+    id: client.id,
+    name: client.name,
+    avatarUrl: null,
+    goal: client.meta.split(' · ')[0] ?? 'No program',
+    programId: null,
+    status,
+    adherence,
+    nextSessionAt: null,
+    lastSessionAt: at(-client.daysAgo, 7, 30),
+    note: null,
+  };
+}
+
+export function mockRoster(): ApiRoster {
+  return rosterState;
+}
+
+/** Mirrors POST /coach/roster/labels. A new label files nobody by itself. */
+export function mockCreateLabel(label: ApiRosterLabel): void {
+  rosterState = composeRoster(rosterState.clients, [...rosterState.labels, label]);
+}
+
+/** Mirrors PATCH /coach/roster/labels/:id — the name only, never the filing. */
+export function mockRenameLabel(id: string, name: string): void {
+  rosterState = composeRoster(
+    rosterState.clients,
+    rosterState.labels.map((label) => (label.id === id ? { ...label, name } : label)),
+  );
+}
+
+/**
+ * Mirrors DELETE /coach/roster/labels/:id. Deleting a label unfiles the
+ * clients that carried it and does nothing else — nobody is detached, no
+ * permission moves, which is exactly what the labels screen promises.
+ */
+export function mockDeleteLabel(id: string): void {
+  rosterState = composeRoster(
+    rosterState.clients.map((client) =>
+      client.labelId === id ? { ...client, labelId: null } : client,
+    ),
+    rosterState.labels.filter((label) => label.id !== id),
+  );
 }

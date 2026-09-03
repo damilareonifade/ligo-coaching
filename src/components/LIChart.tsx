@@ -66,8 +66,10 @@ export function LIChart({ data, height = 180, tone = 'accent', className }: LICh
       </View>
 
       <View className="flex-row justify-between">
-        {data.map((datum) => (
-          <LIText key={datum.label} size="caption" color="muted" text={datum.label} />
+        {/* Keyed by position, not label: a sparse axis blanks the ticks that do
+            not fit, so labels repeat and are not identity. */}
+        {data.map((datum, index) => (
+          <LIText key={index} size="caption" color="muted" text={datum.label} />
         ))}
       </View>
     </View>

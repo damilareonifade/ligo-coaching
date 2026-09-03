@@ -2,14 +2,13 @@ import { useCallback } from 'react';
 
 import { useRosterQuery } from '@/api/roster';
 import { LIErrorState, LISafeArea } from '@/components/ui';
-import RosterContent from '@/screens/roster/RosterContent';
-import RosterSkeleton from '@/screens/roster/RosterSkeleton';
-import RosterTitle from '@/screens/roster/RosterTitle';
+import LabelsContent from '@/screens/roster-labels/LabelsContent';
+import LabelsSkeleton from '@/screens/roster-labels/LabelsSkeleton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — one query, handed down; the filters are RosterContent's. */
-export default function RosterScreen() {
+/** Composer only — the header owns the top inset, so no safe-area edges here. */
+export default function LabelsScreen() {
   const { data, isPending, error, refetch, isRefetching } = useRosterQuery();
 
   const refresh = useCallback(() => {
@@ -18,26 +17,23 @@ export default function RosterScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea>
-        <RosterTitle />
-        <RosterSkeleton />
+      <LISafeArea edges={[]}>
+        <LabelsSkeleton />
       </LISafeArea>
     );
   }
 
   if (error || !data) {
     return (
-      <LISafeArea>
-        <RosterTitle />
+      <LISafeArea edges={[]}>
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea>
-      <RosterTitle />
-      <RosterContent roster={data} refreshing={isRefetching} onRefresh={refresh} />
+    <LISafeArea edges={[]}>
+      <LabelsContent roster={data} refreshing={isRefetching} onRefresh={refresh} />
     </LISafeArea>
   );
 }

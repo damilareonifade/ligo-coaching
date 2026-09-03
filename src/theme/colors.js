@@ -43,4 +43,13 @@ module.exports = {
   hairline: '#E7E9EE', // cool-neutral border (violet-flow alternative to `gray`)
   'hairline-strong': '#D9DCE3', // emphasized border
   ink: '#0A0A0A', // near-black heading text (violet-flow alternative to `navy`/`dark-gray`)
+
+  // Roster label swatches. A coach's private filing system, so these are data
+  // colours, not brand colours — they identify a label and nothing else.
+  'label-violet': '#8B5CF6',
+  'label-amber': '#F59E0B',
+  'label-sky': '#0EA5E9',
+  'label-green': '#16A34A',
+  'label-rose': '#E11D48',
+  'label-slate': '#64748B',
 };

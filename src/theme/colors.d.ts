@@ -28,5 +28,11 @@ declare const colors: {
   readonly hairline: string;
   readonly 'hairline-strong': string;
   readonly ink: string;
+  readonly 'label-violet': string;
+  readonly 'label-amber': string;
+  readonly 'label-sky': string;
+  readonly 'label-green': string;
+  readonly 'label-rose': string;
+  readonly 'label-slate': string;
 };
 export = colors;

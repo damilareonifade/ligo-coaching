@@ -1,42 +1,48 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import type { ApiStudent } from '@/api/types';
+import type { ApiRosterStat } from '@/api/types';
 import RosterStats from '@/screens/roster/RosterStats';
 
-function student(overrides: Partial<ApiStudent>): ApiStudent {
-  return {
-    id: 'stu-x',
-    name: 'Test Student',
-    avatarUrl: null,
-    goal: 'Get stronger',
-    programId: null,
-    status: 'on-track',
-    adherence: 80,
-    nextSessionAt: null,
-    lastSessionAt: null,
-    note: null,
-    ...overrides,
-  };
-}
+/**
+ * The contract changed with the roster rebuild: the tiles no longer derive
+ * anything from a student list, they display the roster's own KPIs and act as
+ * the filter behind each number. That second half is the part worth a test —
+ * a KPI you cannot tap through to is just decoration.
+ */
+const stats: readonly ApiRosterStat[] = [
+  { id: 'clients', label: 'Clients', value: '18' },
+  { id: 'review', label: 'Need a look', value: '2' },
+  { id: 'live', label: 'Training now', value: '1' },
+];
 
 describe('RosterStats', () => {
-  it('counts active students and averages adherence, ignoring inactive ones', async () => {
-    await render(
-      <RosterStats
-        students={[
-          student({ id: 'a', adherence: 90 }),
-          student({ id: 'b', status: 'at-risk', adherence: 50 }),
-          student({ id: 'c', status: 'inactive', adherence: 0 }),
-        ]}
-      />,
-    );
+  it('renders every KPI it is given', async () => {
+    await render(<RosterStats stats={stats} selected="all" onSelect={() => {}} />);
 
-    expect(screen.getByText('2')).toBeTruthy(); // active
-    expect(screen.getByText('70%')).toBeTruthy(); // avg of 90 and 50
+    expect(screen.getByText('18')).toBeTruthy();
+    expect(screen.getByText('Clients')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
+    expect(screen.getByText('Need a look')).toBeTruthy();
+    expect(screen.getByText('1')).toBeTruthy();
+    expect(screen.getByText('Training now')).toBeTruthy();
   });
 
-  it('reports zero adherence with no active students', async () => {
-    await render(<RosterStats students={[student({ status: 'inactive' })]} />);
-    expect(screen.getByText('0%')).toBeTruthy();
+  it('filters to the state a tile stands for', async () => {
+    const onSelect = jest.fn();
+    await render(<RosterStats stats={stats} selected="all" onSelect={onSelect} />);
+
+    await fireEvent.press(screen.getByTestId('roster-stat-review'));
+    expect(onSelect).toHaveBeenCalledWith('review');
+
+    await fireEvent.press(screen.getByTestId('roster-stat-live'));
+    expect(onSelect).toHaveBeenCalledWith('live');
+  });
+
+  it('clears the filter from the Clients tile', async () => {
+    const onSelect = jest.fn();
+    await render(<RosterStats stats={stats} selected="review" onSelect={onSelect} />);
+
+    await fireEvent.press(screen.getByTestId('roster-stat-clients'));
+    expect(onSelect).toHaveBeenCalledWith('all');
   });
 });

@@ -43,7 +43,7 @@ export default function LoginScreen() {
   );
 
   return (
-    <LISafeArea className="bg-sky" edges={['top', 'bottom']}>
+    <LISafeArea className="bg-canvas" edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"

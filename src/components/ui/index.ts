@@ -4,6 +4,7 @@ export { LIBrandMark, type LIBrandMarkProps } from './LIBrandMark';
 export { LIButton, type LIButtonProps } from './LIButton';
 export { LICard, type LICardProps } from './LICard';
 export { LIChip, type LIChipProps } from './LIChip';
+export { LIChipGroup, type LIChipGroupProps, type LIChipOption } from './LIChipGroup';
 export { LIDivider } from './LIDivider';
 export { LIEmptyState, type LIEmptyStateProps } from './LIEmptyState';
 export { LIErrorState, type LIErrorStateProps } from './LIErrorState';

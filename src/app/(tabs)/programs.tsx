@@ -1,44 +1,50 @@
 import { useCallback } from 'react';
-import { View } from 'react-native';
 
-import { useProgramsQuery } from '@/api/programs';
-import { LIErrorState, LISafeArea, LIText } from '@/components/ui';
-import ProgramList from '@/screens/programs/ProgramList';
-import ProgramSkeleton from '@/screens/programs/ProgramSkeleton';
+import { useProgramLibraryQuery } from '@/api/coachPrograms';
+import { useRosterQuery } from '@/api/roster';
+import { LIErrorState, LISafeArea } from '@/components/ui';
+import ProgramsContent from '@/screens/programs/ProgramsContent';
+import ProgramsSkeleton from '@/screens/programs/ProgramsSkeleton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
+/**
+ * Composer only. Two queries because a program card shows who holds it, and
+ * the people are the roster's — the library stores ids, never names.
+ */
 export default function ProgramsScreen() {
-  const { data, isPending, error, refetch, isRefetching } = useProgramsQuery();
+  const library = useProgramLibraryQuery();
+  const roster = useRosterQuery();
 
   const refresh = useCallback(() => {
-    void refetch();
-  }, [refetch]);
+    void library.refetch();
+    void roster.refetch();
+  }, [library, roster]);
 
-  if (isPending) {
+  if (library.isPending || roster.isPending) {
     return (
       <LISafeArea>
-        <ProgramSkeleton />
+        <ProgramsSkeleton />
       </LISafeArea>
     );
   }
 
-  if (error) {
+  if (library.error || !library.data) {
     return (
       <LISafeArea>
-        <LIErrorState message={error.message} onRetry={refresh} />
+        <LIErrorState message={library.error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
     <LISafeArea>
-      <View className="px-4 pt-2">
-        <LIText size="h2" color="primary" text="Programs" />
-      </View>
-      <View className="flex-1">
-        <ProgramList programs={data ?? []} refreshing={isRefetching} onRefresh={refresh} />
-      </View>
+      <ProgramsContent
+        programs={library.data}
+        clients={roster.data?.clients ?? []}
+        refreshing={library.isRefetching || roster.isRefetching}
+        onRefresh={refresh}
+      />
     </LISafeArea>
   );
 }

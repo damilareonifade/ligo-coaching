@@ -61,6 +61,68 @@ export interface ApiProgram {
   readonly assignedStudentIds: readonly string[];
 }
 
+/* ------------------------------------------------------------------ *
+ * Coach programs. Deliberately separate from `ApiProgram` above: that
+ * shape is the student-detail read (a flat exercise list), while these
+ * are the coach's library and editor — days, blocks, and the publish
+ * state that decides whether a client has this version yet.
+ * ------------------------------------------------------------------ */
+
+export type ProgramStatus = 'published' | 'draft' | 'archived';
+
+/** A routine is a single day; a program has weeks and several days. */
+export type BuilderKind = 'routine' | 'program';
+
+export interface ApiProgramBlock {
+  readonly id: string;
+  readonly name: string;
+  /** e.g. "4 × 8" | "3 × 10" */
+  readonly scheme: string;
+  /** e.g. "RPE 8" — empty when the coach left it unset. */
+  readonly rpe: string;
+  /** The one cue the client should remember on this lift. */
+  readonly note: string | null;
+}
+
+export interface ApiProgramDay {
+  readonly id: string;
+  /** "Day 1" | "Upper A" */
+  readonly label: string;
+  readonly blocks: readonly ApiProgramBlock[];
+}
+
+export interface ApiProgramSummary {
+  readonly id: string;
+  readonly name: string;
+  /** e.g. "Upper/Lower · 12 weeks · 4 days" */
+  readonly meta: string;
+  readonly status: ProgramStatus;
+  /** "Published" | "Draft changes" | "Archived" */
+  readonly statusLabel: string;
+  /** Roster client ids — the avatars come from the roster, not a student cast. */
+  readonly assignedIds: readonly string[];
+  /** e.g. "Assigned to 4 clients" */
+  readonly assignedLabel: string;
+}
+
+export interface ApiProgramDetail extends ApiProgramSummary {
+  readonly weeks: number;
+  readonly days: readonly ApiProgramDay[];
+  /** True while the coach's edits are ahead of what clients hold. */
+  readonly hasDraftChanges: boolean;
+}
+
+export interface ApiExerciseOption {
+  readonly id: string;
+  readonly name: string;
+  /** e.g. "Barbell · Quads" */
+  readonly meta: string;
+  /** "Compound" | "Accessory" | "Yours" */
+  readonly tag: string;
+  /** Picker section: "Recent" | "Chest" | "Back" | "Legs" | "Shoulders" */
+  readonly group: string;
+}
+
 export interface ApiSession {
   readonly id: string;
   readonly studentId: string;

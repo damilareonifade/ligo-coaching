@@ -8,12 +8,15 @@ import type {
   ApiClientSession,
   ApiClientToday,
   ApiCoach,
+  ApiExerciseOption,
   ApiFoodDay,
   ApiFoodResult,
   ApiIntegration,
   ApiMonthlyCheckIns,
   ApiNotificationSettings,
   ApiProgram,
+  ApiProgramDetail,
+  ApiProgramSummary,
   ApiRoster,
   ApiRosterClient,
   ApiRosterLabel,
@@ -25,6 +28,7 @@ import type {
   RosterAttention,
   StudentStatus,
 } from '@/api/types';
+import { assignedLabel, filterExerciseOptions } from '@/lib/programs';
 import { deriveRosterStats, withLabelCounts } from '@/lib/roster';
 
 /** Dates are generated relative to now so the demo always reads as "today". */
@@ -1428,4 +1432,394 @@ export function mockDeleteLabel(id: string): void {
     ),
     rosterState.labels.filter((label) => label.id !== id),
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * Coach programs — the library, the editor and the exercise catalogue.
+ *
+ * `assignedIds` are roster ids (`rc-*`), not the older `stu-*` cast that
+ * `mockPrograms` above uses: the avatars on a program card have to be
+ * the same people the coach sees on the roster, or the two screens
+ * disagree about who they coach. See `mockStudentFromRoster` for the
+ * same reconciliation on the student detail route.
+ * ------------------------------------------------------------------ */
+
+/** Full details are the source of truth; the library is derived from them. */
+const initialProgramDetails: readonly ApiProgramDetail[] = [
+  {
+    id: 'pg-upper-lower',
+    name: 'Upper/Lower 4×',
+    meta: 'Upper/Lower · 12 weeks · 4 days',
+    status: 'draft',
+    statusLabel: 'Draft changes',
+    assignedIds: ['rc-maya', 'rc-rafa', 'rc-ines', 'rc-kai'],
+    assignedLabel: assignedLabel(4),
+    weeks: 12,
+    hasDraftChanges: true,
+    days: [
+      {
+        id: 'day-upper-a',
+        label: 'Upper A',
+        blocks: [
+          {
+            id: 'blk-ul-1',
+            name: 'Bench press',
+            scheme: '4 × 8',
+            rpe: 'RPE 8',
+            note: 'Elbows tucked, pause on the chest.',
+          },
+          { id: 'blk-ul-2', name: 'Incline DB press', scheme: '3 × 10', rpe: 'RPE 8', note: null },
+          { id: 'blk-ul-3', name: 'Barbell row', scheme: '4 × 8', rpe: 'RPE 8', note: null },
+          { id: 'blk-ul-4', name: 'Cable fly', scheme: '3 × 12', rpe: 'RPE 7', note: null },
+        ],
+      },
+      {
+        id: 'day-lower-a',
+        label: 'Lower A',
+        blocks: [
+          {
+            id: 'blk-ul-5',
+            name: 'Back squat',
+            scheme: '4 × 6',
+            rpe: 'RPE 8',
+            note: 'Brace before you unrack, not after.',
+          },
+          { id: 'blk-ul-6', name: 'Romanian deadlift', scheme: '3 × 8', rpe: 'RPE 7', note: null },
+          { id: 'blk-ul-7', name: 'Leg press', scheme: '3 × 12', rpe: 'RPE 8', note: null },
+          { id: 'blk-ul-8', name: 'Standing calf raise', scheme: '4 × 12', rpe: '', note: null },
+        ],
+      },
+      {
+        id: 'day-upper-b',
+        label: 'Upper B',
+        blocks: [
+          { id: 'blk-ul-9', name: 'Overhead press', scheme: '4 × 6', rpe: 'RPE 8', note: null },
+          { id: 'blk-ul-10', name: 'Weighted pull-up', scheme: '4 × 6', rpe: 'RPE 8', note: null },
+          { id: 'blk-ul-11', name: 'Seated cable row', scheme: '3 × 10', rpe: 'RPE 7', note: null },
+          { id: 'blk-ul-12', name: 'Lateral raise', scheme: '3 × 15', rpe: '', note: null },
+        ],
+      },
+      {
+        id: 'day-lower-b',
+        label: 'Lower B',
+        blocks: [
+          { id: 'blk-ul-13', name: 'Front squat', scheme: '4 × 5', rpe: 'RPE 8', note: null },
+          {
+            id: 'blk-ul-14',
+            name: 'Hip thrust',
+            scheme: '3 × 10',
+            rpe: 'RPE 8',
+            note: 'Ribs down, finish with the glutes.',
+          },
+          { id: 'blk-ul-15', name: 'Walking lunge', scheme: '3 × 12', rpe: 'RPE 7', note: null },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pg-ppl',
+    name: 'Push Pull Legs',
+    meta: 'PPL · 8 weeks · 6 days',
+    status: 'published',
+    statusLabel: 'Published',
+    assignedIds: ['rc-priya', 'rc-lena', 'rc-amir', 'rc-elif', 'rc-marek', 'rc-grace'],
+    assignedLabel: assignedLabel(6),
+    weeks: 8,
+    hasDraftChanges: false,
+    days: [
+      {
+        id: 'day-push-a',
+        label: 'Push A',
+        blocks: [
+          { id: 'blk-ppl-1', name: 'Bench press', scheme: '4 × 6', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-2', name: 'Overhead press', scheme: '3 × 8', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-3', name: 'Cable fly', scheme: '3 × 12', rpe: 'RPE 7', note: null },
+        ],
+      },
+      {
+        id: 'day-pull-a',
+        label: 'Pull A',
+        blocks: [
+          { id: 'blk-ppl-4', name: 'Weighted pull-up', scheme: '4 × 6', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-5', name: 'Barbell row', scheme: '4 × 8', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-6', name: 'Face pull', scheme: '3 × 15', rpe: '', note: null },
+        ],
+      },
+      {
+        id: 'day-legs-a',
+        label: 'Legs A',
+        blocks: [
+          { id: 'blk-ppl-7', name: 'Back squat', scheme: '4 × 6', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-8', name: 'Romanian deadlift', scheme: '3 × 8', rpe: 'RPE 7', note: null },
+          { id: 'blk-ppl-9', name: 'Leg press', scheme: '3 × 12', rpe: 'RPE 8', note: null },
+        ],
+      },
+      {
+        id: 'day-push-b',
+        label: 'Push B',
+        blocks: [
+          { id: 'blk-ppl-10', name: 'Incline DB press', scheme: '4 × 8', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-11', name: 'Dip', scheme: '3 × 10', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-12', name: 'Lateral raise', scheme: '3 × 15', rpe: '', note: null },
+        ],
+      },
+      {
+        id: 'day-pull-b',
+        label: 'Pull B',
+        blocks: [
+          { id: 'blk-ppl-13', name: 'Lat pulldown', scheme: '4 × 10', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-14', name: 'Seated cable row', scheme: '3 × 10', rpe: 'RPE 7', note: null },
+          { id: 'blk-ppl-15', name: 'Hammer curl', scheme: '3 × 12', rpe: '', note: null },
+        ],
+      },
+      {
+        id: 'day-legs-b',
+        label: 'Legs B',
+        blocks: [
+          { id: 'blk-ppl-16', name: 'Front squat', scheme: '4 × 5', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-17', name: 'Hip thrust', scheme: '3 × 10', rpe: 'RPE 8', note: null },
+          { id: 'blk-ppl-18', name: 'Standing calf raise', scheme: '4 × 12', rpe: '', note: null },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pg-strength-5x5',
+    name: 'Strength 5×5',
+    meta: 'Full body · 10 weeks · 3 days',
+    status: 'published',
+    statusLabel: 'Published',
+    assignedIds: ['rc-sofia', 'rc-tom', 'rc-tomas'],
+    assignedLabel: assignedLabel(3),
+    weeks: 10,
+    hasDraftChanges: false,
+    days: [
+      {
+        id: 'day-5x5-1',
+        label: 'Day 1',
+        blocks: [
+          { id: 'blk-5x5-1', name: 'Back squat', scheme: '5 × 5', rpe: 'RPE 8', note: null },
+          { id: 'blk-5x5-2', name: 'Bench press', scheme: '5 × 5', rpe: 'RPE 8', note: null },
+          { id: 'blk-5x5-3', name: 'Barbell row', scheme: '5 × 5', rpe: 'RPE 7', note: null },
+        ],
+      },
+      {
+        id: 'day-5x5-2',
+        label: 'Day 2',
+        blocks: [
+          { id: 'blk-5x5-4', name: 'Back squat', scheme: '5 × 5', rpe: 'RPE 8', note: null },
+          { id: 'blk-5x5-5', name: 'Overhead press', scheme: '5 × 5', rpe: 'RPE 8', note: null },
+          {
+            id: 'blk-5x5-6',
+            name: 'Deadlift',
+            scheme: '1 × 5',
+            rpe: 'RPE 8',
+            note: 'One heavy set. Reset every rep.',
+          },
+        ],
+      },
+      {
+        id: 'day-5x5-3',
+        label: 'Day 3',
+        blocks: [
+          { id: 'blk-5x5-7', name: 'Back squat', scheme: '5 × 5', rpe: 'RPE 8', note: null },
+          { id: 'blk-5x5-8', name: 'Bench press', scheme: '5 × 5', rpe: 'RPE 8', note: null },
+          { id: 'blk-5x5-9', name: 'Weighted pull-up', scheme: '3 × 6', rpe: 'RPE 7', note: null },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'pg-return',
+    name: 'Return to lifting',
+    meta: 'Rehab · 6 weeks · 3 days',
+    status: 'archived',
+    statusLabel: 'Archived',
+    assignedIds: [],
+    assignedLabel: assignedLabel(0),
+    weeks: 6,
+    hasDraftChanges: false,
+    days: [
+      {
+        id: 'day-return-1',
+        label: 'Day 1',
+        blocks: [
+          {
+            id: 'blk-rt-1',
+            name: 'Goblet squat',
+            scheme: '3 × 10',
+            rpe: 'RPE 6',
+            note: 'Stop two reps short, every set.',
+          },
+          { id: 'blk-rt-2', name: 'Push-up', scheme: '3 × 8', rpe: 'RPE 6', note: null },
+          { id: 'blk-rt-3', name: 'Dead bug', scheme: '3 × 10', rpe: '', note: null },
+        ],
+      },
+      {
+        id: 'day-return-2',
+        label: 'Day 2',
+        blocks: [
+          { id: 'blk-rt-4', name: 'Split squat', scheme: '3 × 10', rpe: 'RPE 6', note: null },
+          { id: 'blk-rt-5', name: 'Lat pulldown', scheme: '3 × 12', rpe: 'RPE 6', note: null },
+          { id: 'blk-rt-6', name: 'Side plank', scheme: '3 × 30', rpe: '', note: null },
+        ],
+      },
+      {
+        id: 'day-return-3',
+        label: 'Day 3',
+        blocks: [
+          { id: 'blk-rt-7', name: 'Hip thrust', scheme: '3 × 12', rpe: 'RPE 6', note: null },
+          { id: 'blk-rt-8', name: 'Seated cable row', scheme: '3 × 12', rpe: 'RPE 6', note: null },
+          { id: 'blk-rt-9', name: 'Farmer carry', scheme: '3 × 40', rpe: '', note: null },
+        ],
+      },
+    ],
+  },
+];
+
+let programState: readonly ApiProgramDetail[] = initialProgramDetails;
+
+/** The library card reads the same fields the detail does — never a second copy. */
+function toSummary(detail: ApiProgramDetail): ApiProgramSummary {
+  return {
+    id: detail.id,
+    name: detail.name,
+    meta: detail.meta,
+    status: detail.status,
+    statusLabel: detail.statusLabel,
+    assignedIds: detail.assignedIds,
+    assignedLabel: detail.assignedLabel,
+  };
+}
+
+export function mockProgramLibrary(): readonly ApiProgramSummary[] {
+  return programState.map(toSummary);
+}
+
+export function mockProgramDetail(id: string): ApiProgramDetail | null {
+  return programState.find((program) => program.id === id) ?? null;
+}
+
+/**
+ * Mirrors POST/PUT /coach/programs. A save never publishes — a program the
+ * coach edits goes back to "Draft changes" until they send it out, which is
+ * the promise the library note makes.
+ */
+export function mockSaveProgram(program: ApiProgramDetail): void {
+  const exists = programState.some((candidate) => candidate.id === program.id);
+  programState = exists
+    ? programState.map((candidate) => (candidate.id === program.id ? program : candidate))
+    : [program, ...programState];
+}
+
+/** Mirrors POST /coach/programs/:id/publish — the draft becomes what clients hold. */
+export function mockPublishProgram(id: string): void {
+  programState = programState.map((program) =>
+    program.id === id
+      ? { ...program, status: 'published', statusLabel: 'Published', hasDraftChanges: false }
+      : program,
+  );
+}
+
+const initialExerciseOptions: readonly ApiExerciseOption[] = [
+  { id: 'ex-bench', name: 'Bench press', meta: 'Barbell · Chest', tag: 'Compound', group: 'Recent' },
+  { id: 'ex-row', name: 'Barbell row', meta: 'Barbell · Back', tag: 'Compound', group: 'Recent' },
+  {
+    id: 'ex-goblet',
+    name: 'Goblet squat',
+    meta: 'Dumbbell · Quads',
+    tag: 'Accessory',
+    group: 'Recent',
+  },
+  {
+    id: 'ex-sam-split',
+    name: "Sam's split squat",
+    meta: 'Dumbbell · Quads',
+    tag: 'Yours',
+    group: 'Recent',
+  },
+  {
+    id: 'ex-incline',
+    name: 'Incline DB press',
+    meta: 'Dumbbell · Chest',
+    tag: 'Compound',
+    group: 'Chest',
+  },
+  { id: 'ex-fly', name: 'Cable fly', meta: 'Cable · Chest', tag: 'Accessory', group: 'Chest' },
+  { id: 'ex-pushup', name: 'Push-up', meta: 'Bodyweight · Chest', tag: 'Accessory', group: 'Chest' },
+  {
+    id: 'ex-pulldown',
+    name: 'Lat pulldown',
+    meta: 'Cable · Back',
+    tag: 'Compound',
+    group: 'Back',
+  },
+  {
+    id: 'ex-cable-row',
+    name: 'Seated cable row',
+    meta: 'Cable · Back',
+    tag: 'Accessory',
+    group: 'Back',
+  },
+  {
+    id: 'ex-pullup',
+    name: 'Weighted pull-up',
+    meta: 'Bodyweight · Back',
+    tag: 'Compound',
+    group: 'Back',
+  },
+  { id: 'ex-squat', name: 'Back squat', meta: 'Barbell · Quads', tag: 'Compound', group: 'Legs' },
+  {
+    id: 'ex-rdl',
+    name: 'Romanian deadlift',
+    meta: 'Barbell · Hamstrings',
+    tag: 'Compound',
+    group: 'Legs',
+  },
+  { id: 'ex-legpress', name: 'Leg press', meta: 'Machine · Quads', tag: 'Accessory', group: 'Legs' },
+  {
+    id: 'ex-ohp',
+    name: 'Overhead press',
+    meta: 'Barbell · Shoulders',
+    tag: 'Compound',
+    group: 'Shoulders',
+  },
+  {
+    id: 'ex-lateral',
+    name: 'Lateral raise',
+    meta: 'Dumbbell · Shoulders',
+    tag: 'Accessory',
+    group: 'Shoulders',
+  },
+];
+
+let exerciseState: readonly ApiExerciseOption[] = initialExerciseOptions;
+
+/** Mirrors GET /coach/exercises?q=&filter= — the app filters with the same function. */
+export function mockExerciseOptions(query: string, filter: string): readonly ApiExerciseOption[] {
+  return filterExerciseOptions(exerciseState, query, filter);
+}
+
+export interface MockCreateExerciseInput {
+  readonly name: string;
+  readonly muscle: string;
+  readonly equipment: string;
+}
+
+/**
+ * Mirrors POST /coach/exercises. A coach's own exercise lands at the top of
+ * Recent — they built it to use it right now, so it must not be three
+ * sections down behind the catalogue.
+ */
+export function mockCreateExercise(input: MockCreateExerciseInput): void {
+  exerciseState = [
+    {
+      id: `ex-${Date.now()}`,
+      name: input.name,
+      meta: `${input.equipment} · ${input.muscle}`,
+      tag: 'Yours',
+      group: 'Recent',
+    },
+    ...exerciseState,
+  ];
 }

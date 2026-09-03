@@ -121,6 +121,49 @@ export default function RootLayout() {
                     headerStyle: { backgroundColor: tokens.canvas },
                   }}
                 />
+                {/* The coach's library and editor. Four full-screen routes off
+                    the Programs tab, in the order a program is built: open it,
+                    build it, pick a lift, invent one that is not in the list. */}
+                <Stack.Screen
+                  name="programs/[id]"
+                  options={{
+                    headerShown: true,
+                    title: 'Program',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="programs/builder"
+                  options={{
+                    headerShown: true,
+                    title: 'New program',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="programs/picker"
+                  options={{
+                    headerShown: true,
+                    title: 'Add exercise',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="programs/new-exercise"
+                  options={{
+                    headerShown: true,
+                    title: 'New exercise',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
                 <Stack.Screen
                   name="profile/notifications"
                   options={{

@@ -16,6 +16,19 @@ export const queryKeys = {
     all: ['programs'] as const,
     detail: (id: string) => ['programs', id] as const,
   },
+  /**
+   * The coach's own library and editor — see src/api/coachPrograms.ts.
+   * `library` and `detail` are deliberately siblings rather than nested:
+   * invalidating the library must not cancel an open program's detail query.
+   */
+  coachPrograms: {
+    library: ['coach', 'programs', 'library'] as const,
+    detail: (id: string) => ['coach', 'programs', 'detail', id] as const,
+    /** Prefix for every search/filter combination at once. */
+    exercisesAll: ['coach', 'exercises'] as const,
+    exercises: (query: string, filter: string) =>
+      ['coach', 'exercises', query, filter] as const,
+  },
   clientTraining: {
     today: ['client', 'today'] as const,
     train: ['client', 'train'] as const,

@@ -1,13 +1,17 @@
 import { useCallback } from 'react';
 import { View } from 'react-native';
 
-import type { ApiChatMessage } from '@/api/types';
 import { LIEmptyState, LIList } from '@/components/ui';
 
-import ChatBubble from './ChatBubble';
+import ChatBubble, { type ChatBubbleMessage } from './ChatBubble';
 
 interface ChatThreadProps {
-  readonly messages: readonly ApiChatMessage[];
+  /**
+   * `ChatBubbleMessage` widens `ApiChatMessage` by two optional fields, so the
+   * two 1:1 callers hand over their messages unchanged and the group hands
+   * over the same messages with a sender label attached.
+   */
+  readonly messages: readonly ChatBubbleMessage[];
   /** Worded by the caller — the two seats say different things to an empty thread. */
   readonly emptyMessage: string;
   readonly testID?: string;
@@ -24,12 +28,13 @@ interface ChatThreadProps {
  * then follows new arrivals only when you are already near the bottom, so it
  * cannot yank the view while you are reading back through history.
  *
- * Shared by both seats: the client's thread and the coach's are the same list,
- * so that behaviour is fixed in one place and cannot drift apart.
+ * Shared by three callers now: the client's thread with their coach, the
+ * coach's thread with one client, and a group of seven. That behaviour is
+ * fixed in one place and cannot drift apart between them.
  */
 export default function ChatThread({ messages, emptyMessage, testID }: ChatThreadProps) {
   const renderItem = useCallback(
-    ({ item }: { item: ApiChatMessage }) => <ChatBubble message={item} />,
+    ({ item }: { item: ChatBubbleMessage }) => <ChatBubble message={item} />,
     [],
   );
 

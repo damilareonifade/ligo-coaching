@@ -35,7 +35,7 @@ import type {
 
 async function fetchClientProfile(): Promise<ApiClientProfile> {
   if (env.useMocks) {
-    return mockDelay(mockClientProfile);
+    return mockDelay(mockClientProfile());
   }
   const { data } = await client.get<ApiClientProfile>('/client/profile');
   return data;

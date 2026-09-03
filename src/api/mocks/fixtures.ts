@@ -3,8 +3,18 @@ import type {
   ApiChatMessage,
   ApiCheckIn,
   ApiClientChat,
+  ApiCoachGroupSummary,
   ApiCoachThread,
+  ApiCommunity,
+  ApiCommunityBoard,
+  ApiCommunityBoardSummary,
+  ApiCommunityGroup,
+  ApiCommunityGroupSummary,
+  ApiCommunityInvite,
+  ApiCommunityMember,
   ApiInboxEntry,
+  BoardMetric,
+  CommunityIdentity,
   ApiClientData,
   ApiClientHealth,
   ApiClientProfile,
@@ -25,6 +35,7 @@ import type {
   ApiRosterClient,
   ApiRosterLabel,
   ApiSession,
+  ApiSettingsGroup,
   ApiSessionSet,
   ApiStudent,
   ApiTrainOverview,
@@ -33,9 +44,18 @@ import type {
   StudentStatus,
 } from '@/api/types';
 import { markActivityRead } from '@/lib/activity';
+import {
+  communityRowValue,
+  deriveBoardStats,
+  ordinal,
+  resolveDisplayName,
+  withRanks,
+} from '@/lib/community';
+import { initials } from '@/lib/format';
 import { appendOwnMessage, filterInbox, withLatestPreview } from '@/lib/messages';
 import { assignedLabel, filterExerciseOptions } from '@/lib/programs';
 import { accessLabel, deriveRosterStats, withLabelCounts } from '@/lib/roster';
+import { useAuthStore } from '@/store/authStore';
 
 /** Dates are generated relative to now so the demo always reads as "today". */
 const now = new Date();
@@ -630,7 +650,7 @@ export const mockClientProgress: ApiClientProgress = {
  * Client profile
  * ------------------------------------------------------------------ */
 
-export const mockClientProfile: ApiClientProfile = {
+const mockClientProfileBase: ApiClientProfile = {
   name: 'Maya Andersson',
   email: 'maya@example.com',
   memberSince: 'since Mar 2025',
@@ -723,6 +743,36 @@ export const mockClientProfile: ApiClientProfile = {
   ],
   version: 'Ligo 2.4.0 · your profile works with no coach, no subscription and no export fee.',
 };
+
+/**
+ * Mirrors GET /client/profile. The Community row's value is read off the
+ * community state rather than authored beside it — accept an invite and the
+ * count on this row has already moved by the time the profile is next opened.
+ *
+ * It sits after Nutrition and before Account: community is about other people,
+ * so it belongs next to the coach section, not filed away under settings.
+ */
+export function mockClientProfile(): ApiClientProfile {
+  const community = mockCommunity();
+  const communityGroup: ApiSettingsGroup = {
+    id: 'community',
+    title: 'COMMUNITY',
+    rows: [
+      {
+        id: 'community',
+        label: 'Groups & leaderboards',
+        desc: 'Optional. Nothing is shared until you opt in.',
+        value: communityRowValue(community),
+        route: '/community',
+      },
+    ],
+  };
+
+  const groups = [...mockClientProfileBase.groups];
+  groups.splice(2, 0, communityGroup);
+
+  return { ...mockClientProfileBase, groups };
+}
 
 const initialNotifications: ApiNotificationSettings = {
   groups: [
@@ -2117,4 +2167,542 @@ export function mockSendCoachMessage(clientId: string, text: string): void {
     thread.clientId === clientId ? appendOwnMessage(thread, message) : thread,
   );
   inboxState = withLatestPreview(inboxState, clientId, text);
+}
+
+/* ------------------------------------------------------------------ *
+ * Community — group chats and leaderboards.
+ *
+ * Two seats read the same group, so the mock composes `from` at read
+ * time from whoever is signed in, exactly as a real server would from
+ * the token on the request. That is why this block reaches for the
+ * auth store: the alternative is a second hand-authored copy of every
+ * thread, and two copies of one conversation is how the coach's seat
+ * ends up quietly disagreeing with the client's.
+ *
+ * Nothing in here records a decline beyond removing the invite. There
+ * is deliberately no `declinedBy` list for a later screen to discover
+ * and render — a fixture that stores the answer is a backend that can
+ * leak it.
+ * ------------------------------------------------------------------ */
+
+const COACH_MEMBER_ID = 'cm-sam';
+const CLIENT_MEMBER_ID = 'cm-maya';
+
+/** Who is asking. The mock stands in for a server that reads the token. */
+function viewerMemberId(): string {
+  return useAuthStore.getState().user?.role === 'coach' ? COACH_MEMBER_ID : CLIENT_MEMBER_ID;
+}
+
+/** Stored side-neutrally; `from` is composed per reader on the way out. */
+interface GroupMessageSeed {
+  readonly id: string;
+  readonly senderId: string;
+  readonly senderName: string;
+  readonly isCoach: boolean;
+  readonly text: string;
+  readonly when: string;
+}
+
+interface GroupRecord {
+  readonly id: string;
+  readonly name: string;
+  readonly coachName: string;
+  readonly members: readonly ApiCommunityMember[];
+  readonly myIdentity: CommunityIdentity;
+  readonly messages: readonly GroupMessageSeed[];
+  /** Whether the signed-in client is in it. A coach runs all of them. */
+  readonly clientIsMember: boolean;
+}
+
+const SUMMER_MEMBERS: readonly ApiCommunityMember[] = [
+  { clientId: COACH_MEMBER_ID, displayName: 'Sam Okafor', initials: 'SO', isCoach: true },
+  { clientId: CLIENT_MEMBER_ID, displayName: 'Maya A.', initials: 'MA', isCoach: false },
+  { clientId: 'cm-priya', displayName: 'Priya B.', initials: 'PB', isCoach: false },
+  { clientId: 'cm-tomas', displayName: 'Tomas L.', initials: 'TL', isCoach: false },
+  { clientId: 'cm-sofia', displayName: 'Sofia N.', initials: 'SN', isCoach: false },
+  { clientId: 'cm-rafa', displayName: 'Rafa M.', initials: 'RM', isCoach: false },
+  { clientId: 'cm-hana', displayName: 'Hana W.', initials: 'HW', isCoach: false },
+];
+
+const WINTER_MEMBERS: readonly ApiCommunityMember[] = [
+  ...SUMMER_MEMBERS,
+  { clientId: 'cm-dara', displayName: 'Dara O.', initials: 'DO', isCoach: false },
+];
+
+const initialGroups: readonly GroupRecord[] = [
+  {
+    id: 'grp-summer',
+    name: 'Summer strength group',
+    coachName: 'Sam Okafor',
+    members: SUMMER_MEMBERS,
+    myIdentity: 'first',
+    clientIsMember: true,
+    messages: [
+      {
+        id: 'gm-summer-1',
+        senderId: 'cm-tomas',
+        senderName: 'Tomas L.',
+        isCoach: false,
+        text: 'Pulled 140 × 3 this morning. First time over 135 and it moved clean.',
+        when: 'Tue 07:42',
+      },
+      {
+        id: 'gm-summer-2',
+        senderId: 'cm-priya',
+        senderName: 'Priya B.',
+        isCoach: false,
+        text: 'That is a jump. Congratulations.',
+        when: 'Tue 08:05',
+      },
+      {
+        id: 'gm-summer-3',
+        senderId: COACH_MEMBER_ID,
+        senderName: 'Sam Okafor',
+        isCoach: true,
+        text: 'Well earned. Three weeks of paused pulls did that, not this morning.',
+        when: 'Tue 08:20',
+      },
+      {
+        id: 'gm-summer-4',
+        senderId: CLIENT_MEMBER_ID,
+        senderName: 'Maya A.',
+        isCoach: false,
+        text: 'Week 6 has felt heavy the whole way through. Is a deload coming, or do we push on?',
+        when: 'Tue 18:11',
+      },
+      {
+        id: 'gm-summer-5',
+        senderId: COACH_MEMBER_ID,
+        senderName: 'Sam Okafor',
+        isCoach: true,
+        text: 'Deload next week for everyone on the Upper/Lower block. Same lifts, two sets fewer, and keep the top set honest.',
+        when: 'Tue 18:40',
+      },
+      {
+        id: 'gm-summer-6',
+        senderId: 'cm-sofia',
+        senderName: 'Sofia N.',
+        isCoach: false,
+        text: 'Good timing. My knees have been asking for one.',
+        when: 'Tue 19:02',
+      },
+    ],
+  },
+  {
+    // Pending: the coach runs it, but the client is not in it until the
+    // invite below is accepted on her own screen.
+    id: 'grp-winter',
+    name: 'Winter push',
+    coachName: 'Sam Okafor',
+    members: WINTER_MEMBERS,
+    myIdentity: 'first',
+    clientIsMember: false,
+    messages: [],
+  },
+];
+
+let groupState: readonly GroupRecord[] = initialGroups;
+
+const initialBoards: readonly ApiCommunityBoard[] = [
+  {
+    id: 'brd-autumn',
+    name: 'Autumn volume challenge',
+    coachName: 'Sam Okafor',
+    metricLabel: 'Total volume lifted · 1–30 Sep · updates hourly',
+    windowLabel: '1–30 Sep',
+    optedIn: true,
+    myIdentity: 'first',
+    stats: [],
+    rows: [
+      {
+        rank: 1,
+        displayName: 'Tomas L.',
+        initials: 'TL',
+        value: '48,920 kg',
+        sub: '14 sessions',
+        delta: '+1',
+        isMe: false,
+      },
+      {
+        rank: 2,
+        displayName: 'Maya A.',
+        initials: 'MA',
+        value: '42,180 kg',
+        sub: '12 sessions',
+        delta: '−1',
+        isMe: true,
+      },
+      {
+        rank: 3,
+        displayName: 'Priya B.',
+        initials: 'PB',
+        value: '39,640 kg',
+        sub: '13 sessions',
+        delta: '+2',
+        isMe: false,
+      },
+      {
+        rank: 4,
+        displayName: 'IronFox',
+        initials: 'IF',
+        value: '35,010 kg',
+        sub: '11 sessions',
+        delta: '—',
+        isMe: false,
+      },
+      {
+        rank: 5,
+        displayName: 'Sofia N.',
+        initials: 'SN',
+        value: '31,475 kg',
+        sub: '10 sessions',
+        delta: '−1',
+        isMe: false,
+      },
+      {
+        rank: 6,
+        displayName: 'Hana W.',
+        initials: 'HW',
+        value: '24,300 kg',
+        sub: '9 sessions',
+        delta: '+1',
+        isMe: false,
+      },
+    ],
+    invitedNotOptedIn: 3,
+    facts: [
+      { label: 'Metric', value: 'Total volume lifted' },
+      { label: 'Window', value: '1–30 Sep' },
+      { label: 'Visible to', value: '9 invited clients' },
+      { label: 'Updates', value: 'Hourly' },
+    ],
+  },
+  {
+    // Invited, not joined — so the opt-in screen is reachable, and so the
+    // index has both states to show. Empty rows are the honest starting
+    // point: a board has nobody on it until people put themselves on it.
+    id: 'brd-consistency',
+    name: 'Winter consistency ladder',
+    coachName: 'Sam Okafor',
+    metricLabel: 'Sessions completed · 1–31 Dec · updates hourly',
+    windowLabel: '1–31 Dec',
+    optedIn: false,
+    myIdentity: 'first',
+    stats: [],
+    rows: [],
+    invitedNotOptedIn: 9,
+    facts: [
+      { label: 'Metric', value: 'Sessions completed' },
+      { label: 'Window', value: '1–31 Dec' },
+      { label: 'Visible to', value: '9 invited clients' },
+      { label: 'Updates', value: 'Hourly' },
+    ],
+  },
+];
+
+/** Stats are derived on the way in, never authored beside the rows. */
+let boardState: readonly ApiCommunityBoard[] = initialBoards.map((board) => ({
+  ...board,
+  stats: deriveBoardStats(board.rows),
+}));
+
+/** Which boards the signed-in client was invited to. Others are invisible. */
+let boardsInvitedToMe: readonly string[] = ['brd-autumn', 'brd-consistency'];
+
+const initialInvites: readonly ApiCommunityInvite[] = [
+  {
+    id: 'inv-winter',
+    kind: 'group',
+    targetId: 'grp-winter',
+    name: 'Winter push',
+    coachName: 'Sam Okafor',
+    summary: 'Sam Okafor is inviting you to a group chat with 6 other clients he coaches.',
+    visible: [
+      'Your display name and messages you send',
+      'That you are coached by Sam',
+      'When you are active in the group',
+    ],
+    hidden: [
+      'Your workouts, meals and measurements',
+      'Your check-ins and photos',
+      'Your real name, unless you choose it',
+    ],
+  },
+];
+
+let inviteState: readonly ApiCommunityInvite[] = initialInvites;
+
+function groupSummary(record: GroupRecord): ApiCommunityGroupSummary {
+  const last = record.messages[record.messages.length - 1];
+
+  return {
+    id: record.id,
+    name: record.name,
+    coachName: record.coachName,
+    memberCount: record.members.length,
+    preview: last ? last.text : 'No messages yet.',
+    when: last ? last.when.split(' ')[0] : '',
+  };
+}
+
+function boardSummary(board: ApiCommunityBoard): ApiCommunityBoardSummary {
+  const mine = board.rows.find((row) => row.isMe);
+
+  return {
+    id: board.id,
+    name: board.name,
+    coachName: board.coachName,
+    metricLabel: board.metricLabel,
+    optedIn: board.optedIn,
+    standing: mine ? `${ordinal(mine.rank)} of ${board.rows.length}` : 'Open to join',
+  };
+}
+
+/** Mirrors GET /community — the client's index, and only what they are in. */
+export function mockCommunity(): ApiCommunity {
+  return {
+    invites: inviteState,
+    groups: groupState.filter((record) => record.clientIsMember).map(groupSummary),
+    boards: boardState
+      .filter((board) => boardsInvitedToMe.includes(board.id))
+      .map(boardSummary),
+  };
+}
+
+/** Mirrors GET /coach/community/groups — every group this coach runs. */
+export function mockCoachGroups(): readonly ApiCoachGroupSummary[] {
+  return groupState.map((record) => {
+    const summary = groupSummary(record);
+    return {
+      id: summary.id,
+      name: summary.name,
+      memberCount: summary.memberCount,
+      preview: summary.preview,
+      when: summary.when,
+    };
+  });
+}
+
+/**
+ * Mirrors GET /community/groups/:id. `from` and the identity line are composed
+ * for whoever is asking, which is why the coach can open the same thread and
+ * see their own messages on their own side of it.
+ */
+export function mockCommunityGroup(id: string): ApiCommunityGroup | null {
+  const record = groupState.find((candidate) => candidate.id === id);
+  if (!record) return null;
+
+  const viewer = viewerMemberId();
+  const me = record.members.find((member) => member.clientId === viewer);
+
+  return {
+    id: record.id,
+    name: record.name,
+    coachName: record.coachName,
+    members: record.members,
+    myIdentity: viewer === COACH_MEMBER_ID ? 'real' : record.myIdentity,
+    myDisplayName: me?.displayName ?? '',
+    messages: record.messages.map((message) => ({
+      ...message,
+      from: message.senderId === viewer ? 'me' : 'them',
+    })),
+  };
+}
+
+export function mockCommunityBoard(id: string): ApiCommunityBoard | null {
+  return boardState.find((board) => board.id === id) ?? null;
+}
+
+/** Mirrors POST /community/groups/:id/messages. */
+export function mockSendGroupMessage(groupId: string, text: string): void {
+  const viewer = viewerMemberId();
+
+  groupState = groupState.map((record) => {
+    if (record.id !== groupId) return record;
+    const sender = record.members.find((member) => member.clientId === viewer);
+
+    return {
+      ...record,
+      messages: [
+        ...record.messages,
+        {
+          id: `gm-${Date.now()}`,
+          senderId: viewer,
+          senderName: sender?.displayName ?? 'You',
+          isCoach: sender?.isCoach ?? false,
+          text,
+          when: 'now',
+        },
+      ],
+    };
+  });
+}
+
+/**
+ * Mirrors POST /community/invites/:id/accept. Accepting a group invite is the
+ * moment the client becomes a member — before it, the group exists but she is
+ * not in it and it is not on her index.
+ */
+export function mockAcceptInvite(inviteId: string): void {
+  const invite = inviteState.find((candidate) => candidate.id === inviteId);
+  if (!invite) return;
+
+  if (invite.kind === 'group') {
+    groupState = groupState.map((record) =>
+      record.id === invite.targetId ? { ...record, clientIsMember: true } : record,
+    );
+  } else {
+    boardsInvitedToMe = boardsInvitedToMe.includes(invite.targetId)
+      ? boardsInvitedToMe
+      : [...boardsInvitedToMe, invite.targetId];
+  }
+
+  inviteState = inviteState.filter((candidate) => candidate.id !== inviteId);
+}
+
+/**
+ * Mirrors POST /community/invites/:id/decline. The invite goes and nothing is
+ * written down — no reason, no record, nothing for the coach to read later.
+ */
+export function mockDeclineInvite(inviteId: string): void {
+  inviteState = inviteState.filter((candidate) => candidate.id !== inviteId);
+}
+
+export interface MockJoinBoardInput {
+  readonly boardId: string;
+  readonly identity: CommunityIdentity;
+  readonly handle: string;
+}
+
+/** Mirrors POST /community/boards/:id/join. The row is created here, not before. */
+export function mockJoinBoard({ boardId, identity, handle }: MockJoinBoardInput): void {
+  const displayName = resolveDisplayName(identity, mockClientProfileBase.name, handle);
+
+  boardState = boardState.map((board) => {
+    if (board.id !== boardId || board.optedIn) return board;
+
+    const rows = withRanks([
+      ...board.rows,
+      {
+        rank: board.rows.length + 1,
+        displayName,
+        initials: initials(displayName),
+        // Nothing logged in this window yet — a joined board with an invented
+        // total would be the app putting words in a client's training log.
+        value: '0',
+        sub: 'No sessions in this window yet',
+        delta: '—',
+        isMe: true,
+      },
+    ]);
+
+    return {
+      ...board,
+      optedIn: true,
+      myIdentity: identity,
+      rows,
+      stats: deriveBoardStats(rows),
+      invitedNotOptedIn: Math.max(0, board.invitedNotOptedIn - 1),
+    };
+  });
+}
+
+/** Mirrors DELETE /community/boards/:id/me — the row goes, the history stays. */
+export function mockLeaveBoard(boardId: string): void {
+  boardState = boardState.map((board) => {
+    if (board.id !== boardId) return board;
+
+    const rows = withRanks(board.rows.filter((row) => !row.isMe));
+
+    return {
+      ...board,
+      optedIn: false,
+      rows,
+      stats: deriveBoardStats(rows),
+      invitedNotOptedIn: board.invitedNotOptedIn + 1,
+    };
+  });
+}
+
+/** Mirrors DELETE /community/groups/:id/me. */
+export function mockLeaveGroup(groupId: string): void {
+  groupState = groupState.map((record) =>
+    record.id === groupId
+      ? {
+          ...record,
+          clientIsMember: false,
+          members: record.members.filter((member) => member.clientId !== CLIENT_MEMBER_ID),
+        }
+      : record,
+  );
+}
+
+export interface MockCreateGroupInput {
+  readonly name: string;
+  readonly clientIds: readonly string[];
+}
+
+/**
+ * Mirrors POST /coach/community/groups. The coach's own row appears; every
+ * invited client is absent until they accept on their own screen, so a group
+ * created here starts with exactly one member.
+ */
+export function mockCreateGroup({ name, clientIds }: MockCreateGroupInput): void {
+  const coach: ApiCommunityMember = {
+    clientId: COACH_MEMBER_ID,
+    displayName: 'Sam Okafor',
+    initials: 'SO',
+    isCoach: true,
+  };
+
+  groupState = [
+    ...groupState,
+    {
+      id: `grp-${Date.now()}`,
+      name: name.trim(),
+      coachName: 'Sam Okafor',
+      members: [coach],
+      myIdentity: 'first',
+      clientIsMember: false,
+      messages: [],
+    },
+  ];
+
+  // The invited ids are deliberately not stored on the group. Who was asked is
+  // the coach's business; who is in it is everybody's, and only the second is
+  // ever rendered.
+  void clientIds;
+}
+
+export interface MockCreateBoardInput {
+  readonly name: string;
+  readonly metric: BoardMetric;
+  readonly windowLabel: string;
+  readonly metricLabel: string;
+  readonly clientIds: readonly string[];
+}
+
+/** Mirrors POST /coach/community/boards. Starts empty, by design. */
+export function mockCreateBoard(input: MockCreateBoardInput): void {
+  boardState = [
+    ...boardState,
+    {
+      id: `brd-${Date.now()}`,
+      name: input.name.trim(),
+      coachName: 'Sam Okafor',
+      metricLabel: input.metricLabel,
+      windowLabel: input.windowLabel,
+      optedIn: false,
+      myIdentity: 'first',
+      stats: [],
+      rows: [],
+      invitedNotOptedIn: input.clientIds.length,
+      facts: [
+        { label: 'Metric', value: input.metricLabel.split(' · ')[0] },
+        { label: 'Window', value: input.windowLabel },
+        { label: 'Visible to', value: `${input.clientIds.length} invited clients` },
+        { label: 'Updates', value: 'Hourly' },
+      ],
+    },
+  ];
 }

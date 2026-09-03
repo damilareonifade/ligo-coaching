@@ -1,0 +1,39 @@
+import { useCallback } from 'react';
+
+import { useRosterQuery } from '@/api/roster';
+import { LIErrorState, LISafeArea } from '@/components/ui';
+import NewBoardContent from '@/screens/new-board/NewBoardContent';
+import NewBoardSkeleton from '@/screens/new-board/NewBoardSkeleton';
+
+export { LIRouteError as ErrorBoundary } from '@/components/ui';
+
+/** Composer only — the header owns the top inset, so no safe-area edges here. */
+export default function NewBoardScreen() {
+  const { data, isPending, error, refetch } = useRosterQuery();
+
+  const refresh = useCallback(() => {
+    void refetch();
+  }, [refetch]);
+
+  if (isPending) {
+    return (
+      <LISafeArea edges={[]}>
+        <NewBoardSkeleton />
+      </LISafeArea>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <LISafeArea edges={[]}>
+        <LIErrorState message={error?.message} onRetry={refresh} />
+      </LISafeArea>
+    );
+  }
+
+  return (
+    <LISafeArea edges={[]}>
+      <NewBoardContent clients={data.clients} />
+    </LISafeArea>
+  );
+}

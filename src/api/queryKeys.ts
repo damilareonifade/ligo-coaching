@@ -63,4 +63,20 @@ export const queryKeys = {
   },
   clientChat: ['client', 'chat'] as const,
   clientCheckIns: ['client', 'check-ins'] as const,
+  /**
+   * Community — see src/api/community.ts. `overview` is the client's index;
+   * `group` and `board` are deliberately siblings of it, not children, for the
+   * same reason the coach's threads sit beside their inbox: sending a group
+   * message invalidates the overview's preview line and must not cancel the
+   * open thread while its optimistic bubble is on screen.
+   *
+   * `coachGroups` is the coach's own list of groups they run, which is a
+   * different question from "what am I a member of" and so a different key.
+   */
+  community: {
+    overview: ['community'] as const,
+    group: (id: string) => ['community', 'group', id] as const,
+    board: (id: string) => ['community', 'board', id] as const,
+    coachGroups: ['coach', 'community', 'groups'] as const,
+  },
 } as const;

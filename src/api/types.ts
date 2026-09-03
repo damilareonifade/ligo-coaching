@@ -652,3 +652,164 @@ export interface ApiCoachThread {
   readonly archived: boolean;
   readonly messages: readonly ApiChatMessage[];
 }
+
+/* ------------------------------------------------------------------ *
+ * Community — group chats and leaderboards.
+ *
+ * The rest of the app answers "what can one coach see about one
+ * client". Community is the plural case, and the same rule holds: a
+ * coach can only invite, and nobody appears anywhere until they say
+ * yes on their own screen. Two consequences run through every shape
+ * below. Non-participants are absent rather than greyed out, so there
+ * is no shape here that can name someone who did not opt in — only
+ * `invitedNotOptedIn`, a bare count. And a display identity is chosen
+ * per board, never inherited, so `myIdentity` lives on the board and
+ * on the group rather than on the client.
+ * ------------------------------------------------------------------ */
+
+/** How a client chooses to be named in one group or on one board. */
+export type CommunityIdentity = 'real' | 'first' | 'handle';
+
+export type BoardMetric = 'volume' | 'sessions' | 'streak' | 'weight-lifted' | 'bodyweight';
+
+export type BoardWindow = 'week' | 'month' | 'quarter' | 'custom';
+
+export interface ApiCommunityMember {
+  readonly clientId: string;
+  /** Already resolved through that member's own identity choice. */
+  readonly displayName: string;
+  readonly initials: string;
+  readonly isCoach: boolean;
+}
+
+export interface ApiGroupMessage {
+  readonly id: string;
+  readonly senderId: string;
+  readonly senderName: string;
+  readonly isCoach: boolean;
+  readonly text: string;
+  readonly when: string;
+  /** Side-neutral, exactly as in `ApiChatMessage` — relative to the reader. */
+  readonly from: 'me' | 'them';
+}
+
+export interface ApiCommunityGroup {
+  readonly id: string;
+  readonly name: string;
+  readonly coachName: string;
+  readonly members: readonly ApiCommunityMember[];
+  readonly myIdentity: CommunityIdentity;
+  readonly myDisplayName: string;
+  readonly messages: readonly ApiGroupMessage[];
+}
+
+export interface ApiBoardRow {
+  readonly rank: number;
+  readonly displayName: string;
+  readonly initials: string;
+  /** Pre-composed with its unit, e.g. "42,180 kg". */
+  readonly value: string;
+  readonly sub: string;
+  /** Movement since the last update: "+2" | "−1" | "—". */
+  readonly delta: string;
+  readonly isMe: boolean;
+}
+
+export interface ApiBoardStat {
+  readonly label: string;
+  readonly value: string;
+}
+
+export interface ApiCommunityBoard {
+  readonly id: string;
+  readonly name: string;
+  readonly coachName: string;
+  /** e.g. "Total volume lifted · 1–30 Sep · updates hourly" */
+  readonly metricLabel: string;
+  /** Just the window, for the opt-in facts grid: "1–30 Sep". */
+  readonly windowLabel: string;
+  readonly optedIn: boolean;
+  readonly myIdentity: CommunityIdentity;
+  readonly stats: readonly ApiBoardStat[];
+  readonly rows: readonly ApiBoardRow[];
+  /**
+   * A count and nothing more. Naming who declined would undo the whole
+   * point of the opt-in, so the shape cannot carry it even if a server
+   * wanted to send it.
+   */
+  readonly invitedNotOptedIn: number;
+  readonly facts: readonly { readonly label: string; readonly value: string }[];
+}
+
+export type CommunityInviteKind = 'group' | 'board';
+
+export interface ApiCommunityInvite {
+  readonly id: string;
+  readonly kind: CommunityInviteKind;
+  readonly targetId: string;
+  readonly name: string;
+  readonly coachName: string;
+  readonly summary: string;
+  /** "If you accept, members can see" */
+  readonly visible: readonly string[];
+  /** "Stays private, always" */
+  readonly hidden: readonly string[];
+}
+
+/* Display rows. The index lists memberships without loading a thread
+ * or a ranking, so these are summaries rather than the full shapes. */
+
+export interface ApiCommunityGroupSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly coachName: string;
+  readonly memberCount: number;
+  /** Last message in the thread, from any member. */
+  readonly preview: string;
+  readonly when: string;
+}
+
+export interface ApiCommunityBoardSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly coachName: string;
+  readonly metricLabel: string;
+  readonly optedIn: boolean;
+  /** "2nd of 6" while opted in; an invitation to decide when not. */
+  readonly standing: string;
+}
+
+/** One payload for the client's whole Community screen. */
+export interface ApiCommunity {
+  readonly invites: readonly ApiCommunityInvite[];
+  readonly groups: readonly ApiCommunityGroupSummary[];
+  readonly boards: readonly ApiCommunityBoardSummary[];
+}
+
+/** One row of the coach's inbox that is a group rather than a client. */
+export interface ApiCoachGroupSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly memberCount: number;
+  readonly preview: string;
+  readonly when: string;
+}
+
+export interface ApiIdentityOption {
+  readonly id: CommunityIdentity;
+  readonly label: string;
+  readonly desc: string;
+  /** How this choice actually renders for this client — "Maya A.". */
+  readonly sample: string;
+}
+
+export interface ApiBoardMetricOption {
+  readonly id: BoardMetric;
+  readonly label: string;
+  readonly desc: string;
+  /**
+   * Body weight is the one metric that can hurt someone to publish, so it
+   * is flagged in the data rather than special-cased in a screen.
+   */
+  readonly sensitive?: boolean;
+}

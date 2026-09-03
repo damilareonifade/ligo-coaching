@@ -2,11 +2,12 @@ import { useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { RefreshControl, View } from 'react-native';
 
-import type { ApiInboxEntry } from '@/api/types';
+import type { ApiCoachGroupSummary, ApiInboxEntry } from '@/api/types';
 import { LIList } from '@/components/ui';
 import { tokens } from '@/theme/tokens';
 
 import InboxEmptyState from './InboxEmptyState';
+import InboxGroupRows from './InboxGroupRows';
 import InboxNote from './InboxNote';
 import InboxNoResults from './InboxNoResults';
 import InboxRow from './InboxRow';
@@ -22,6 +23,8 @@ interface InboxListRow {
 interface InboxContentProps {
   /** Already filtered — the search runs server-side, on the query below. */
   readonly entries: readonly ApiInboxEntry[];
+  /** Groups this coach runs, listed above the 1:1 threads. */
+  readonly groups: readonly ApiCoachGroupSummary[];
   readonly query: string;
   readonly onQueryChange: (query: string) => void;
   readonly refreshing: boolean;
@@ -30,6 +33,7 @@ interface InboxContentProps {
 
 export default function InboxContent({
   entries,
+  groups,
   query,
   onQueryChange,
   refreshing,
@@ -68,7 +72,16 @@ export default function InboxContent({
         data={[...rows]}
         keyExtractor={(row) => row.entry.clientId}
         renderItem={renderItem}
-        ListHeaderComponent={<InboxSearchBar query={query} onQueryChange={onQueryChange} />}
+        // Groups sit inside the header rather than in the data: they are a
+        // different kind of row with a different destination, and folding them
+        // into the same list would put them in the reach of a search that only
+        // knows how to match clients.
+        ListHeaderComponent={
+          <>
+            <InboxSearchBar query={query} onQueryChange={onQueryChange} />
+            {trimmed.length === 0 ? <InboxGroupRows groups={groups} /> : null}
+          </>
+        }
         // An empty inbox and an empty search result are two different
         // situations: the first is a coach who has never been written to, the
         // second is four characters they typed a second ago.

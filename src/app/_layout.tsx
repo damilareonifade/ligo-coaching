@@ -262,6 +262,88 @@ export default function RootLayout() {
                     headerStyle: { backgroundColor: tokens.canvas },
                   }}
                 />
+                {/* Community. Both seats route through the same stack: the
+                    client reaches the index from their profile, the coach
+                    reaches the two creators and any group from Messages.
+
+                    The consent screens are full routes rather than sheets on
+                    purpose. Accepting an invitation and joining a board are
+                    decisions about what other people can see, and a decision
+                    like that should have a screen of its own and a back
+                    button, not a card that can be swiped away by accident. */}
+                <Stack.Screen
+                  name="community/index"
+                  options={{
+                    headerShown: true,
+                    title: 'Community',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="community/invite/[id]"
+                  options={{
+                    headerShown: true,
+                    title: 'Invitation',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                {/* Titled "Group" here and narrowed to the group's own name by
+                    the screen once the fetch lands — the layout cannot know it
+                    before then. */}
+                <Stack.Screen
+                  name="community/group/[id]"
+                  options={{
+                    headerShown: true,
+                    title: 'Group',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="community/board/[id]/index"
+                  options={{
+                    headerShown: true,
+                    title: 'Leaderboard',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="community/board/[id]/opt-in"
+                  options={{
+                    headerShown: true,
+                    title: 'Join leaderboard',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="community/new-group"
+                  options={{
+                    headerShown: true,
+                    title: 'New group',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                <Stack.Screen
+                  name="community/new-board"
+                  options={{
+                    headerShown: true,
+                    title: 'New leaderboard',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
               </Stack.Protected>
 
               <Stack.Protected guard={!signedIn}>

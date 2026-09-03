@@ -11,11 +11,21 @@ const KNOB_INSET = 2;
 export interface LISwitchProps {
   readonly value: boolean;
   readonly onValueChange: (value: boolean) => void;
+  /**
+   * A switch that is not the reader's to move — the coach's "Permission
+   * changed" notification, which is on and stays on.
+   *
+   * It stays a real switch rather than becoming a decorative view, so a screen
+   * reader still announces it as one, with `disabled` alongside `checked`. The
+   * press is refused here rather than by handing in a no-op `onValueChange`,
+   * which would still animate the knob under the thumb and read as accepted.
+   */
+  readonly disabled?: boolean;
   readonly testID?: string;
 }
 
 /** On/off toggle knob only — the row/label wrapping happens at the call site. */
-export function LISwitch({ value, onValueChange, testID }: LISwitchProps) {
+export function LISwitch({ value, onValueChange, disabled = false, testID }: LISwitchProps) {
   const trackStyle = useAnimatedStyle(() => ({
     backgroundColor: withTiming(value ? tokens.violet : tokens.field, { duration: 150 }),
   }));
@@ -33,8 +43,9 @@ export function LISwitch({ value, onValueChange, testID }: LISwitchProps) {
   return (
     <Pressable
       onPress={() => onValueChange(!value)}
+      disabled={disabled}
       accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
+      accessibilityState={{ checked: value, disabled }}
       testID={testID}
       hitSlop={8}
     >
@@ -42,6 +53,7 @@ export function LISwitch({ value, onValueChange, testID }: LISwitchProps) {
         style={[
           { width: TRACK_WIDTH, height: TRACK_HEIGHT, borderRadius: TRACK_HEIGHT / 2 },
           trackStyle,
+          disabled ? { opacity: 0.5 } : null,
         ]}
       >
         <Animated.View

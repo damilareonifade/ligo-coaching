@@ -19,20 +19,31 @@ interface LeaveSheetProps {
   /** What actually happens, one row per consequence. */
   readonly consequences: readonly LeaveConsequence[];
   readonly confirmTitle: string;
+  /**
+   * The way out. Defaults to "Stay", which is what leaving a group or a board
+   * is declining to do — detaching a coach declines something else, and says
+   * so ("Stay attached") rather than borrowing a word that fits neither.
+   */
+  readonly dismissTitle?: string;
   readonly onConfirm: () => void;
   readonly loading?: boolean;
   readonly testID?: string;
 }
 
 /**
- * The confirmation for leaving a group or a board, shared by both so the two
- * cannot end up promising different things.
+ * The confirmation for ending a relationship, shared by the three places that
+ * end one — leaving a group, leaving a board, detaching a coach — so they
+ * cannot drift into promising different things.
  *
- * It lists consequences rather than asking "are you sure?". Someone leaving a
- * leaderboard is usually worried about something specific — that their history
- * goes with it, or that their coach will take it personally — and the honest
- * answer to both is on this sheet, above the button, where it can still change
- * the decision. A dialog that only escalates the tone answers neither.
+ * It lists consequences rather than asking "are you sure?". Someone leaving is
+ * usually worried about something specific — that their history goes with it,
+ * or that their coach will take it personally — and the honest answer is on
+ * this sheet, above the button, where it can still change the decision. A
+ * dialog that only escalates the tone answers neither.
+ *
+ * Everything that differs between the three is a prop; nothing branches on
+ * which caller it is. That is what keeps a fourth caller from arriving as a
+ * fourth variant of this file.
  */
 export default function LeaveSheet({
   visible,
@@ -41,6 +52,7 @@ export default function LeaveSheet({
   body,
   consequences,
   confirmTitle,
+  dismissTitle = 'Stay',
   onConfirm,
   loading = false,
   testID,
@@ -83,7 +95,7 @@ export default function LeaveSheet({
             testID="leave-confirm"
           />
           <LIButton
-            title="Stay"
+            title={dismissTitle}
             variant="ghost"
             fullWidth
             shape="rounded"

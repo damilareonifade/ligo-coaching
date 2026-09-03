@@ -813,3 +813,119 @@ export interface ApiBoardMetricOption {
    */
   readonly sensitive?: boolean;
 }
+
+/* ------------------------------------------------------------------ *
+ * The coach's review of one client.
+ *
+ * The shape is the boundary. A coach sees a domain the client granted
+ * and nothing else, so an ungranted domain carries no `rows` at all
+ * rather than rows the screen is trusted to hide — there is no value
+ * in the payload for a rendering mistake to leak. `requested` is a
+ * third state on purpose: asking is a thing the coach did, not a
+ * thing the client answered, and it must never read as access.
+ * ------------------------------------------------------------------ */
+
+export type DomainAccess = 'granted' | 'not-granted' | 'requested';
+
+export interface ApiReviewDomainRow {
+  readonly label: string;
+  readonly value: string;
+}
+
+export interface ApiReviewDomain {
+  readonly id: 'nutrition' | 'metrics' | 'health' | 'monthly';
+  readonly title: string;
+  readonly access: DomainAccess;
+  /** Empty unless `access` is `granted`. Never a placeholder. */
+  readonly rows: readonly ApiReviewDomainRow[];
+  /** What the coach can or cannot see here, and why. */
+  readonly note: string;
+}
+
+export interface ApiReviewSession {
+  readonly id: string;
+  readonly name: string;
+  readonly meta: string;
+  /** "Done" | "Today" | "Missed" — see `sessionTagTone` in src/lib/clientReview.ts. */
+  readonly tag: string;
+}
+
+export interface ApiClientReview {
+  readonly clientId: string;
+  readonly name: string;
+  readonly initials: string;
+  /** e.g. "Upper/Lower · week 6 of 12" */
+  readonly programLine: string;
+  /** The coach's own filing, not a permission. `null` = unfiled. */
+  readonly labelId: string | null;
+  /** e.g. "92% adherence" */
+  readonly adherence: string;
+  readonly adherenceBars: readonly { readonly label: string; readonly value: number }[];
+  readonly domains: readonly ApiReviewDomain[];
+  readonly sessions: readonly ApiReviewSession[];
+  /** Drives the live entry point, and nothing else. */
+  readonly isTraining: boolean;
+}
+
+/* ------------------------------------------------------------------ *
+ * The live session, from the coach's seat. Structurally a sibling of
+ * `ApiClientSession` rather than the same type: the client's shape
+ * carries `isPr` and is written back to, and this one is a read. A
+ * coach watching a set land is not editing it.
+ * ------------------------------------------------------------------ */
+
+export interface ApiLiveSet {
+  readonly n: number;
+  readonly weightKg: number;
+  readonly reps: number;
+  readonly completed: boolean;
+}
+
+export interface ApiLiveExercise {
+  readonly id: string;
+  readonly name: string;
+  /** Cue / scheme line, e.g. "4 × 8 · 2 min rest". */
+  readonly note: string;
+  /** e.g. "2 of 4" */
+  readonly progress: string;
+  readonly sets: readonly ApiLiveSet[];
+}
+
+export interface ApiLiveSession {
+  readonly clientId: string;
+  readonly clientName: string;
+  /** e.g. "Upper A · Push focus" */
+  readonly title: string;
+  readonly startedAt: string;
+  readonly exercises: readonly ApiLiveExercise[];
+  /** Said on the screen itself, so watching can never be mistaken for editing. */
+  readonly notice: string;
+}
+
+/* ------------------------------------------------------------------ *
+ * The coach's own settings.
+ * ------------------------------------------------------------------ */
+
+export interface ApiCoachNotification {
+  readonly id: string;
+  readonly label: string;
+  readonly desc: string;
+  readonly enabled: boolean;
+  /**
+   * A locked row cannot be turned off — a permission change decides what the
+   * coach is allowed to do, so it is not theirs to mute. The flag lives in the
+   * data rather than in a screen's list of special cases, and both the UI and
+   * the mutation read it (see `canToggleNotification` in src/lib/coachProfile.ts).
+   */
+  readonly locked: boolean;
+}
+
+export interface ApiCoachProfile {
+  readonly name: string;
+  readonly initials: string;
+  /** Derived from the roster, never authored — e.g. "Strength coach · Berlin · 17 clients". */
+  readonly headline: string;
+  readonly inviteCode: string;
+  readonly notifications: readonly ApiCoachNotification[];
+  readonly groups: readonly ApiSettingsGroup[];
+}

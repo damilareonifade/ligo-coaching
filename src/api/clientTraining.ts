@@ -22,7 +22,7 @@ import type { ApiClientSession, ApiClientToday, ApiSessionSet, ApiTrainOverview 
 
 async function fetchClientToday(): Promise<ApiClientToday> {
   if (env.useMocks) {
-    return mockDelay(mockClientToday);
+    return mockDelay(mockClientToday());
   }
   const { data } = await client.get<ApiClientToday>('/client/today');
   return data;

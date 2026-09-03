@@ -18,6 +18,15 @@ import type {
   ApiClientData,
   ApiClientHealth,
   ApiClientProfile,
+  ApiClientReview,
+  ApiCoachNotification,
+  ApiCoachProfile,
+  ApiLiveExercise,
+  ApiLiveSession,
+  ApiReviewDomain,
+  ApiReviewDomainRow,
+  ApiReviewSession,
+  RosterAccess,
   ApiClientProgress,
   ApiClientSession,
   ApiClientToday,
@@ -44,6 +53,7 @@ import type {
   StudentStatus,
 } from '@/api/types';
 import { markActivityRead } from '@/lib/activity';
+import { coachHeadline, toggleNotification } from '@/lib/coachProfile';
 import {
   communityRowValue,
   deriveBoardStats,
@@ -295,7 +305,7 @@ export const mockSessions: readonly ApiSession[] = [
  * Client App" design canvas — do not paraphrase it here.
  * ------------------------------------------------------------------ */
 
-export const mockClientToday: ApiClientToday = {
+const clientTodayBase: ApiClientToday = {
   plan: {
     id: 'plan-upper-a',
     title: 'Upper A · Push focus',
@@ -322,8 +332,21 @@ export const mockClientToday: ApiClientToday = {
   ],
 };
 
+/**
+ * Held in a variable rather than exported as a const because detaching a coach
+ * has to actually take effect: `mockDetachCoach` sets `coach` to null here and
+ * the Today screen's coach card is gone on the next read. Training alone is a
+ * state the app already models, so detaching returns the client to it rather
+ * than to a special "detached" mode.
+ */
+let clientTodayState: ApiClientToday = clientTodayBase;
+
+export function mockClientToday(): ApiClientToday {
+  return clientTodayState;
+}
+
 export const mockTrainOverview: ApiTrainOverview = {
-  nextUp: mockClientToday.plan,
+  nextUp: clientTodayBase.plan,
   nextUpPreview: [
     { name: 'Bench press', scheme: '4 × 8' },
     { name: 'Incline DB press', scheme: '3 × 10' },
@@ -660,7 +683,9 @@ const mockClientProfileBase: ApiClientProfile = {
     { label: 'PRS', value: '36' },
   ],
   // The same coach the client's Today screen shows — one attachment, one shape.
-  coach: mockClientToday.coach,
+  // Overwritten from `clientTodayState` in `mockClientProfile` so a detach
+  // reaches both screens at once; there is only ever one attachment.
+  coach: clientTodayBase.coach,
   coachRows: [
     {
       id: 'permissions',
@@ -771,7 +796,18 @@ export function mockClientProfile(): ApiClientProfile {
   const groups = [...mockClientProfileBase.groups];
   groups.splice(2, 0, communityGroup);
 
-  return { ...mockClientProfileBase, groups };
+  // The coach comes off the one attachment, not off this fixture, so detaching
+  // empties the section here and on Today together. With no coach the rows go
+  // too: permissions, check-in sharing and "detach" are all about somebody, and
+  // there is nobody to point them at.
+  const coach = clientTodayState.coach;
+
+  return {
+    ...mockClientProfileBase,
+    coach,
+    coachRows: coach ? mockClientProfileBase.coachRows : [],
+    groups,
+  };
 }
 
 const initialNotifications: ApiNotificationSettings = {
@@ -1087,6 +1123,35 @@ export function mockSendMessage(text: string): void {
       { id: `msg-${Date.now()}`, from: 'me', text, when: 'now' },
     ],
   };
+}
+
+/**
+ * Mirrors DELETE /client/coach — the client's side of the relationship, ended.
+ *
+ * Three things move and one deliberately does not. The attachment goes, which
+ * takes the coach card off Today and the coach section off the profile. The
+ * thread archives rather than deleting: the history was the client's half of a
+ * conversation and stays readable, but the composer is gone. And nothing else
+ * is touched — no session, meal, measurement or photo — because "you keep
+ * everything" is the sentence on the sheet, and this is where it either holds
+ * or quietly does not.
+ */
+export function mockDetachCoach(): void {
+  clientTodayState = { ...clientTodayState, coach: null };
+  chatState = { ...chatState, archived: true };
+
+  // "The thread closes" has to be true from both seats, or the coach goes on
+  // typing into a conversation the client has already ended. Maya is the
+  // client this app is signed in as and `rc-maya` is her row on the roster —
+  // one relationship, two views of it.
+  threadState = threadState.map((thread) =>
+    thread.clientId === 'rc-maya' ? { ...thread, archived: true } : thread,
+  );
+
+  // The check-in toggle is named after a coach; with none attached it has
+  // nobody to point at, and an empty `coachName` is how that is already
+  // modelled (see `ApiMonthlyCheckIns`).
+  checkInState = { ...checkInState, coachName: '', coachCanEdit: false };
 }
 
 /* ------------------------------------------------------------------ *
@@ -1477,6 +1542,479 @@ export function mockDeleteLabel(id: string): void {
     ),
     rosterState.labels.filter((label) => label.id !== id),
   );
+}
+
+/**
+ * Mirrors PUT /coach/roster/clients/:id/label. Filing is written to the roster
+ * itself rather than to a review-shaped copy, so the chip the coach taps on the
+ * review and the group the row sits in back on the roster cannot disagree.
+ */
+export function mockSetClientLabel(clientId: string, labelId: string | null): void {
+  rosterState = composeRoster(
+    rosterState.clients.map((client) =>
+      client.id === clientId ? { ...client, labelId } : client,
+    ),
+    rosterState.labels,
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * The coach's review of one client.
+ *
+ * Maya's review is authored, verbatim from the design. Everyone else's
+ * is derived from their roster row — and specifically from `access`,
+ * which is the client's own setting mirrored back. Deriving it there
+ * rather than authoring seventeen reviews means there is no second
+ * place where a client's sharing is written down, and so no second
+ * place for it to be written down wrongly.
+ *
+ * `rows` are attached only to granted domains. Not hidden on a
+ * granted flag, not blanked by a component — simply not built. The
+ * payload for an ungranted domain has nowhere to put a number.
+ * ------------------------------------------------------------------ */
+
+/** Domains the coach has asked about, per client. Asking is not access. */
+const accessRequests = new Map<string, ReadonlySet<ApiReviewDomain['id']>>();
+
+const MAYA_DOMAINS: readonly ApiReviewDomain[] = [
+  {
+    id: 'nutrition',
+    title: 'Nutrition',
+    access: 'granted',
+    rows: [
+      { label: 'Today', value: '1,840 / 2,600 kcal' },
+      { label: 'Protein', value: '126 / 185 g' },
+      { label: '7-day average', value: '2,180 kcal' },
+    ],
+    note: 'Maya shares nutrition. She can withdraw this at any time.',
+  },
+  {
+    id: 'metrics',
+    title: 'Metrics',
+    access: 'granted',
+    rows: [
+      { label: 'Body weight', value: '82.4 kg' },
+      { label: 'Waist', value: '78 cm' },
+      { label: 'Trend', value: '−1.8 kg since June' },
+    ],
+    note: 'Shared with you. Photos are not included.',
+  },
+  {
+    id: 'health',
+    title: 'Health profile',
+    access: 'not-granted',
+    rows: [],
+    note: 'Maya has not shared her health profile. You will not see injuries, conditions or medication unless she does.',
+  },
+  {
+    id: 'monthly',
+    title: 'Monthly check-ins',
+    access: 'not-granted',
+    rows: [],
+    note: 'Check-ins are their own permission, and include logging on her behalf.',
+  },
+];
+
+const MAYA_SESSIONS: readonly ApiReviewSession[] = [
+  { id: 'rs-upper-a', name: 'Upper A', meta: '7 of 7 sets · 48 min · 1 PR', tag: 'Done' },
+  { id: 'rs-lower-a', name: 'Lower A', meta: '6 of 6 sets · 52 min', tag: 'Done' },
+  { id: 'rs-upper-b', name: 'Upper B', meta: 'Planned today', tag: 'Today' },
+];
+
+/** Eight weeks, trending up — the shape the design shows for Maya. */
+const MAYA_BARS: readonly { label: string; value: number }[] = [
+  { label: 'W1', value: 71 },
+  { label: 'W2', value: 78 },
+  { label: 'W3', value: 74 },
+  { label: 'W4', value: 83 },
+  { label: 'W5', value: 86 },
+  { label: 'W6', value: 84 },
+  { label: 'W7', value: 91 },
+  { label: 'W8', value: 92 },
+];
+
+/**
+ * What each level of `access` actually grants, domain by domain. The client
+ * set one word on their own screen; this is the only place that word is turned
+ * into four answers, so widening one of them is a visible edit here rather
+ * than a quiet default somewhere downstream.
+ */
+const GRANTS: Record<RosterAccess, readonly ApiReviewDomain['id'][]> = {
+  full: ['nutrition', 'metrics', 'health', 'monthly'],
+  partial: ['nutrition', 'metrics'],
+  min: ['metrics'],
+  none: [],
+};
+
+const DOMAIN_TITLES: Record<ApiReviewDomain['id'], string> = {
+  nutrition: 'Nutrition',
+  metrics: 'Metrics',
+  health: 'Health profile',
+  monthly: 'Monthly check-ins',
+};
+
+function grantedNote(id: ApiReviewDomain['id'], name: string): string {
+  switch (id) {
+    case 'nutrition':
+      return `${name} shares nutrition. This can be withdrawn at any time.`;
+    case 'metrics':
+      return 'Shared with you. Photos are not included.';
+    case 'health':
+      return 'Shared with you, including injuries, conditions and medication.';
+    case 'monthly':
+    default:
+      return 'Shared with you. This permission includes logging on their behalf.';
+  }
+}
+
+function withheldNote(id: ApiReviewDomain['id'], name: string): string {
+  switch (id) {
+    case 'nutrition':
+      return `${name} has not shared nutrition. You will not see meals or targets unless they do.`;
+    case 'metrics':
+      return `${name} has not shared metrics. Body weight and measurements stay private.`;
+    case 'health':
+      return `${name} has not shared a health profile. You will not see injuries, conditions or medication unless they do.`;
+    case 'monthly':
+    default:
+      return 'Check-ins are their own permission, and include logging on their behalf.';
+  }
+}
+
+/**
+ * Derived rows for a granted domain. Deterministic from the client id, exactly
+ * as `mockStudentFromRoster` derives adherence — two clients should not read as
+ * twins, and a refetch should not shuffle the numbers under the coach.
+ */
+function derivedRows(
+  id: ApiReviewDomain['id'],
+  seed: number,
+): readonly ApiReviewDomainRow[] {
+  switch (id) {
+    case 'nutrition':
+      return [
+        { label: 'Today', value: `${1_600 + (seed % 9) * 60} / ${2_200 + (seed % 5) * 100} kcal` },
+        { label: 'Protein', value: `${110 + (seed % 7) * 5} / ${160 + (seed % 4) * 10} g` },
+        { label: '7-day average', value: `${2_000 + (seed % 6) * 50} kcal` },
+      ];
+    case 'metrics':
+      return [
+        { label: 'Body weight', value: `${68 + (seed % 22)}.${seed % 10} kg` },
+        { label: 'Waist', value: `${74 + (seed % 12)} cm` },
+        { label: 'Trend', value: `−${1 + (seed % 3)}.${seed % 10} kg since June` },
+      ];
+    case 'health':
+      return [
+        { label: 'Injuries', value: seed % 2 === 0 ? 'None noted' : 'Left shoulder, 2024' },
+        { label: 'Conditions', value: 'None noted' },
+        { label: 'Medication', value: 'None noted' },
+      ];
+    case 'monthly':
+    default:
+      return [
+        { label: 'Last check-in', value: `${['May', 'Jun', 'Jul', 'Aug'][seed % 4]} 2026` },
+        { label: 'Logged', value: `${2 + (seed % 4)} months` },
+        { label: 'You can log', value: 'Yes' },
+      ];
+  }
+}
+
+function reviewDomains(client: ApiRosterClient): readonly ApiReviewDomain[] {
+  if (client.id === 'rc-maya') return MAYA_DOMAINS;
+
+  const seed = hashId(client.id);
+  const granted = new Set(GRANTS[client.access]);
+  const name = client.name.split(' ')[0] ?? client.name;
+
+  return (['nutrition', 'metrics', 'health', 'monthly'] as const).map((id) => {
+    if (granted.has(id)) {
+      return {
+        id,
+        title: DOMAIN_TITLES[id],
+        access: 'granted' as const,
+        rows: derivedRows(id, seed),
+        note: grantedNote(id, name),
+      };
+    }
+
+    return {
+      id,
+      title: DOMAIN_TITLES[id],
+      access: 'not-granted' as const,
+      // Nothing to put here. The shape has no room for a value the client
+      // did not share, which is the point of building it this way.
+      rows: [],
+      note: withheldNote(id, name),
+    };
+  });
+}
+
+function reviewSessions(client: ApiRosterClient): readonly ApiReviewSession[] {
+  if (client.id === 'rc-maya') return MAYA_SESSIONS;
+
+  const seed = hashId(client.id);
+  const program = client.meta.split(' · ')[0] ?? 'Session';
+  const missed = client.attention === 'review' || client.attention === 'quiet';
+
+  return [
+    {
+      id: `rs-${client.id}-1`,
+      name: `${program} A`,
+      meta: `${5 + (seed % 3)} of ${5 + (seed % 3)} sets · ${44 + (seed % 12)} min`,
+      tag: 'Done',
+    },
+    {
+      id: `rs-${client.id}-2`,
+      name: `${program} B`,
+      meta: missed ? 'Not logged' : `${6 + (seed % 2)} of ${6 + (seed % 2)} sets · ${48 + (seed % 9)} min`,
+      tag: missed ? 'Missed' : 'Done',
+    },
+    {
+      id: `rs-${client.id}-3`,
+      name: `${program} C`,
+      meta: 'Planned today',
+      tag: 'Today',
+    },
+  ];
+}
+
+function reviewBars(client: ApiRosterClient): readonly { label: string; value: number }[] {
+  if (client.id === 'rc-maya') return MAYA_BARS;
+
+  const seed = hashId(client.id);
+  return Array.from({ length: 8 }, (_value, index) => ({
+    label: `W${index + 1}`,
+    value: 55 + index * 4 + ((seed + index * 7) % 11),
+  }));
+}
+
+/** The same anchor `mockStudentFromRoster` uses, so the two never disagree. */
+const ADHERENCE_BASE: Record<RosterAttention, number> = {
+  live: 88,
+  ok: 86,
+  new: 72,
+  review: 61,
+  quiet: 48,
+};
+
+/** Mirrors GET /coach/clients/:id/review. */
+export function mockClientReview(clientId: string): ApiClientReview | null {
+  const client = rosterState.clients.find((candidate) => candidate.id === clientId);
+  if (!client) return null;
+
+  const isMaya = client.id === 'rc-maya';
+  const requested = accessRequests.get(clientId);
+  const domains = reviewDomains(client).map((domain) =>
+    requested?.has(domain.id) && domain.access === 'not-granted'
+      ? { ...domain, access: 'requested' as const }
+      : domain,
+  );
+
+  const parts = client.meta.split(' · ');
+  const week = (parts[1] ?? '').replace('wk ', 'week ');
+  const adherence = isMaya
+    ? 92
+    : Math.min(99, ADHERENCE_BASE[client.attention] + (hashId(client.id) % 9));
+
+  return {
+    clientId: client.id,
+    name: client.name,
+    initials: client.initials,
+    programLine: isMaya
+      ? 'Upper/Lower · week 6 of 12'
+      : [parts[0], week].filter((part) => part.length > 0).join(' · '),
+    labelId: client.labelId,
+    adherence: `${adherence}% adherence`,
+    adherenceBars: reviewBars(client),
+    domains,
+    sessions: reviewSessions(client),
+    // Only one client trains at a time in the mock, and it is the one the
+    // roster already flags `live`. Two sources would eventually disagree.
+    isTraining: client.attention === 'live',
+  };
+}
+
+/**
+ * Mirrors POST /coach/clients/:id/access-requests.
+ *
+ * It records that the coach asked, and that is the whole effect. Nothing about
+ * what they can see moves — the domain goes from "not shared" to "requested",
+ * which is a note about the coach's own behaviour sitting where a value would
+ * be if the client had said yes.
+ */
+export function mockRequestAccess(clientId: string, domainId: ApiReviewDomain['id']): void {
+  const current = accessRequests.get(clientId) ?? new Set<ApiReviewDomain['id']>();
+  accessRequests.set(clientId, new Set([...current, domainId]));
+}
+
+/* ------------------------------------------------------------------ *
+ * The live session, watched from the coach's seat.
+ * ------------------------------------------------------------------ */
+
+const mayaLiveExercises: readonly ApiLiveExercise[] = [
+  {
+    id: 'lex-bench',
+    name: 'Bench press',
+    note: '4 × 8 · 2 min rest',
+    progress: '2 of 4',
+    sets: [
+      { n: 1, weightKg: 60, reps: 8, completed: true },
+      { n: 2, weightKg: 62.5, reps: 8, completed: true },
+      { n: 3, weightKg: 62.5, reps: 8, completed: false },
+      { n: 4, weightKg: 62.5, reps: 8, completed: false },
+    ],
+  },
+  {
+    id: 'lex-incline',
+    name: 'Incline DB press',
+    note: '3 × 10 · 90 s rest',
+    progress: '0 of 3',
+    sets: [
+      { n: 1, weightKg: 22.5, reps: 10, completed: false },
+      { n: 2, weightKg: 22.5, reps: 10, completed: false },
+      { n: 3, weightKg: 22.5, reps: 10, completed: false },
+    ],
+  },
+  {
+    id: 'lex-fly',
+    name: 'Cable fly',
+    note: '3 × 12 · 60 s rest',
+    progress: '0 of 3',
+    sets: [
+      { n: 1, weightKg: 15, reps: 12, completed: false },
+      { n: 2, weightKg: 15, reps: 12, completed: false },
+      { n: 3, weightKg: 15, reps: 12, completed: false },
+    ],
+  },
+];
+
+/**
+ * Mirrors GET /coach/clients/:id/live. Null for anyone not training, which is
+ * the honest answer — the screen has an ended state for exactly this, rather
+ * than a stale session left on screen as though it were still running.
+ */
+export function mockLiveSession(clientId: string): ApiLiveSession | null {
+  const client = rosterState.clients.find((candidate) => candidate.id === clientId);
+  if (!client || client.attention !== 'live') return null;
+
+  return {
+    clientId: client.id,
+    clientName: client.name,
+    title: 'Upper A · Push focus',
+    // Mid-session on every read, so the elapsed clock has something to count.
+    startedAt: new Date(Date.now() - 24 * 60_000).toISOString(),
+    exercises: mayaLiveExercises,
+    notice: 'You are seeing sets as Maya logs them. You cannot edit her session.',
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * The coach's own settings.
+ * ------------------------------------------------------------------ */
+
+const initialCoachNotifications: readonly ApiCoachNotification[] = [
+  {
+    id: 'session-completed',
+    label: 'Session completed',
+    desc: 'When a client finishes a workout',
+    enabled: true,
+    locked: false,
+  },
+  {
+    id: 'missed-session',
+    label: 'Missed session',
+    desc: 'When a planned day is missed',
+    enabled: true,
+    locked: false,
+  },
+  {
+    id: 'new-message',
+    label: 'New message',
+    desc: 'When a client messages you',
+    enabled: true,
+    locked: false,
+  },
+  {
+    // The one that cannot be silenced. A coach who muted this could go on
+    // acting as though they still had access a client took back this morning.
+    id: 'permission-changed',
+    label: 'Permission changed',
+    desc: 'When a client grants or withdraws access',
+    enabled: true,
+    locked: true,
+  },
+  {
+    id: 'client-attached',
+    label: 'Client attached',
+    desc: 'When someone joins with your code',
+    enabled: true,
+    locked: false,
+  },
+];
+
+let coachNotificationState: readonly ApiCoachNotification[] = initialCoachNotifications;
+
+/**
+ * Mirrors GET /coach/profile. The headline's client count and the Labels row's
+ * value are both read off the roster rather than authored here, so neither can
+ * go stale behind a label the coach just deleted.
+ */
+export function mockCoachProfile(): ApiCoachProfile {
+  const groups: readonly ApiSettingsGroup[] = [
+    {
+      id: 'coaching',
+      title: 'COACHING',
+      rows: [
+        {
+          id: 'invite-code',
+          label: 'Invite code',
+          desc: 'Share it to take on a client',
+          value: INVITE_CODE,
+        },
+        {
+          id: 'labels',
+          label: 'Labels',
+          desc: 'Organise your roster',
+          value: `${rosterState.labels.length}`,
+          route: '/roster/labels',
+        },
+      ],
+    },
+    {
+      id: 'account',
+      title: 'ACCOUNT',
+      rows: [
+        { id: 'profile', label: 'Profile', desc: 'Name, bio, specialties' },
+        { id: 'billing', label: 'Billing', desc: 'Plan and seats' },
+      ],
+    },
+    {
+      id: 'support',
+      title: 'SUPPORT',
+      rows: [
+        { id: 'help', label: 'Help centre', desc: 'Guides and answers' },
+        { id: 'sign-out', label: 'Sign out', desc: '', danger: true },
+      ],
+    },
+  ];
+
+  return {
+    name: 'Sam Okafor',
+    initials: 'SO',
+    headline: coachHeadline('Strength coach · Berlin', rosterState.clients.length),
+    inviteCode: INVITE_CODE,
+    notifications: coachNotificationState,
+    groups,
+  };
+}
+
+/**
+ * Mirrors POST /coach/notifications. The refusal is the shared predicate, not
+ * a check written twice — a locked row that arrives here is left exactly as it
+ * was, so a caller that skipped the UI gets the same answer the switch does.
+ */
+export function mockToggleCoachNotification(id: string, enabled: boolean): void {
+  coachNotificationState = toggleNotification(coachNotificationState, id, enabled);
 }
 
 /* ------------------------------------------------------------------ *

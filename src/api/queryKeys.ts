@@ -50,6 +50,18 @@ export const queryKeys = {
   /** The coach's feed — one payload, already grouped. See src/api/coachActivity.ts. */
   coachActivity: ['coach', 'activity'] as const,
   /**
+   * The coach's view of one client — see src/api/coachClient.ts. `live` is a
+   * sibling of `review` rather than a child: watching a session refetches on
+   * its own cadence, and invalidating the review after a label change must not
+   * cancel a live query that is mid-flight behind it.
+   */
+  coachClient: {
+    review: (clientId: string) => ['coach', 'client', 'review', clientId] as const,
+    live: (clientId: string) => ['coach', 'client', 'live', clientId] as const,
+  },
+  /** The coach's own account and notification settings. */
+  coachProfile: ['coach', 'profile'] as const,
+  /**
    * The coach's inbox and threads — see src/api/coachMessages.ts. `inboxAll` is
    * the prefix over every search variant, so invalidating it refreshes the list
    * whatever is typed in the box. `thread` is deliberately a sibling of it, not

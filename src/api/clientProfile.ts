@@ -14,6 +14,7 @@ import {
   mockClientHealth,
   mockClientProfile,
   mockDelay,
+  mockDetachCoach,
   mockIntegrations,
   mockNotificationSettings,
   mockToggleHealthShare,
@@ -43,6 +44,49 @@ async function fetchClientProfile(): Promise<ApiClientProfile> {
 
 export function useClientProfileQuery(): UseQueryResult<ApiClientProfile, Error> {
   return useQuery({ queryKey: queryKeys.clientProfile.profile, queryFn: fetchClientProfile });
+}
+
+/* ------------------------------------------------------------------ *
+ * Detaching a coach.
+ *
+ * The client's half of every permission screen in the app, and the
+ * only write that ends the relationship. It lives here rather than
+ * beside the coach's own endpoints on purpose: this is not something
+ * a coach can do, or be asked to approve.
+ * ------------------------------------------------------------------ */
+
+async function deleteCoachAttachment(): Promise<void> {
+  if (env.useMocks) {
+    mockDetachCoach();
+    await mockDelay(undefined, 300);
+    return;
+  }
+  await client.delete('/client/coach');
+}
+
+/**
+ * Not optimistic, and that is deliberate.
+ *
+ * Everywhere else a control that waits for the network reads as broken. Here
+ * an interface that says "detached" before the server agrees would be claiming
+ * that access has ended when it may not have — the one lie this screen must
+ * not tell. So the sheet holds its spinner until the write lands, then every
+ * coach-dependent surface is invalidated at once: Today's coach card, the
+ * profile's coach section, and the thread, which archives rather than
+ * disappearing.
+ */
+export function useDetachCoachMutation(): UseMutationResult<void, Error, void> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteCoachAttachment,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientProfile.profile });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientTraining.today });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientChat });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientCheckIns });
+    },
+  });
 }
 
 /* ------------------------------------------------------------------ *

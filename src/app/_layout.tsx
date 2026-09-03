@@ -67,11 +67,28 @@ export default function RootLayout() {
                 {/* Signup signs the user in before routing here, so onboarding
                     has to live on the signed-in side of the guard. */}
                 <Stack.Screen name="onboarding" />
+                {/* The coach's review of one client. Titled "Client" rather
+                    than for the person: their name is the card at the top,
+                    exactly as in every thread in the app. */}
                 <Stack.Screen
                   name="student/[id]"
                   options={{
                     headerShown: true,
-                    title: 'Student',
+                    title: 'Client',
+                    headerBackTitle: 'Back',
+                    headerTintColor: tokens.violet,
+                    headerStyle: { backgroundColor: tokens.canvas },
+                  }}
+                />
+                {/* Watching a session in progress. A route off the review
+                    rather than a mode inside it: it is read-only, it is over
+                    when the client finishes, and it should be somewhere a
+                    coach can leave with a back button. */}
+                <Stack.Screen
+                  name="student/[id]/live"
+                  options={{
+                    headerShown: true,
+                    title: 'Live session',
                     headerBackTitle: 'Back',
                     headerTintColor: tokens.violet,
                     headerStyle: { backgroundColor: tokens.canvas },

@@ -70,49 +70,96 @@ After every change, run in this order:
 4. `npx expo-doctor` — confirm native deps are aligned
 5. `npm run bundle:check` — confirm Metro can actually bundle it
 
+## Dependencies
+
+Before adding any package, check in this order — never install silently:
+
+1. **Expo SDK package** (`expo-*`) — check [expo.dev/packages](https://expo.dev/packages) first. If one exists, use it.
+2. **Expo Go / managed-workflow compatible library** — no custom native build step required.
+3. **Maintenance check** — reject anything not updated in 12+ months, deprecated, or archived.
+4. **Neither fits** — stop and ask before proceeding.
+
+Install Expo SDK packages with `npx expo install <pkg>` (pins the version to the SDK), everything
+else with `npm install <pkg>`.
+
+## Environments
+
+Only one environment exists today — `src/lib/env.ts` defaults `apiUrl` to `https://api.ligo.app`
+with `EXPO_PUBLIC_USE_MOCKS=true`, and there's no `eas.json` yet. Fill in this table once staging/
+production backends and EAS build profiles exist:
+
+| Env | `EXPO_PUBLIC_APP_ENV` | `EXPO_PUBLIC_API_URL` | EAS profile |
+|-----|------------------------|------------------------|-------------|
+| Development | `development` | mocks (`EXPO_PUBLIC_USE_MOCKS=true`) | — |
+| Staging | `staging` | TBD | TBD |
+| Production | `production` | TBD | TBD |
+
+Only `EXPO_PUBLIC_*` vars are exposed to the client — never put secrets in them.
+
 ## Color Palette & Design Tokens
 
 ### Brand Colors
 
-| Name        | Hex       | Role             | CSS Variable            | Tailwind Token     |
-|-------------|-----------|------------------|-------------------------|--------------------|
-| Navy        | `#0A3D62` | Primary          | `--color-navy`          | `navy`             |
-| Teal        | `#48CAE4` | Accent           | `--color-teal`          | `teal`             |
-| Sky         | `#EBF4FB` | Background       | `--color-sky`           | `sky`              |
-| Midnight    | `#0D1B2A` | Dark surface     | `--color-midnight`      | `midnight`         |
-| Light Teal  | `#E1F5EE` | Pill / badge fill| `--color-light-teal`    | `light-teal`       |
-| Gray        | `#F1EFE8` | Neutral surface  | `--color-gray`          | `gray`             |
-| White       | `#FFFFFF` | Screen background| `--color-white`         | `white`            |
-| Dark Gray   | `#333333` | Body text        | `--color-dark-gray`     | `dark-gray`        |
+**Violet is the current brand palette — primary and accent.** Navy/Teal/Sky/Midnight/Light Teal/Gray
+are legacy tokens (see **Legacy Palette** below); don't reach for them in new work.
+
+| Name            | Hex       | Role                              | CSS Variable               | Tailwind Token   |
+|------------------|-----------|------------------------------------|-----------------------------|------------------|
+| Violet           | `#8B5CF6` | Primary — headers, icons, primary actions | `--color-violet`     | `violet`         |
+| Violet Weak      | `#DFDBF3` | Soft tint — icon badges, chip/badge fill | `--color-violet-weak` | `violet-weak`    |
+| Violet Line      | `#CDBFF3` | Border / ring on violet elements   | `--color-violet-line`       | `violet-line`    |
+| Ink              | `#0A0A0A` | Heading text                       | `--color-ink`               | `ink`            |
+| Dark Gray        | `#333333` | Body text                          | `--color-dark-gray`         | `dark-gray`      |
+| Canvas           | `#ECEEF2` | Screen background                  | `--color-canvas`            | `canvas`         |
+| White            | `#FFFFFF` | Card / section background          | `--color-white`             | `white`          |
+| Field            | `#F0F2F6` | Unselected chip/segment/input fill | `--color-field`             | `field`          |
+| Hairline         | `#E7E9EE` | Default border / divider           | `--color-hairline`          | `hairline`       |
+| Hairline Strong  | `#D9DCE3` | Emphasized border                  | `--color-hairline-strong`   | `hairline-strong`|
 
 ### Color Usage Rules
 
-- **Navy** is the dominant brand color — use for headers, icons, and primary actions.
-- **Teal** is the accent color — use for highlights, completed sets, streaks, and call-to-action elements.
-- **Never** use more than 3 brand colors on a single screen.
-- **Navy + Teal** is the primary combination. Never pair Teal with Midnight independently.
+- **Violet** is the dominant brand color — use for headers, icons, primary actions, and the accent
+  moments that used to be Teal (highlights, completed sets, streaks, CTAs).
+- **Never** use more than 3 brand colors on a single screen (Violet + a violet tint/border + a
+  neutral is the normal shape).
 - All colors must be referenced via NativeWind tokens or theme variables — no hardcoded hex values in components, and no raw hex in `StyleSheet`.
 - Hex values live in exactly one file: `src/theme/colors.js`. `tailwind.config.js` requires it, and
   TS reads it through `src/theme/tokens.ts` (for Skia charts, navigation theme, icon `color` props).
-- `gray` is a single flat brand neutral, **not** a scale — `bg-gray-100` does not exist.
 - `danger` / `success` / `warning` are functional tokens for feedback states only, not brand colors.
 - Third-party brand colors (the Google "G", etc.) are fixed by their owners and are the one
   exception — they live in `src/theme/brandLogos.ts`, never inline in a component.
+- `LIButton`, `LIBadge`, `LIInput`, and `LIAvatar` all accept an optional `labelClassName` prop for
+  overriding their inner text color without touching the shared defaults every other screen relies on.
+- `LIText`'s inline link (`link`/`linkValue`/`linkHref`) is styled via a `linkColor` prop (raw hex,
+  defaults to `tokens.violet`), **not** `className` — `expo-router`'s `Link` only applies `className`
+  on web (confirmed from its source: `useInteropClassName` returns `props.style` unchanged whenever
+  `Platform.OS !== 'web'`), so `className` on a `Link` silently no-ops on iOS/Android.
 
 ### Semantic Mapping
 
-| Usage                    | Token          |
-|--------------------------|----------------|
-| Primary button bg        | `navy`         |
-| Primary button pressed   | `midnight`     |
-| CTA / accent button bg   | `teal`         |
-| Screen background        | `white`        |
-| Card / section bg        | `sky`          |
-| Neutral surface / divider| `gray`         |
-| Badge / pill fill        | `light-teal`   |
-| Body text                | `dark-gray`    |
-| Heading text             | `navy`         |
-| Dark mode surface        | `midnight`     |
+| Usage                     | Token          |
+|---------------------------|----------------|
+| Primary button bg         | `violet`       |
+| Primary button pressed    | `navy` *(legacy — see below)* |
+| Secondary accent bg       | `violet-weak`  |
+| Secondary accent border   | `violet-line`  |
+| Screen background         | `canvas`       |
+| Card / section bg         | `white`        |
+| Neutral surface / divider | `hairline`     |
+| Unselected control fill   | `field`        |
+| Badge / pill fill         | `violet-weak`  |
+| Body text                 | `dark-gray`    |
+| Heading text              | `ink`          |
+
+### Legacy Palette
+
+`navy` (`#0A3D62`), `teal` (`#48CAE4`), `sky` (`#EBF4FB`), `midnight` (`#0D1B2A`), `light-teal`
+(`#E1F5EE`), and `gray` (`#F1EFE8`) remain defined in `src/theme/colors.js` for code not yet migrated
+off them (most of the app, as of this palette switch — the dashboard/roster/login/student-detail
+screens and the signup/onboarding flow are on Violet; everything else still renders Navy/Teal until
+migrated). Don't use legacy tokens in new work, and don't mix a legacy token with a Violet-palette
+token on the same screen. `gray` was a single flat neutral, not a scale — `bg-gray-100` never existed.
+else.
 
 ## Data Fetching Rule (Critical)
 
@@ -260,6 +307,9 @@ Never use raw React Native primitives for text (`<Text>`) or touch (`<TouchableO
 
 `<View>` is allowed directly for layout.
 
+`LIButton` and any other touchable wrapper is built on `Pressable` internally — never
+`TouchableOpacity`, `TouchableHighlight`, or `TouchableNativeFeedback`, even inside `src/components/ui/`.
+
 ### LIText — canonical usage
 
 ```tsx
@@ -295,9 +345,13 @@ Use `persist` with the MMKV storage adapter only for data that must survive app 
 - `useCallback` for handlers passed as props, `useMemo` for expensive derivations, `React.memo` on FlashList rows
 - Navigation via Expo Router `<Link>`, `useRouter()`, and typed routes only — never mutate history manually
 - Every screen root wraps in `LISafeArea` (`react-native-safe-area-context`) — never hardcode status bar padding
-- Keyboard handling via `KeyboardAvoidingView` wrapper in `LIForm`, tested on both platforms
+- Keyboard handling is the screen's job — `LIForm` is only `FormProvider` + a spacing `View`, it does
+  **not** wrap a `KeyboardAvoidingView`. Route files wrap forms in `KeyboardAvoidingView` (see
+  `(auth)/login.tsx`) or a `ScrollView` with `keyboardShouldPersistTaps="handled"` for long forms.
+  Test on both platforms.
 - Platform differences via `Platform.select` or `.ios.tsx` / `.android.tsx` files — never untested `Platform.OS` branches in render
 - Env vars via `src/lib/env.ts` reading `process.env.EXPO_PUBLIC_*` (public only — secrets never ship in the bundle)
+- Always import via the `@/` alias — never relative paths like `../../../`
 - Import from the specific module in `src/components/` (`@/components/LIForm`), never a barrel —
   there is deliberately no `src/components/index.ts`, because `LIChart` pulls in Skia + d3 and a
   barrel would drag that into every screen that imports a form

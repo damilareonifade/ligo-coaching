@@ -16,7 +16,12 @@ interface CheckInPhotoRowProps {
  */
 export default function CheckInPhotoRow({ photos }: CheckInPhotoRowProps) {
   const showToast = useUiStore((state) => state.showToast);
-  const attach = useCallback(() => showToast('Not connected yet', 'success'), [showToast]);
+  // 'info', not 'success' — nothing was attached, and a green confirmation
+  // for a no-op reads as if the photo went through.
+  const attach = useCallback(
+    () => showToast('Attaching photos is not wired up yet', 'info'),
+    [showToast],
+  );
 
   return (
     <View className="flex-row items-center gap-3 rounded-card border border-dashed border-hairline-strong p-4">

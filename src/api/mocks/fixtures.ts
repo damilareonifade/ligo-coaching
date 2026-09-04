@@ -1586,7 +1586,7 @@ const MAYA_DOMAINS: readonly ApiReviewDomain[] = [
       { label: 'Protein', value: '126 / 185 g' },
       { label: '7-day average', value: '2,180 kcal' },
     ],
-    note: 'Maya shares nutrition. She can withdraw this at any time.',
+    note: 'Maya shares nutrition. This can be withdrawn at any time.',
   },
   {
     id: 'metrics',
@@ -1604,14 +1604,14 @@ const MAYA_DOMAINS: readonly ApiReviewDomain[] = [
     title: 'Health profile',
     access: 'not-granted',
     rows: [],
-    note: 'Maya has not shared her health profile. You will not see injuries, conditions or medication unless she does.',
+    note: 'Maya has not shared a health profile. You will not see injuries, conditions or medication unless they do.',
   },
   {
     id: 'monthly',
     title: 'Monthly check-ins',
     access: 'not-granted',
     rows: [],
-    note: 'Check-ins are their own permission, and include logging on her behalf.',
+    note: 'Check-ins are their own permission, and include logging on their behalf.',
   },
 ];
 

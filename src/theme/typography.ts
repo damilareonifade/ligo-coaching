@@ -12,10 +12,11 @@ export const textSizeClass = {
 export type LITextSize = keyof typeof textSizeClass;
 
 export const textColorClass = {
-  primary: 'text-navy',
+  primary: 'text-ink',
   body: 'text-dark-gray',
   muted: 'text-muted',
-  accent: 'text-teal',
+  accent: 'text-violet',
+  violet: 'text-violet',
   danger: 'text-danger',
   success: 'text-success',
   warning: 'text-warning',

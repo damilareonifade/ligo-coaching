@@ -13,12 +13,22 @@ export interface LIChartDatum {
 export interface LIChartProps {
   readonly data: readonly LIChartDatum[];
   readonly height?: number;
-  readonly tone?: 'accent' | 'primary';
+  readonly tone?: 'accent' | 'violet' | 'primary';
   readonly className?: string;
 }
 
 /** Index signature is required by victory-native generics. */
 type ChartRow = { [key: string]: number; index: number; value: number };
+
+/**
+ * Every tone resolves to violet post-palette-migration. The prop is kept so the
+ * existing call sites (`tone="accent"` / `tone="primary"`) keep type-checking.
+ */
+const toneColor: Record<NonNullable<LIChartProps['tone']>, string> = {
+  accent: tokens.violet,
+  violet: tokens.violet,
+  primary: tokens.violet,
+};
 
 /**
  * Bar chart for progress over time (weekly volume, adherence).
@@ -27,12 +37,22 @@ type ChartRow = { [key: string]: number; index: number; value: number };
  */
 export function LIChart({ data, height = 180, tone = 'accent', className }: LIChartProps) {
   const rows: ChartRow[] = data.map((datum, index) => ({ index, value: datum.value }));
-  const color = tone === 'accent' ? tokens.teal : tokens.navy;
+  const color = toneColor[tone];
+  // Anchor the axis at zero. Left to auto-scale, victory-native fits the domain
+  // to [min, max], so the smallest bar renders at zero height — eight weeks of
+  // volume between 31t and 42t looked like a jump from nothing to everything.
+  const maxValue = data.reduce((max, datum) => Math.max(max, datum.value), 0);
 
   return (
     <View className={cn('gap-2', className)}>
       <View style={{ height }}>
-        <CartesianChart data={rows} xKey="index" yKeys={['value']} domainPadding={{ left: 24, right: 24, top: 16 }}>
+        <CartesianChart
+          data={rows}
+          xKey="index"
+          yKeys={['value']}
+          domain={{ y: [0, maxValue > 0 ? maxValue : 1] }}
+          domainPadding={{ left: 24, right: 24, top: 16 }}
+        >
           {({ points, chartBounds }) => (
             <Bar
               points={points.value}
@@ -46,8 +66,10 @@ export function LIChart({ data, height = 180, tone = 'accent', className }: LICh
       </View>
 
       <View className="flex-row justify-between">
-        {data.map((datum) => (
-          <LIText key={datum.label} size="caption" color="muted" text={datum.label} />
+        {/* Keyed by position, not label: a sparse axis blanks the ticks that do
+            not fit, so labels repeat and are not identity. */}
+        {data.map((datum, index) => (
+          <LIText key={index} size="caption" color="muted" text={datum.label} />
         ))}
       </View>
     </View>

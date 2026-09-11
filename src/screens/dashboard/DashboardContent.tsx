@@ -56,7 +56,7 @@ export default function DashboardContent({
       onRefresh={onRefresh}
       ListHeaderComponent={
         atRisk.length > 0 ? (
-          <LICard className="mb-3 bg-light-teal">
+          <LICard className="mb-3 bg-violet-weak">
             <LIText size="h5" color="primary" text="Needs a nudge" />
             <LIText
               size="p"

@@ -1,51 +1,57 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
 
-import { useProgramQuery } from '@/api/programs';
-import { useStudentQuery, useStudentVolumeQuery } from '@/api/students';
+import { useClientReviewQuery } from '@/api/coachClient';
+import { useRosterQuery } from '@/api/roster';
 import { LIErrorState, LISafeArea } from '@/components/ui';
-import StudentDetailContent from '@/screens/student/StudentDetailContent';
-import StudentSkeleton from '@/screens/student/StudentSkeleton';
+import ReviewContent from '@/screens/client-review/ReviewContent';
+import ReviewSkeleton from '@/screens/client-review/ReviewSkeleton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-export default function StudentDetailScreen() {
+/**
+ * The coach's review of one client. Still `/student/<id>` so the roster rows
+ * and the activity feed keep resolving; what is behind the route is new.
+ *
+ * Composer only: both fetches happen here. The roster comes along for its
+ * labels, which the review's picker needs and which are already cached from
+ * the screen the coach almost certainly arrived from.
+ */
+export default function ClientReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const studentId = id ?? '';
+  const clientId = id ?? '';
 
-  const studentQuery = useStudentQuery(studentId);
-  const volumeQuery = useStudentVolumeQuery(studentId);
-  // Only runs once the student resolves — `enabled` guards the empty id.
-  const programQuery = useProgramQuery(studentQuery.data?.programId ?? '');
+  const reviewQuery = useClientReviewQuery(clientId);
+  const rosterQuery = useRosterQuery();
 
   const refresh = useCallback(() => {
-    void studentQuery.refetch();
-    void volumeQuery.refetch();
-  }, [studentQuery, volumeQuery]);
+    void reviewQuery.refetch();
+    void rosterQuery.refetch();
+  }, [reviewQuery, rosterQuery]);
 
-  if (studentQuery.isPending) {
+  if (reviewQuery.isPending) {
     return (
       <LISafeArea edges={[]}>
-        <StudentSkeleton />
+        <ReviewSkeleton />
       </LISafeArea>
     );
   }
 
-  if (studentQuery.error || !studentQuery.data) {
+  if (reviewQuery.error || !reviewQuery.data) {
     return (
       <LISafeArea edges={[]}>
-        <LIErrorState message={studentQuery.error?.message} onRetry={refresh} />
+        <LIErrorState message={reviewQuery.error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
     <LISafeArea edges={[]}>
-      <StudentDetailContent
-        student={studentQuery.data}
-        program={programQuery.data ?? null}
-        volume={volumeQuery.data ?? []}
-        volumeLoading={volumeQuery.isPending}
+      <ReviewContent
+        review={reviewQuery.data}
+        labels={rosterQuery.data?.labels ?? []}
+        refreshing={reviewQuery.isRefetching}
+        onRefresh={refresh}
       />
     </LISafeArea>
   );

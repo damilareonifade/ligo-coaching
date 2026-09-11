@@ -20,6 +20,7 @@ const transformAllowlist = [
   'standard-navigation',
   // Ligo: styling, lists, sheets, charts
   'nativewind',
+  'react-native-url-polyfill',
   'react-native-css',
   'react-native-css-interop',
   'react-native-reanimated',
@@ -57,6 +58,8 @@ module.exports = {
   ...expoPreset,
   setupFiles: [
     ...expoPreset.setupFiles,
+    // EXPO_PUBLIC_* vars that src/lib/env.ts requires; Jest loads no .env file.
+    '<rootDir>/jest/env.js',
     // Skia is native-only; its own mock keeps victory-native importable in tests.
     '<rootDir>/node_modules/@shopify/react-native-skia/jestSetup.js',
   ],

@@ -1,0 +1,6 @@
+# Supabase CLI project config. `project_id` is the linked project's ref.
+project_id = "tblujcawpwvedllowuuy"
+
+[db]
+# Match the platform version so local behaviour matches production.
+major_version = 17

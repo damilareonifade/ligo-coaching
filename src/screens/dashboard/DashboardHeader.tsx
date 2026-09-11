@@ -3,6 +3,8 @@ import { View } from 'react-native';
 import type { ApiCoach } from '@/api/types';
 import { LIAvatar, LIText } from '@/components/ui';
 
+import DashboardActivityButton from './DashboardActivityButton';
+
 interface DashboardHeaderProps {
   readonly coach: ApiCoach | null;
   readonly sessionCount: number;
@@ -28,7 +30,10 @@ export default function DashboardHeader({ coach, sessionCount }: DashboardHeader
         <LIText size="h2" color="primary" text={name} numberOfLines={1} />
         <LIText size="p" color="body" text={subtitle} />
       </View>
-      <LIAvatar name={name} uri={coach?.avatarUrl} size="lg" />
+      <View className="flex-row items-center gap-3">
+        <DashboardActivityButton />
+        <LIAvatar name={name} uri={coach?.avatarUrl} size="lg" />
+      </View>
     </View>
   );
 }

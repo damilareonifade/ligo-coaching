@@ -74,6 +74,11 @@ The skeleton is complete and runs; these are deliberately left as next steps:
 - **Session reminders** — `expo-notifications` is installed and configured, and the settings
   toggle persists, but nothing schedules a notification yet
 - **Student messaging / form cues** — cues exist on exercises but aren't sendable
-- **Google / passkey sign-in** — both buttons are built and wired to handlers, but no OAuth client
-  ID or passkey relying party is configured, so they surface a "not connected yet" toast. Email +
-  password is the working path.
+- **Passkey sign-in** — the button is built and wired to a handler, but no relying party is
+  configured, so it surfaces a "not connected yet" toast. Email + password and Google both work.
+- **Remote sign-out** — `public.sessions` records devices and `revokeDeviceSession` marks one
+  revoked, which stops pushes, but it cannot invalidate that device's Supabase tokens. Only the
+  admin API can, which needs an Edge Function.
+- **Domain tables** — `supabase/migrations` covers auth, devices, cache, resets and the
+  coach↔client link. Programs, sessions and check-ins are still served from `src/api/mocks/`
+  (`EXPO_PUBLIC_USE_MOCKS=true`).

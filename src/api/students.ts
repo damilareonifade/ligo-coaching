@@ -3,7 +3,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { env } from '@/lib/env';
 
 import { ApiError, client } from './client';
-import { mockDelay, mockStudents, mockVolume } from './mocks';
+import { mockDelay, mockStudentFromRoster, mockStudents, mockVolume } from './mocks';
 import { queryKeys } from './queryKeys';
 import type { ApiStudent, ApiVolumePoint } from './types';
 
@@ -15,7 +15,7 @@ async function fetchStudents(): Promise<readonly ApiStudent[]> {
 
 async function fetchStudent(id: string): Promise<ApiStudent> {
   if (env.useMocks) {
-    const student = mockStudents.find((candidate) => candidate.id === id);
+    const student = mockStudents.find((candidate) => candidate.id === id) ?? mockStudentFromRoster(id);
     if (!student) throw new ApiError('That student is no longer on your roster.', 404);
     return mockDelay(student);
   }

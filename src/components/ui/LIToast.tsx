@@ -8,7 +8,7 @@ import { useUiStore, type ToastTone } from '@/store/uiStore';
 const toneClass: Record<ToastTone, string> = {
   success: 'bg-success',
   danger: 'bg-danger',
-  info: 'bg-navy',
+  info: 'bg-violet',
 };
 
 /** Mounted once in the root layout. Read toasts with `useUiStore`. */

@@ -5,7 +5,9 @@ import { View } from 'react-native';
 
 import type { UserRole } from '@/api/types';
 import { LIButton, LICard, LIText } from '@/components/ui';
+import { useGoogleSignUp } from '@/hooks/useGoogleSignUp';
 import { cn } from '@/lib/utils';
+import SocialSignIn from '@/screens/auth/SocialSignIn';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { tokens } from '@/theme/tokens';
 
@@ -38,6 +40,7 @@ export default function RoleSelect() {
   const router = useRouter();
   const role = useOnboardingStore((state) => state.role);
   const setRole = useOnboardingStore((state) => state.setRole);
+  const google = useGoogleSignUp();
 
   const handleContinue = useCallback(() => {
     router.push('/signup/details');
@@ -105,6 +108,14 @@ export default function RoleSelect() {
         shape="rounded"
         className="bg-violet active:bg-violet/90"
         testID="role-continue"
+      />
+
+      <SocialSignIn
+        onGoogle={() => void (role !== null && google.start(role))}
+        // Disabled until a role is picked: the account is created with one, so
+        // there is nothing sensible to do with this button before then.
+        busy={google.pending || role === null}
+        label="Or create your account with"
       />
 
       <LIText

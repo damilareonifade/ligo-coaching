@@ -1,3 +1,4 @@
+import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import {
   Apple,
@@ -24,7 +25,16 @@ import { tokens } from '@/theme/tokens';
  */
 export default function TabsLayout() {
   const role = useAuthStore((state) => state.user?.role);
+  const needsRole = useAuthStore((state) => state.needsRole);
   const isClient = role === 'client';
+
+  // A Google account arrives signed in but roleless, and the tab bar below is
+  // a choice between two apps — so ask before rendering either. Checked here
+  // rather than in the root guard because the picker itself has to be
+  // reachable on the signed-in side of it.
+  if (needsRole) {
+    return <Redirect href="/onboarding/choose-role" />;
+  }
 
   return (
     <Tabs

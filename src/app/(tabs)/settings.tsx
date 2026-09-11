@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { View } from 'react-native';
 
+import { useDeviceSessionsQuery, useRevokeDeviceSessionMutation } from '@/api/appSessions';
 import { useCoachProfileQuery } from '@/api/coachProfile';
 import { LIErrorState, LISafeArea, LIText } from '@/components/ui';
 import CoachSettingsContent from '@/screens/coach-settings/CoachSettingsContent';
@@ -17,10 +18,23 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
  */
 export default function CoachSettingsScreen() {
   const { data, isPending, error, refetch, isRefetching } = useCoachProfileQuery();
+  // Real Supabase data on a screen whose profile is still mocked: the device
+  // list comes from public.sessions, so it is fetched here beside the profile
+  // rather than inside the card that renders it.
+  const devices = useDeviceSessionsQuery();
+  const revoke = useRevokeDeviceSessionMutation();
 
   const refresh = useCallback(() => {
     void refetch();
-  }, [refetch]);
+    void devices.refetch();
+  }, [devices, refetch]);
+
+  const handleRevoke = useCallback(
+    (sessionId: string) => {
+      revoke.mutate(sessionId, { onSuccess: () => void devices.refetch() });
+    },
+    [devices, revoke],
+  );
 
   return (
     <LISafeArea>
@@ -35,7 +49,14 @@ export default function CoachSettingsScreen() {
       ) : null}
 
       {!isPending && data ? (
-        <CoachSettingsContent profile={data} refreshing={isRefetching} onRefresh={refresh} />
+        <CoachSettingsContent
+          profile={data}
+          devices={devices.data ?? []}
+          onRevokeDevice={handleRevoke}
+          revokingDeviceId={revoke.isPending ? (revoke.variables ?? null) : null}
+          refreshing={isRefetching}
+          onRefresh={refresh}
+        />
       ) : null}
     </LISafeArea>
   );

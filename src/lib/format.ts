@@ -21,6 +21,35 @@ export function formatSessionDay(iso: string, now: Date = new Date()): string {
   return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+/**
+ * "just now" / "4 minutes ago" / "3 days ago" — for a device list, where the
+ * interesting part is how stale a row is, not the wall-clock time it was
+ * written. Falls back to a date once "days ago" stops being useful.
+ */
+export function relativeTime(iso: string, now: Date = new Date()): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return 'unknown';
+
+  const seconds = Math.round((now.getTime() - then) / 1000);
+  // A clock skewed slightly ahead of the server should not read "in 3 seconds".
+  if (seconds < 60) return 'just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days <= 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+  return new Date(then).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }

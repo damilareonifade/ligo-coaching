@@ -44,7 +44,8 @@
         {
           "color": "#0A3D62"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "scheme": "ligo",
     "experiments": {

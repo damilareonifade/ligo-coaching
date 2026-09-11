@@ -32,3 +32,15 @@ describe('SocialSignIn', () => {
     expect(onGoogle).not.toHaveBeenCalled();
   });
 });
+
+describe('SocialSignIn without a passkey handler', () => {
+  it('offers Google alone, under a caller-supplied label', async () => {
+    await render(<SocialSignIn onGoogle={jest.fn()} label="Or create your account with" />);
+
+    expect(screen.getByText('Or create your account with')).toBeTruthy();
+    expect(screen.getByTestId('continue-google')).toBeTruthy();
+    // The signup role screen has no passkey path, so the button must not
+    // appear at all rather than appear and do nothing.
+    expect(screen.queryByTestId('continue-passkey')).toBeNull();
+  });
+});

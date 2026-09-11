@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { View } from 'react-native';
 import { z } from 'zod';
@@ -9,6 +9,8 @@ import { useSignupMutation } from '@/api/auth';
 import { errorMessage } from '@/api/client';
 import { LIForm, LIFormInput } from '@/components/LIForm';
 import { LIBadge, LIButton, LIText } from '@/components/ui';
+import { useGoogleSignUp } from '@/hooks/useGoogleSignUp';
+import SocialSignIn from '@/screens/auth/SocialSignIn';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUiStore } from '@/store/uiStore';
@@ -28,6 +30,8 @@ export default function SignupDetails() {
   const signIn = useAuthStore((state) => state.signIn);
   const showToast = useUiStore((state) => state.showToast);
   const { mutateAsync, isPending } = useSignupMutation();
+  const google = useGoogleSignUp();
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState<string | null>(null);
 
   // Defensive: someone deep-linked or reloaded mid-flow with no role chosen.
   useEffect(() => {
@@ -46,8 +50,17 @@ export default function SignupDetails() {
       if (role === null) return;
       try {
         const result = await mutateAsync({ role, ...values });
-        await signIn(result);
         setDetails({ name: values.name, email: values.email });
+
+        // This project requires a confirmed address, so signUp returns a user
+        // with no session. There is nothing to sign in to yet — say so instead
+        // of routing into an app the token cannot open.
+        if (result.status === 'confirmation-required') {
+          setAwaitingConfirmation(result.email);
+          return;
+        }
+
+        await signIn(result.session, result.profile);
         router.replace(role === 'coach' ? '/onboarding/coach-profile' : '/onboarding/welcome');
       } catch (error) {
         showToast(errorMessage(error), 'danger');
@@ -57,6 +70,36 @@ export default function SignupDetails() {
   );
 
   if (role === null) return null;
+
+  if (awaitingConfirmation !== null) {
+    return (
+      <View className="flex-1 justify-center gap-6 px-6">
+        <View className="gap-3">
+          <LIText
+            size="h1"
+            color="primary"
+            text="Confirm your email"
+            className="font-geist-semibold text-ink"
+          />
+          <LIText
+            size="p"
+            color="body"
+            text={`We sent a link to ${awaitingConfirmation}. Open it to finish setting up your account, then sign in.`}
+            className="font-geist"
+          />
+        </View>
+        <LIButton
+          title="Back to sign in"
+          onPress={() => router.replace('/login')}
+          fullWidth
+          size="lg"
+          shape="rounded"
+          className="bg-violet active:bg-violet/90"
+          testID="signup-confirm-back"
+        />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 justify-center gap-6 px-6">
@@ -128,6 +171,12 @@ export default function SignupDetails() {
           testID="signup-submit"
         />
       </LIForm>
+
+      <SocialSignIn
+        onGoogle={() => void google.start(role)}
+        onPasskey={() => showToast('Passkey sign-in is not connected yet.', 'info')}
+        busy={isPending || google.pending}
+      />
 
       <LIText
         size="caption"

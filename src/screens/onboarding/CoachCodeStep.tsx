@@ -3,6 +3,7 @@ import { Check } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIButton, LIText } from '@/components/ui';
+import { useFinishOnboarding } from '@/hooks/useFinishOnboarding';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { tokens } from '@/theme/tokens';
 import { useUiStore } from '@/store/uiStore';
@@ -43,13 +44,13 @@ const EXPECTATIONS = [
 export default function CoachCodeStep() {
   const router = useRouter();
   const name = useOnboardingStore((state) => state.name);
-  const reset = useOnboardingStore((state) => state.reset);
+  const finishOnboarding = useFinishOnboarding();
   const showToast = useUiStore((state) => state.showToast);
 
   const code = generateInviteCode(name);
 
   const handleFinish = () => {
-    reset();
+    finishOnboarding();
     router.replace('/');
   };
 

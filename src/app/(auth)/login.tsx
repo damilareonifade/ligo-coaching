@@ -4,7 +4,8 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { useLoginMutation } from '@/api/auth';
 import { errorMessage } from '@/api/client';
-import { LISafeArea } from '@/components/ui';
+import { useGoogleSignInMutation } from '@/api/googleAuth';
+import { LISafeArea, LIText } from '@/components/ui';
 import LoginFooter from '@/screens/auth/LoginFooter';
 import LoginForm, { type LoginValues } from '@/screens/auth/LoginForm';
 import LoginHeader from '@/screens/auth/LoginHeader';
@@ -21,6 +22,7 @@ export default function LoginScreen() {
   const signIn = useAuthStore((state) => state.signIn);
   const showToast = useUiStore((state) => state.showToast);
   const { mutateAsync, isPending } = useLoginMutation();
+  const { mutateAsync: signInWithGoogle, isPending: googlePending } = useGoogleSignInMutation();
 
   const handleSubmit = useCallback(
     async (values: LoginValues) => {
@@ -35,8 +37,23 @@ export default function LoginScreen() {
     [mutateAsync, router, showToast, signIn],
   );
 
-  // No OAuth client or passkey relying party is configured yet — say so rather
-  // than failing silently. See README "Not built yet".
+  const handleGoogle = useCallback(async () => {
+    try {
+      // No role from this screen: someone signing in already has an account,
+      // and a brand-new Google account gets asked on the next screen.
+      const result = await signInWithGoogle(null);
+      // Null means the browser was dismissed before Google answered — that is
+      // a choice, not a failure, so leave the screen as it was.
+      if (!result) return;
+      await signIn(result.session, result.profile);
+      router.replace(result.profile.roleConfirmed ? '/' : '/onboarding/choose-role');
+    } catch (error) {
+      showToast(errorMessage(error), 'danger');
+    }
+  }, [router, showToast, signIn, signInWithGoogle]);
+
+  // No passkey relying party is configured yet — say so rather than failing
+  // silently. See README "Not built yet".
   const handleUnavailable = useCallback(
     (method: string) => () => showToast(`${method} sign-in is not connected yet.`, 'info'),
     [showToast],
@@ -56,10 +73,18 @@ export default function LoginScreen() {
 
           <View className="gap-6 pt-8">
             <LoginForm onSubmit={(values) => void handleSubmit(values)} submitting={isPending} />
+            <LIText
+              size="caption"
+              color="accent"
+              text="Forgot your password?"
+              handleClick={() => router.push('/forgot-password')}
+              className="text-center font-geist-medium text-violet"
+              testID="forgot-password-link"
+            />
             <SocialSignIn
-              onGoogle={handleUnavailable('Google')}
+              onGoogle={() => void handleGoogle()}
               onPasskey={handleUnavailable('Passkey')}
-              busy={isPending}
+              busy={isPending || googlePending}
             />
             <LoginPrivacyNote />
           </View>

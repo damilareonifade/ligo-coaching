@@ -12,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { createQueryClient } from '@/api/queryClient';
 import { LIToastHost } from '@/components/ui';
+import { useSettingsSync } from '@/hooks/useSettingsSync';
 import { useAuthStore } from '@/store/authStore';
 import { tokens } from '@/theme/tokens';
 
@@ -37,6 +38,9 @@ export default function RootLayout() {
   useEffect(() => {
     void restore();
   }, [restore]);
+
+  // Preferences follow the account between devices — see public.cache.
+  useSettingsSync();
 
   useEffect(() => {
     if (status !== 'restoring' && fontsLoaded) {

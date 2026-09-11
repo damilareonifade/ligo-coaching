@@ -152,6 +152,43 @@ export interface ApiAuthResult {
   readonly user: ApiSessionUser;
 }
 
+/**
+ * The full profile row from `public.users`. `ApiSessionUser` is the subset the
+ * auth store and tab bars need; this adds the fields the signup flow reads.
+ */
+export interface ApiProfile {
+  readonly id: string;
+  readonly email: string;
+  readonly name: string;
+  readonly avatarUrl: string | null;
+  readonly role: UserRole;
+  /** False until the person picked a side — a Google signup starts here. */
+  readonly roleConfirmed: boolean;
+  readonly onboardedAt: string | null;
+}
+
+/**
+ * A signup that needs the email confirmed before a session exists. Supabase
+ * returns no session in that case, so the UI has to say so rather than
+ * routing into the app.
+ */
+export type ApiSignupResult =
+  | { readonly status: 'signed-in'; readonly session: ApiAuthResult; readonly profile: ApiProfile }
+  | { readonly status: 'confirmation-required'; readonly email: string };
+
+/** One device signed in to this account — see `public.sessions`. */
+export interface ApiDeviceSession {
+  readonly id: string;
+  readonly deviceId: string;
+  readonly deviceName: string;
+  readonly platform: string;
+  readonly appVersion: string;
+  readonly createdAt: string;
+  readonly lastSeenAt: string;
+  readonly revokedAt: string | null;
+  readonly isCurrentDevice: boolean;
+}
+
 /* ------------------------------------------------------------------ *
  * Client-side training. Deliberately separate from the coach shapes
  * above — the client app reads pre-composed display strings from the

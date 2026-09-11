@@ -1,6 +1,12 @@
 /** Every query key in the app. Never inline a key array at a call site. */
 export const queryKeys = {
   coach: ['coach'] as const,
+  /** The signed-in user's own row in `public.users`. */
+  profile: ['profile'] as const,
+  /** Devices signed in to this account — see `public.sessions`. */
+  deviceSessions: {
+    all: ['device-sessions'] as const,
+  },
   students: {
     all: ['students'] as const,
     detail: (id: string) => ['students', id] as const,

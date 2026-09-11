@@ -6,14 +6,21 @@ import { tokens } from '@/theme/tokens';
 
 interface SocialSignInProps {
   readonly onGoogle: () => void;
-  readonly onPasskey: () => void;
+  /** Omit to offer Google alone — the signup role screen has no passkey path. */
+  readonly onPasskey?: () => void;
   readonly busy?: boolean;
+  readonly label?: string;
 }
 
-export default function SocialSignIn({ onGoogle, onPasskey, busy = false }: SocialSignInProps) {
+export default function SocialSignIn({
+  onGoogle,
+  onPasskey,
+  busy = false,
+  label = 'Or continue with',
+}: SocialSignInProps) {
   return (
     <View className="gap-3">
-      <LIText size="caption" color="muted" text="Or continue with" className="text-center" />
+      <LIText size="caption" color="muted" text={label} className="text-center" />
 
       <LIButton
         title="Continue with Google"
@@ -27,17 +34,19 @@ export default function SocialSignIn({ onGoogle, onPasskey, busy = false }: Soci
         testID="continue-google"
       />
 
-      <LIButton
-        title="Continue with a passkey"
-        onPress={onPasskey}
-        variant="social"
-        size="lg"
-        shape="rounded"
-        fullWidth
-        disabled={busy}
-        icon={<KeyRound color={tokens.foreground} size={18} />}
-        testID="continue-passkey"
-      />
+      {onPasskey ? (
+        <LIButton
+          title="Continue with a passkey"
+          onPress={onPasskey}
+          variant="social"
+          size="lg"
+          shape="rounded"
+          fullWidth
+          disabled={busy}
+          icon={<KeyRound color={tokens.foreground} size={18} />}
+          testID="continue-passkey"
+        />
+      ) : null}
     </View>
   );
 }

@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { useLookupCoachMutation } from '@/api/auth';
 import { errorMessage } from '@/api/client';
 import { LIButton, LICard, LIInput, LIText } from '@/components/ui';
+import { useFinishOnboarding } from '@/hooks/useFinishOnboarding';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUiStore } from '@/store/uiStore';
 
@@ -18,7 +19,7 @@ export default function AttachCoachStep() {
   const inviteCode = useOnboardingStore((state) => state.inviteCode);
   const setInviteCode = useOnboardingStore((state) => state.setInviteCode);
   const setLookedUpCoach = useOnboardingStore((state) => state.setLookedUpCoach);
-  const reset = useOnboardingStore((state) => state.reset);
+  const finishOnboarding = useFinishOnboarding();
   const showToast = useUiStore((state) => state.showToast);
   const { mutateAsync, isPending } = useLookupCoachMutation();
 
@@ -37,9 +38,9 @@ export default function AttachCoachStep() {
       router.back();
       return;
     }
-    reset();
+    finishOnboarding();
     router.replace('/');
-  }, [isDirect, reset, router]);
+  }, [finishOnboarding, isDirect, router]);
 
   return (
     <View className="flex-1 gap-6 px-6 pt-2">

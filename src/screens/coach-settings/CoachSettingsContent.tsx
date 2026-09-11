@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView } from 'react-native';
 
 import { errorMessage } from '@/api/client';
 import { useToggleCoachNotificationMutation } from '@/api/coachProfile';
-import type { ApiCoachProfile } from '@/api/types';
+import type { ApiCoachProfile, ApiDeviceSession } from '@/api/types';
 import { LIText } from '@/components/ui';
 import { COACH_EXPORT_NOTE } from '@/lib/coachProfile';
 import { useAuthStore } from '@/store/authStore';
@@ -13,15 +13,22 @@ import { tokens } from '@/theme/tokens';
 import CoachHeroCard from './CoachHeroCard';
 import CoachNotificationsCard from './CoachNotificationsCard';
 import CoachSettingsGroups from './CoachSettingsGroups';
+import DeviceSessionsCard from './DeviceSessionsCard';
 
 interface CoachSettingsContentProps {
   readonly profile: ApiCoachProfile;
+  readonly devices: readonly ApiDeviceSession[];
+  readonly onRevokeDevice: (sessionId: string) => void;
+  readonly revokingDeviceId: string | null;
   readonly refreshing: boolean;
   readonly onRefresh: () => void;
 }
 
 export default function CoachSettingsContent({
   profile,
+  devices,
+  onRevokeDevice,
+  revokingDeviceId,
   refreshing,
   onRefresh,
 }: CoachSettingsContentProps) {
@@ -67,6 +74,12 @@ export default function CoachSettingsContent({
       />
 
       <CoachNotificationsCard rows={profile.notifications} onToggle={handleToggle} />
+
+      <DeviceSessionsCard
+        sessions={devices}
+        onRevoke={onRevokeDevice}
+        revokingId={revokingDeviceId}
+      />
 
       <CoachSettingsGroups
         groups={profile.groups}

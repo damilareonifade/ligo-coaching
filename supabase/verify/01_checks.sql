@@ -1528,3 +1528,85 @@ select f.kind, f.title
 set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
 update public.coach_clients set log_for = true
  where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 156. a client cannot forge an imported exercise (expect ERROR) ==='
+reset role;
+reset request.jwt.claims;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+-- A catalogue entry nobody can trace is worse than one that is missing.
+insert into public.exercises (owner_id, name, source, external_id)
+  values (auth.uid(), 'Fake press', 'workoutx', 'forged-1');
+
+\echo ''
+\echo '=== 157. they can still invent their own ==='
+insert into public.exercises (owner_id, name) values (auth.uid(), 'Deficit split squat');
+select name, source, tag from public.exercises where owner_id = auth.uid();
+
+\echo ''
+\echo '=== 158. an imported row composes its own picker fields ==='
+reset role;
+insert into public.exercises (name, source, external_id, equipment, body_part, mechanic)
+  values ('Barbell bench press', 'workoutx', 'wx-1', 'barbell', 'chest', 'compound');
+select name, meta, tag, muscle_group from public.exercises where external_id = 'wx-1';
+
+\echo ''
+\echo '=== 159. re-importing the same exercise updates rather than duplicates ==='
+insert into public.exercises (name, source, external_id, equipment, body_part, mechanic)
+  values ('Barbell bench press', 'workoutx', 'wx-1', 'dumbbell', 'chest', 'isolation')
+  on conflict (source, external_id) do update
+    set equipment = excluded.equipment,
+        mechanic = excluded.mechanic,
+        synced_at = now();
+select count(*) as rows_for_wx1, max(meta) as meta, max(tag) as tag
+  from public.exercises where external_id = 'wx-1';
+
+\echo ''
+\echo '=== 160. and a client cannot edit it — RLS filters it, so no error, no change ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+update public.exercises set name = 'Mine now' where external_id = 'wx-1';
+-- Silent rather than refused: `exercises_write_own` scopes to owner_id, and an
+-- imported row has none, so the statement matches nothing. The name below is
+-- the assertion.
+select name from public.exercises where external_id = 'wx-1';
+
+\echo ''
+\echo '=== 161. but they can read it, because the library is shared ==='
+select name, meta from public.exercises where external_id = 'wx-1';
+
+\echo ''
+\echo '=== 162. a block remembers which catalogue entry it came from ==='
+reset role;
+reset request.jwt.claims;
+-- The catalogue row from check 158.
+insert into public.routine_instances (client_id, name)
+  values ('22222222-2222-2222-2222-222222222222', 'Preview test')
+  returning id \gset inst_
+insert into public.routine_blocks (routine_instance_id, name, exercise_id)
+  select :'inst_id', 'Barbell bench press', e.id
+    from public.exercises e where e.external_id = 'wx-1';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select p.name, p.equipment
+  from public.routine_blocks b
+  cross join lateral public.exercise_preview(b.exercise_id, b.name) p
+ where b.routine_instance_id = :'inst_id';
+
+\echo ''
+\echo '=== 163. a renamed copy keeps its preview, which the name alone would lose ==='
+reset role;
+update public.routine_blocks set name = 'Bench press (paused)'
+ where routine_instance_id = :'inst_id';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select b.name as block_name, p.name as catalogue_name
+  from public.routine_blocks b
+  cross join lateral public.exercise_preview(b.exercise_id, b.name) p
+ where b.routine_instance_id = :'inst_id';
+
+\echo ''
+\echo '=== 164. something invented has no preview, and says so by returning nothing ==='
+select count(*) as rows_for_an_invented_lift
+  from public.exercise_preview(null, 'Nordic curl on a bosu');

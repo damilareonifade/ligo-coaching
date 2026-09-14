@@ -4,3 +4,22 @@ project_id = "kwqcmnhnjpldtialcwks"
 [db]
 # Match the platform version so local behaviour matches production.
 major_version = 17
+
+# ---------------------------------------------------------------------------
+# The catalogue import. See supabase/functions/sync-exercises/index.ts.
+#
+# `verify_jwt` is left at its default of true on purpose. This function spends
+# a metered third-party quota on every call, so an endpoint anyone could hit is
+# a way to empty the month's allowance from a curl loop. It is invoked with the
+# service role key, by us or by a schedule.
+# ---------------------------------------------------------------------------
+[functions.sync-exercises]
+verify_jwt = true
+
+# ---------------------------------------------------------------------------
+# One exercise animation, fetched and kept. Called by the app on first view,
+# so `verify_jwt` stays on — a signed-in person may warm the cache, a stranger
+# may not. After the first call the exercise costs nothing to view again.
+# ---------------------------------------------------------------------------
+[functions.cache-exercise-gif]
+verify_jwt = true

@@ -16,5 +16,6 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts"
   ],
-  "exclude": ["node_modules", "dist", ".expo/bundle-check"]
+  "// exclude": "supabase/functions is Deno, not React Native — it has its own globals and a jsr: import map, and typechecking it here reports errors that are only errors in this context.",
+  "exclude": ["node_modules", "dist", ".expo/bundle-check", "supabase/functions"]
 }

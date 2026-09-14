@@ -51,7 +51,7 @@ export function toggleNotification(
 
 /** Under the notification switches, explaining the one that will not move. */
 export const NOTIFICATION_LOCK_NOTE =
-  'Permission changes cannot be muted — they change what you are allowed to do.';
+  'Permission changes cannot be muted they change what you are allowed to do.';
 
 /**
  * The last line on the coach's settings screen. It is here rather than in a

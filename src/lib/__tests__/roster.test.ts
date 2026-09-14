@@ -1,11 +1,15 @@
-import type { ApiRosterClient, ApiRosterLabel } from '@/api/types';
+import { SHARE_DOMAINS } from '@/api/types';
+import type { ApiSharePermissions, ShareDomain , ApiRosterClient, ApiRosterLabel } from '@/api/types';
 import {
-  deriveRosterStats,
+  attentionCounts,
   filterRosterClients,
   groupRosterClients,
   nextRosterSort,
   sortRosterClients,
   withLabelCounts,
+  deriveAccess,
+  deriveAttention,
+  rosterMeta,
 } from '@/lib/roster';
 
 function client(overrides: Partial<ApiRosterClient>): ApiRosterClient {
@@ -39,15 +43,17 @@ describe('roster derivations', () => {
     expect(withLabelCounts(labels, clients).map((label) => label.count)).toEqual([2, 0]);
   });
 
-  it('derives the three KPIs from the attention states', () => {
-    const stats = deriveRosterStats([
-      client({ id: 'a', attention: 'live' }),
-      client({ id: 'b', attention: 'review' }),
-      client({ id: 'c', attention: 'review' }),
-      client({ id: 'd' }),
-    ]);
-
-    expect(stats.map((stat) => stat.value)).toEqual(['4', '2', '1']);
+  it('counts every filter, including the ones nobody is in', () => {
+    // These ride on the filter chips now. A count that is missing is a chip
+    // the roster quietly stops offering, so all five are asserted.
+    expect(
+      attentionCounts([
+        client({ id: 'a', attention: 'live' }),
+        client({ id: 'b', attention: 'review' }),
+        client({ id: 'c', attention: 'review' }),
+        client({ id: 'd' }),
+      ]),
+    ).toEqual({ all: 4, review: 2, live: 1, new: 0, quiet: 0 });
   });
 });
 
@@ -125,5 +131,84 @@ describe('sorting', () => {
     );
 
     expect(sorted.map((entry) => entry.id)).toEqual(['live', 'review', 'ok', 'quiet']);
+  });
+});
+
+/**
+ * These two used to be typed into fixtures by hand, so there was no rule to
+ * disagree with. Now there is one, and "Needs a look" has to mean the same
+ * thing on every row.
+ */
+describe('deriveAttention', () => {
+  const now = new Date(2026, 8, 20, 12, 0, 0);
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000).toISOString();
+  const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
+
+  it('puts training now above everything else', () => {
+    expect(
+      deriveAttention(
+        { isTraining: true, lastWorkoutAt: daysAgo(90), acceptedAt: daysAgo(90) },
+        now,
+      ),
+    ).toBe('live');
+  });
+
+  it('calls a recent session one worth looking at', () => {
+    expect(
+      deriveAttention({ isTraining: false, lastWorkoutAt: hoursAgo(6), acceptedAt: null }, now),
+    ).toBe('review');
+  });
+
+  it('stops calling it that once it is old news', () => {
+    expect(
+      deriveAttention({ isTraining: false, lastWorkoutAt: daysAgo(4), acceptedAt: null }, now),
+    ).toBe('ok');
+  });
+
+  it('notices a long silence', () => {
+    expect(
+      deriveAttention({ isTraining: false, lastWorkoutAt: daysAgo(30), acceptedAt: null }, now),
+    ).toBe('quiet');
+  });
+
+  it('separates someone brand new from someone who went quiet', () => {
+    expect(
+      deriveAttention({ isTraining: false, lastWorkoutAt: null, acceptedAt: daysAgo(2) }, now),
+    ).toBe('new');
+    expect(
+      deriveAttention({ isTraining: false, lastWorkoutAt: null, acceptedAt: daysAgo(60) }, now),
+    ).toBe('quiet');
+  });
+});
+
+describe('deriveAccess', () => {
+  const perms = (...on: readonly ShareDomain[]) =>
+    Object.fromEntries(
+      SHARE_DOMAINS.map((domain) => [domain, on.includes(domain)]),
+    ) as ApiSharePermissions;
+
+  it('says messaging only when nothing is shared', () => {
+    expect(deriveAccess(perms())).toBe('none');
+  });
+
+  it('distinguishes one domain from several', () => {
+    expect(deriveAccess(perms('metrics'))).toBe('min');
+    expect(deriveAccess(perms('metrics', 'nutrition'))).toBe('partial');
+  });
+
+  it('only says full when it means all of it', () => {
+    expect(deriveAccess(perms(...SHARE_DOMAINS))).toBe('full');
+    expect(deriveAccess(perms(...SHARE_DOMAINS.slice(0, -1)))).toBe('partial');
+  });
+});
+
+describe('rosterMeta', () => {
+  it('names the program and what they share', () => {
+    const shared = { workouts: true, nutrition: true } as ApiSharePermissions;
+    expect(rosterMeta('Upper/Lower', shared)).toBe('Upper/Lower · workouts, nutrition');
+  });
+
+  it('says so plainly when there is neither', () => {
+    expect(rosterMeta(null, {} as ApiSharePermissions)).toBe('No program yet · nothing shared');
   });
 });

@@ -9,6 +9,9 @@ import {
   requestAction,
   sessionTagTone,
   visibleRows,
+  checkInRows,
+  healthRows,
+  metricsRows,
 } from '@/lib/clientReview';
 
 function domain(overrides: Partial<ApiReviewDomain> = {}): ApiReviewDomain {
@@ -132,5 +135,85 @@ describe('current label', () => {
 
   it('says None for a label that no longer exists', () => {
     expect(currentLabelName('deleted', labels)).toBe('None');
+  });
+});
+
+/**
+ * A card that says "Shared" and shows nothing is the permission without the
+ * point of it. These are what the coach actually reads.
+ */
+describe('metricsRows', () => {
+  const reading = (measured_at: string, weight_kg: number | null, waist_cm = 78) => ({
+    measured_at,
+    weight_kg,
+    waist_cm,
+    body_fat_pct: 16.8,
+  });
+
+  it('leads with the latest reading and how it has moved', () => {
+    const rows = metricsRows([
+      reading('2026-09-01T00:00:00Z', 82.4),
+      reading('2026-06-01T00:00:00Z', 84.2),
+    ]);
+
+    expect(rows[0]).toEqual({ label: 'Body weight', value: '82.4 kg' });
+    expect(rows.at(-1)).toEqual({ label: 'Trend', value: '−1.8 kg since Jun' });
+  });
+
+  it('offers no trend from a single reading', () => {
+    const rows = metricsRows([reading('2026-09-01T00:00:00Z', 82.4)]);
+    expect(rows.some((row) => row.label === 'Trend')).toBe(false);
+  });
+
+  it('says plainly when nothing has been logged', () => {
+    expect(metricsRows([])).toEqual([{ label: 'Nothing logged', value: '—' }]);
+  });
+});
+
+describe('healthRows', () => {
+  it('puts injuries first — they are what changes a program', () => {
+    const rows = healthRows([
+      { section: 'medication', label: 'Salbutamol', value: 'As needed' },
+      { section: 'injuries', label: 'Left shoulder', value: 'Impingement' },
+      { section: 'conditions', label: 'Asthma', value: 'Exercise-induced' },
+    ]);
+
+    expect(rows.map((row) => row.label)).toEqual([
+      'Left shoulder',
+      'Asthma',
+      'Salbutamol',
+    ]);
+  });
+
+  it('is a card, not the whole file', () => {
+    const many = Array.from({ length: 9 }, (_unused, index) => ({
+      section: 'injuries',
+      label: `Injury ${index}`,
+      value: 'x',
+    }));
+    expect(healthRows(many)).toHaveLength(5);
+  });
+
+  it('says plainly when nothing is recorded', () => {
+    expect(healthRows([])).toEqual([{ label: 'Nothing recorded', value: '—' }]);
+  });
+});
+
+describe('checkInRows', () => {
+  it('shows the latest month with its change, and their own words', () => {
+    expect(
+      checkInRows([
+        { label: 'August 2026', weightKg: '82.4', delta: '−0.7', note: 'Waist down.' },
+      ]),
+    ).toEqual([
+      { label: 'August 2026', value: '82.4 kg (−0.7)' },
+      { label: 'Note', value: 'Waist down.' },
+    ]);
+  });
+
+  it('leaves the delta off when there is no month to compare with', () => {
+    expect(
+      checkInRows([{ label: 'August 2026', weightKg: '82.4', delta: '—', note: '' }]),
+    ).toEqual([{ label: 'August 2026', value: '82.4 kg' }]);
   });
 });

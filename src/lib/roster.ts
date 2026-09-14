@@ -1,7 +1,8 @@
+import { SHARE_DOMAINS } from '@/api/types';
 import type {
   ApiRosterClient,
+  ApiSharePermissions,
   ApiRosterLabel,
-  ApiRosterStat,
   RosterAccess,
   RosterAttention,
 } from '@/api/types';
@@ -23,20 +24,106 @@ export function withLabelCounts(
   }));
 }
 
-export function deriveRosterStats(clients: readonly ApiRosterClient[]): readonly ApiRosterStat[] {
-  return [
-    { id: 'clients', label: 'Clients', value: `${clients.length}` },
-    {
-      id: 'review',
-      label: 'Need a look',
-      value: `${clients.filter((client) => client.attention === 'review').length}`,
-    },
-    {
-      id: 'live',
-      label: 'Training now',
-      value: `${clients.filter((client) => client.attention === 'live').length}`,
-    },
-  ];
+/**
+ * How many clients sit behind each filter.
+ *
+ * This replaced a row of KPI tiles that sat above the filter chips and set the
+ * same state they did — the same control twice, one of them taking ninety
+ * pixels to say a number the chip beside it could carry. The counts live on
+ * the chips now, so there is one place to tap and one place to read.
+ */
+export function attentionCounts(
+  clients: readonly ApiRosterClient[],
+): Readonly<Record<RosterAttentionFilter, number>> {
+  return {
+    all: clients.length,
+    review: clients.filter((client) => client.attention === 'review').length,
+    live: clients.filter((client) => client.attention === 'live').length,
+    new: clients.filter((client) => client.attention === 'new').length,
+    quiet: clients.filter((client) => client.attention === 'quiet').length,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Deriving a roster card.
+ *
+ * Both of these used to be typed into fixtures by hand, so there was
+ * no rule to disagree with. They are here rather than in the API
+ * module because they are the rule, and a coach reading "Needs a look"
+ * deserves it to mean the same thing every time.
+ * ------------------------------------------------------------------ */
+
+/** A workout finished this recently is the one a coach has not seen yet. */
+const REVIEW_WINDOW_HOURS = 48;
+/** Past this without training, a client has gone quiet rather than paused. */
+const QUIET_AFTER_DAYS = 14;
+/** How long someone counts as newly attached. */
+const NEW_FOR_DAYS = 7;
+
+export interface RosterActivity {
+  readonly isTraining: boolean;
+  readonly lastWorkoutAt: string | null;
+  readonly acceptedAt: string | null;
+}
+
+/**
+ * What, if anything, this client needs from the coach.
+ *
+ * Order is the whole design: training now beats everything, then somebody
+ * brand new who has not started, then a session worth looking at, then a
+ * silence worth noticing. `ok` is what is left, and is the answer most of
+ * the roster should give most of the time.
+ */
+export function deriveAttention(
+  activity: RosterActivity,
+  now: Date = new Date(),
+): RosterAttention {
+  if (activity.isTraining) return 'live';
+
+  const last = activity.lastWorkoutAt ? Date.parse(activity.lastWorkoutAt) : null;
+  const hoursSince = last === null ? null : (now.getTime() - last) / 3_600_000;
+
+  if (last === null) {
+    // Never trained. Recently attached is "new"; a while ago is "quiet",
+    // which is a different conversation.
+    const accepted = activity.acceptedAt ? Date.parse(activity.acceptedAt) : null;
+    if (accepted !== null && (now.getTime() - accepted) / 86_400_000 <= NEW_FOR_DAYS) {
+      return 'new';
+    }
+    return 'quiet';
+  }
+
+  if (hoursSince !== null && hoursSince <= REVIEW_WINDOW_HOURS) return 'review';
+  if (hoursSince !== null && hoursSince >= QUIET_AFTER_DAYS * 24) return 'quiet';
+  return 'ok';
+}
+
+/**
+ * How much of themselves the client has shared, as one word.
+ *
+ * A summary of the five permission switches, and deliberately coarse: the
+ * roster row is a glance, and the exact list belongs on the client's own card
+ * where it can be read properly.
+ */
+export function deriveAccess(permissions: ApiSharePermissions): RosterAccess {
+  const granted = SHARE_DOMAINS.filter((domain) => permissions[domain]).length;
+  if (granted === 0) return 'none';
+  if (granted === 1) return 'min';
+  if (granted >= SHARE_DOMAINS.length) return 'full';
+  return 'partial';
+}
+
+/** "Upper/Lower · workouts, nutrition", or just what they share. */
+export function rosterMeta(
+  programName: string | null,
+  permissions: ApiSharePermissions,
+): string {
+  const shared = SHARE_DOMAINS.filter((domain) => permissions[domain]);
+  // No week number: a program is a rotation the client works through at their
+  // own pace, so there is no week N to be in. See src/lib/rotation.ts.
+  const parts = programName ? [programName] : ['No program yet'];
+  parts.push(shared.length > 0 ? shared.join(', ') : 'nothing shared');
+  return parts.join(' · ');
 }
 
 /* ------------------------------------------------------------------ *

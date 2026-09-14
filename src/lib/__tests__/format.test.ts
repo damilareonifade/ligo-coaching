@@ -1,20 +1,9 @@
 import {
   formatPercent,
   formatSessionDay,
-  formatWeight,
   initials,
   relativeTime,
 } from '@/lib/format';
-
-describe('formatWeight', () => {
-  it('rounds and suffixes kilograms', () => {
-    expect(formatWeight(82.4)).toBe('82kg');
-  });
-
-  it('converts to pounds when the coach prefers lb', () => {
-    expect(formatWeight(100, 'lb')).toBe('220lb');
-  });
-});
 
 describe('formatSessionDay', () => {
   const now = new Date('2026-03-04T09:00:00.000Z');

@@ -82,7 +82,7 @@ describe('notification toggles', () => {
 describe('settings copy', () => {
   it('explains the lock in terms of what the coach may do', () => {
     expect(NOTIFICATION_LOCK_NOTE).toBe(
-      'Permission changes cannot be muted — they change what you are allowed to do.',
+      'Permission changes cannot be muted they change what you are allowed to do.',
     );
   });
 

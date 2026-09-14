@@ -1,12 +1,3 @@
-export type WeightUnit = 'kg' | 'lb';
-
-const KG_TO_LB = 2.20462;
-
-export function formatWeight(kg: number, unit: WeightUnit = 'kg'): string {
-  const value = unit === 'kg' ? kg : kg * KG_TO_LB;
-  return `${Math.round(value)}${unit}`;
-}
-
 /** "Today" / "Tomorrow" / "Mon 4 Mar" — coaches scan by day, not by timestamp. */
 export function formatSessionDay(iso: string, now: Date = new Date()): string {
   const date = new Date(iso);
@@ -50,6 +41,29 @@ export function relativeTime(iso: string, now: Date = new Date()): string {
   });
 }
 
+/** "Tuesday, 16 June" — the eyebrow on a screen that is about today. */
+export function formatToday(now: Date = new Date()): string {
+  return now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+/**
+ * "Good morning" / "Good afternoon" / "Good evening".
+ *
+ * The device's clock, not the server's: this greets the person holding the
+ * phone, and they are the authority on what time it is where they are.
+ */
+export function greeting(now: Date = new Date()): string {
+  const hour = now.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/** "Maya" from "Maya Andersson" — a greeting uses the name people answer to. */
+export function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] || name.trim();
+}
+
 export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
@@ -79,12 +93,6 @@ export function formatElapsed(ms: number): string {
   return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
 }
 
-/** Session volume: "4,320 kg". */
-export function formatVolumeKg(kg: number): string {
-  return `${Math.round(kg).toLocaleString('en-US')} kg`;
-}
-
-/** Set chip weights drop the trailing ".0": 62.5 → "62.5", 60 → "60". */
-export function formatSetWeight(kg: number): string {
-  return Number.isInteger(kg) ? String(kg) : String(Number(kg.toFixed(1)));
-}
+// Weight and length formatting lives in src/lib/units.ts, which is the one
+// place that knows what the reader has chosen. Two opinions about how to draw
+// a kilogram is how one screen ends up in pounds and the next does not.

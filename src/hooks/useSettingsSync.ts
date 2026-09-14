@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { cacheKeys, readCache, writeCache } from '@/api/serverCache';
-import type { WeightUnit } from '@/lib/format';
+import type { WeightUnit } from '@/lib/units';
 import { useAuthStore } from '@/store/authStore';
 import { useSettingsStore } from '@/store/settingsStore';
 

@@ -8,10 +8,10 @@ import {
 } from '@/lib/liveSession';
 
 const sets: readonly ApiLiveSet[] = [
-  { n: 1, weightKg: 60, reps: 8, completed: true },
-  { n: 2, weightKg: 62.5, reps: 8, completed: true },
-  { n: 3, weightKg: 62.5, reps: 8, completed: false },
-  { n: 4, weightKg: 62.5, reps: 8, completed: false },
+  { id: 's1', n: 1, weightKg: 60, reps: 8, completed: true, changedByCoach: false },
+  { id: 's2', n: 2, weightKg: 62.5, reps: 8, completed: true, changedByCoach: false },
+  { id: 's3', n: 3, weightKg: 62.5, reps: 8, completed: false, changedByCoach: false },
+  { id: 's4', n: 4, weightKg: 62.5, reps: 8, completed: false, changedByCoach: false },
 ];
 
 describe('live header', () => {

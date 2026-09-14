@@ -1,11 +1,15 @@
-import type { ApiExerciseOption, ApiProgramBlock, ApiProgramDay } from '@/api/types';
+import type { ApiExerciseOption, ApiProgramBlock, ApiProgramRoutine } from '@/api/types';
 import {
   assignedLabel,
-  buildDayLabels,
+  buildRoutineNames,
+  composeRpe,
+  composeScheme,
   filterExerciseOptions,
   groupExerciseOptions,
+  parseRpe,
+  parseScheme,
   parseSetCount,
-  resizeDays,
+  resizeRoutines,
   resultCountLabel,
   setsLabel,
   statusTone,
@@ -72,24 +76,25 @@ describe('assignment and status', () => {
   });
 });
 
-describe('builder day shapes', () => {
-  it('labels days from one', () => {
-    expect(buildDayLabels(3)).toEqual(['Day 1', 'Day 2', 'Day 3']);
-    expect(buildDayLabels(0)).toEqual([]);
+describe('builder routine shapes', () => {
+  /** Program → Routines → Exercises. "Routine 2" is a default, not a rule. */
+  it('names routines from one', () => {
+    expect(buildRoutineNames(3)).toEqual(['Routine 1', 'Routine 2', 'Routine 3']);
+    expect(buildRoutineNames(0)).toEqual([]);
   });
 
-  it('keeps the blocks already entered when the day count changes', () => {
-    const days: readonly ApiProgramDay[] = [
-      { id: 'day-1', label: 'Day 1', blocks: [block({})] },
-      { id: 'day-2', label: 'Day 2', blocks: [block({}), block({})] },
+  it('keeps the blocks already entered when the count changes', () => {
+    const routines: readonly ApiProgramRoutine[] = [
+      { id: 'day-1', name: 'Day 1', blocks: [block({})] },
+      { id: 'day-2', name: 'Day 2', blocks: [block({}), block({})] },
     ];
 
-    const grown = resizeDays(days, 4);
+    const grown = resizeRoutines(routines, 4);
     expect(grown).toHaveLength(4);
     expect(grown[1].blocks).toHaveLength(2);
     expect(grown[3].blocks).toHaveLength(0);
 
-    const shrunk = resizeDays(grown, 2);
+    const shrunk = resizeRoutines(grown, 2);
     expect(shrunk).toHaveLength(2);
     expect(shrunk[1].blocks).toHaveLength(2);
   });
@@ -135,5 +140,58 @@ describe('exercise picker', () => {
     expect(resultCountLabel(0)).toBe('0 exercises');
     expect(resultCountLabel(1)).toBe('1 exercise');
     expect(resultCountLabel(15)).toBe('15 exercises');
+  });
+});
+
+/**
+ * The scheme is display text, so the editor has to take it apart and put it
+ * back in the exact shape `parseSetCount` and every card already read — the
+ * multiplication sign is U+00D7, and a round trip must not drift.
+ */
+describe('editing a scheme', () => {
+  it('splits sets from reps', () => {
+    expect(parseScheme('4 × 8')).toEqual({ sets: 4, reps: 8 });
+    expect(parseScheme('3 × 10')).toEqual({ sets: 3, reps: 10 });
+    expect(parseScheme('12 × 3')).toEqual({ sets: 12, reps: 3 });
+  });
+
+  it('accepts a plain x, which is what a keyboard types', () => {
+    expect(parseScheme('5x5')).toEqual({ sets: 5, reps: 5 });
+    expect(parseScheme('5 X 5')).toEqual({ sets: 5, reps: 5 });
+  });
+
+  it('falls back rather than throwing on free text', () => {
+    expect(parseScheme('AMRAP')).toEqual({ sets: 3, reps: 10 });
+    // A leading count is still worth keeping, even with no reps behind it.
+    expect(parseScheme('5 sets to failure')).toEqual({ sets: 5, reps: 10 });
+  });
+
+  it('round-trips through the editor unchanged', () => {
+    const parts = parseScheme('4 × 8');
+    expect(composeScheme(parts.sets, parts.reps)).toBe('4 × 8');
+  });
+
+  it('composes what the rest of the app already counts', () => {
+    expect(parseSetCount(composeScheme(4, 8))).toBe(4);
+  });
+});
+
+describe('editing an RPE', () => {
+  it('shows the number, stores the label', () => {
+    expect(parseRpe('RPE 8')).toBe('8');
+    expect(composeRpe('8')).toBe('RPE 8');
+    expect(composeRpe('7.5')).toBe('RPE 7.5');
+  });
+
+  it('keeps blank blank — an RPE nobody set is not an RPE of zero', () => {
+    expect(parseRpe('')).toBe('');
+    expect(composeRpe('')).toBe('');
+    expect(composeRpe('   ')).toBe('');
+    expect(composeRpe('0')).toBe('');
+    expect(composeRpe('nonsense')).toBe('');
+  });
+
+  it('round-trips', () => {
+    expect(composeRpe(parseRpe('RPE 9'))).toBe('RPE 9');
   });
 });

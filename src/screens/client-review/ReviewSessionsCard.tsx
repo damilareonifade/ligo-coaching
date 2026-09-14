@@ -33,7 +33,7 @@ export default function ReviewSessionsCard({ sessions }: ReviewSessionsCardProps
             key={session.id}
             className={cn(
               'flex-row items-center gap-3 py-3',
-              index > 0 && 'border-t border-hairline',
+              index > 0 && 'border-t border-border',
             )}
             testID={`review-session-${session.id}`}
           >

@@ -47,7 +47,7 @@ export default function IntegrationCard({
         />
       </View>
 
-      <View className="flex-row items-center gap-2 border-t border-hairline pt-3">
+      <View className="flex-row items-center gap-2 border-t border-border pt-3">
         {integration.flows.map((flow) => (
           <LIBadge
             key={flow.label}

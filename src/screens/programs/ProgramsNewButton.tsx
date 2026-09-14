@@ -3,13 +3,14 @@ import { Plus } from 'lucide-react-native';
 import { useCallback } from 'react';
 
 import { LIButton } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 /**
  * Dashed rather than solid: this is the empty slot at the end of the library,
  * not a call to action competing with the programs already built.
  */
 export default function ProgramsNewButton() {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const openBuilder = useCallback(() => router.push('/programs/builder'), [router]);
 

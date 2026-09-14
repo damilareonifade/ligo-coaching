@@ -43,7 +43,7 @@ export default function BoardHeaderCard({
       </View>
 
       {stats.length > 0 ? (
-        <View className="flex-row gap-2 border-t border-hairline pt-3">
+        <View className="flex-row gap-2 border-t border-border pt-3">
           {stats.map((stat) => (
             <View key={stat.label} className="flex-1 gap-0.5">
               <LIText

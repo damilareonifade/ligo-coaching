@@ -1,7 +1,7 @@
 import { RefreshControl, ScrollView } from 'react-native';
 
 import type { ApiFoodDay, ApiQuickFood } from '@/api/types';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import FoodLoggedList from './FoodLoggedList';
 import FoodQuickAdd from './FoodQuickAdd';
@@ -23,6 +23,7 @@ export default function FoodContent({
   onQuickAdd,
   adding,
 }: FoodContentProps) {
+  const tokens = useThemeTokens();
   return (
     <ScrollView
       className="flex-1"

@@ -18,7 +18,7 @@ export function LIRadio({ selected, className }: LIRadioProps) {
     <View
       className={cn(
         'h-5 w-5 items-center justify-center rounded-pill border-2',
-        selected ? 'border-violet' : 'border-hairline-strong',
+        selected ? 'border-violet' : 'border-border-strong',
         className,
       )}
     >

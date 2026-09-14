@@ -16,7 +16,7 @@ export default function ProfileSkeleton() {
         </View>
         <View className="flex-row gap-2">
           {[0, 1, 2].map((tile) => (
-            <View key={tile} className="flex-1 items-center gap-2 rounded-2xl bg-white p-3">
+            <View key={tile} className="flex-1 items-center gap-2 rounded-2xl bg-surface p-3">
               <LISkeleton className="h-5 w-10" />
               <LISkeleton className="h-3 w-16" />
             </View>
@@ -26,7 +26,7 @@ export default function ProfileSkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-16" />
-        <View className="rounded-card bg-white px-4 py-1">
+        <View className="rounded-card bg-surface px-4 py-1">
           {[0, 1, 2, 3].map((row) => (
             <View key={row} className="flex-row items-center gap-3 py-3">
               {row === 0 ? <LISkeleton className="h-12 w-12 rounded-pill" /> : null}
@@ -43,7 +43,7 @@ export default function ProfileSkeleton() {
       {[0, 1].map((group) => (
         <View key={group} className="gap-2">
           <LISkeleton className="h-3 w-20" />
-          <View className="rounded-card bg-white px-4 py-1">
+          <View className="rounded-card bg-surface px-4 py-1">
             {[0, 1, 2].map((row) => (
               <View key={row} className="flex-row items-center gap-3 py-3">
                 <View className="flex-1 gap-2">

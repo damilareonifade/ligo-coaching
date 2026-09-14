@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable } from 'react-native';
 
 import { LIInput } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface FoodSearchFieldProps {
   readonly value: string;
@@ -11,6 +11,7 @@ interface FoodSearchFieldProps {
 }
 
 export default function FoodSearchField({ value, onChange }: FoodSearchFieldProps) {
+  const tokens = useThemeTokens();
   const [focused, setFocused] = useState(false);
 
   return (
@@ -27,7 +28,7 @@ export default function FoodSearchField({ value, onChange }: FoodSearchFieldProp
       accessibilityLabel="Search foods"
       // The border is the only focus cue on a screen with no other chrome.
       fieldClassName={focused ? 'border-violet' : undefined}
-      leading={<Search color={tokens.muted} size={18} />}
+      leading={<Search color={tokens['foreground-subtle']} size={18} />}
       trailing={
         value.length > 0 ? (
           <Pressable
@@ -37,7 +38,7 @@ export default function FoodSearchField({ value, onChange }: FoodSearchFieldProp
             accessibilityLabel="Clear search"
             testID="food-search-clear"
           >
-            <X color={tokens.muted} size={18} />
+            <X color={tokens['foreground-subtle']} size={18} />
           </Pressable>
         ) : null
       }

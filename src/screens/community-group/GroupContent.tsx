@@ -12,7 +12,7 @@ import ChatThread from '@/components/chat/ChatThread';
 import LeaveSheet, { type LeaveConsequence } from '@/components/community/LeaveSheet';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import GroupHeaderCard from './GroupHeaderCard';
 import GroupVisibilityNotice from './GroupVisibilityNotice';
@@ -33,6 +33,7 @@ interface GroupContentProps {
  * the count of people reading should not scroll away mid-sentence.
  */
 export default function GroupContent({ group }: GroupContentProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const showToast = useUiStore((state) => state.showToast);
   const role = useAuthStore((state) => state.user?.role);
@@ -78,13 +79,13 @@ export default function GroupContent({ group }: GroupContentProps) {
     },
     {
       id: 'history',
-      icon: <MessageSquare color={tokens.muted} size={18} />,
+      icon: <MessageSquare color={tokens['foreground-subtle']} size={18} />,
       title: 'Messages you already sent stay',
       body: 'The thread keeps its history for the members still in it.',
     },
     {
       id: 'coach',
-      icon: <UserCheck color={tokens.muted} size={18} />,
+      icon: <UserCheck color={tokens['foreground-subtle']} size={18} />,
       title: `${group.coachName} stays your coach`,
       body: 'Leaving a group changes nothing about coaching.',
     },

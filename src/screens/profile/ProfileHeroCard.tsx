@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import type { ApiProfileStat } from '@/api/types';
 import { LIAvatar, LIText } from '@/components/ui';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ProfileHeroCardProps {
   readonly name: string;
@@ -21,6 +21,7 @@ export default function ProfileHeroCard({
   memberSince,
   stats,
 }: ProfileHeroCardProps) {
+  const tokens = useThemeTokens();
   const showToast = useUiStore((state) => state.showToast);
   const stub = useCallback(() => showToast('Not connected yet', 'success'), [showToast]);
 
@@ -33,7 +34,7 @@ export default function ProfileHeroCard({
         className="flex-row items-center gap-3 active:opacity-80"
         testID="profile-hero-row"
       >
-        <LIAvatar name={name} size="lg" className="bg-white" labelClassName="font-geist-semibold" />
+        <LIAvatar name={name} size="lg" className="bg-surface" labelClassName="font-geist-semibold" />
         <View className="flex-1 gap-0.5">
           <LIText size="h4" color="primary" text={name} className="font-geist-semibold" />
           <LIText
@@ -44,12 +45,12 @@ export default function ProfileHeroCard({
             numberOfLines={1}
           />
         </View>
-        <ChevronRight color={tokens.muted} size={20} />
+        <ChevronRight color={tokens['foreground-subtle']} size={20} />
       </Pressable>
 
       <View className="flex-row gap-2">
         {stats.map((stat) => (
-          <View key={stat.label} className="flex-1 items-center gap-0.5 rounded-2xl bg-white p-3">
+          <View key={stat.label} className="flex-1 items-center gap-0.5 rounded-2xl bg-surface p-3">
             <LIText size="h4" color="primary" text={stat.value} className="font-geist-semibold" />
             <LIText
               size="caption"

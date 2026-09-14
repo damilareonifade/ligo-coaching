@@ -45,7 +45,7 @@ export function LIDialog({ visible, onClose, title, children, testID }: LIDialog
         onPress={onClose}
         accessibilityRole="button"
         accessibilityLabel="Close"
-        className="flex-1 justify-end bg-ink/40"
+        className="flex-1 justify-end bg-foreground/40"
         testID="dialog-backdrop"
       >
         {/* Its own Pressable so a tap on the card is swallowed rather than
@@ -53,11 +53,11 @@ export function LIDialog({ visible, onClose, title, children, testID }: LIDialog
         <Pressable
           onPress={() => {}}
           accessibilityViewIsModal
-          className="rounded-t-card bg-white px-4 pt-3"
+          className="rounded-t-card bg-surface px-4 pt-3"
           style={{ paddingBottom: insets.bottom + 24 }}
           testID={testID}
         >
-          <View className="mb-4 h-1 w-10 self-center rounded-pill bg-hairline" />
+          <View className="mb-4 h-1 w-10 self-center rounded-pill bg-border" />
 
           <View className="gap-4">
             {title ? (

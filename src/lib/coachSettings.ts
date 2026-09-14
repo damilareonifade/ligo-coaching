@@ -66,6 +66,12 @@ export function buildCoachSettingsGroups({
           desc: 'Gym, bio and specialties — what a client reads before attaching',
           route: '/coach/profile',
         },
+        {
+          id: 'appearance',
+          label: 'Appearance',
+          desc: 'Light, dark, or follow your phone',
+          route: '/profile/theme',
+        },
         // Billing is gone rather than stubbed. There is no plan, no provider
         // and no decision behind one, and a row that opens nothing teaches a
         // coach not to trust the rows that do.

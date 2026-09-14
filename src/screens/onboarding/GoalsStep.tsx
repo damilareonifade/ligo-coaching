@@ -38,7 +38,7 @@ export default function GoalsStep() {
           size="h1"
           color="primary"
           text="What are you training for?"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -65,7 +65,7 @@ export default function GoalsStep() {
           size="h5"
           color="primary"
           text="Training experience"
-          className="font-geist-medium text-ink"
+          className="font-geist-medium text-foreground"
         />
         <LISegmented options={EXPERIENCE_OPTIONS} value={experience} onChange={setExperience} />
       </View>

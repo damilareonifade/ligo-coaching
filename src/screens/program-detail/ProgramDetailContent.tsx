@@ -9,7 +9,7 @@ import BuilderRoutineName from '@/components/builder/BuilderRoutineName';
 import { LICard, LIText } from '@/components/ui';
 import { setsLabel } from '@/lib/programs';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import ProgramAddExerciseButton from './ProgramAddExerciseButton';
 import ProgramAssignButton from './ProgramAssignButton';
@@ -28,6 +28,7 @@ export default function ProgramDetailContent({
   refreshing,
   onRefresh,
 }: ProgramDetailContentProps) {
+  const tokens = useThemeTokens();
   // Which day is open is a reading position, not program data — it belongs to
   // the screen and resets when the coach leaves.
   const [selectedRoutineId, setSelectedDayId] = useState(program.routines[0]?.id ?? '');

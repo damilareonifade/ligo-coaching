@@ -5,7 +5,7 @@ import { Alert, Pressable, View } from 'react-native';
 
 import type { ApiRoutine, ApiWeeklyProgress } from '@/api/types';
 import { LIButton, LICard, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import TrainRoutineCard from './TrainRoutineCard';
 
@@ -38,6 +38,7 @@ export default function TrainRoutines({
   startingId,
   disabled,
 }: TrainRoutinesProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const build = useCallback(() => router.push('/routines/new'), [router]);
 

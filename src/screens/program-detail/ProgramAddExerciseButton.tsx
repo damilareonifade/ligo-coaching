@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react-native';
 import { useCallback } from 'react';
 
 import { LIButton } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ProgramAddExerciseButtonProps {
   readonly programId: string;
@@ -15,6 +15,7 @@ export default function ProgramAddExerciseButton({
   programId,
   routineId,
 }: ProgramAddExerciseButtonProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const openPicker = useCallback(

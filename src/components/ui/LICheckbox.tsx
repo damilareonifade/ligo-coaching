@@ -2,7 +2,7 @@ import { Check } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export interface LICheckboxProps {
   readonly checked: boolean;
@@ -33,6 +33,7 @@ export function LICheckbox({
   className,
   testID,
 }: LICheckboxProps) {
+  const tokens = useThemeTokens();
   return (
     <Pressable
       onPress={() => onChange(!checked)}
@@ -43,13 +44,13 @@ export function LICheckbox({
       hitSlop={8}
       className={cn(
         'h-6 w-6 items-center justify-center rounded-md border',
-        checked ? 'border-violet bg-violet' : 'border-hairline-strong bg-white',
+        checked ? 'border-violet bg-violet' : 'border-border-strong bg-surface',
         disabled && 'opacity-50',
         className,
       )}
       testID={testID}
     >
-      {checked ? <Check color={tokens.white} size={16} strokeWidth={3} /> : <View />}
+      {checked ? <Check color={tokens.inverse} size={16} strokeWidth={3} /> : <View />}
     </Pressable>
   );
 }

@@ -15,11 +15,11 @@ export interface LISegmentedProps {
   readonly testID?: string;
 }
 
-/** Single-select segmented control on a rounded `bg-field` track. */
+/** Single-select segmented control on a rounded `bg-surface-sunken` track. */
 export function LISegmented({ options, value, onChange, className, testID }: LISegmentedProps) {
   return (
     <View
-      className={cn('flex-row gap-1 rounded-pill bg-field p-1', className)}
+      className={cn('flex-row gap-1 rounded-pill bg-surface-sunken p-1', className)}
       testID={testID}
       accessibilityRole="radiogroup"
     >
@@ -39,7 +39,7 @@ export function LISegmented({ options, value, onChange, className, testID }: LIS
             <Text
               className={cn(
                 'text-caption font-semibold font-geist-medium',
-                selected ? 'text-white' : 'text-dark-gray',
+                selected ? 'text-surface' : 'text-foreground-muted',
               )}
               numberOfLines={1}
             >

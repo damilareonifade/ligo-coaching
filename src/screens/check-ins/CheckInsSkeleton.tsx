@@ -8,7 +8,7 @@ export default function CheckInsSkeleton() {
     <View className="gap-4 px-4 pt-2">
       <View className="flex-row gap-3">
         {[0, 1, 2].map((stat) => (
-          <View key={stat} className="flex-1 items-center gap-2 rounded-card bg-white px-2 py-3">
+          <View key={stat} className="flex-1 items-center gap-2 rounded-card bg-surface px-2 py-3">
             <LISkeleton className="h-5 w-16" />
             <LISkeleton className="h-3 w-20" />
           </View>
@@ -18,7 +18,7 @@ export default function CheckInsSkeleton() {
       <LISkeleton className="h-12 w-full rounded-pill" />
 
       {[0, 1].map((card) => (
-        <View key={card} className="gap-3 rounded-card bg-white p-4">
+        <View key={card} className="gap-3 rounded-card bg-surface p-4">
           <View className="flex-row items-center gap-3">
             <LISkeleton className="h-4 w-32 flex-1" />
             <LISkeleton className="h-4 w-16" />
@@ -31,7 +31,7 @@ export default function CheckInsSkeleton() {
             ))}
           </View>
           <LISkeleton className="h-3 w-full" />
-          <View className="flex-row items-center gap-2 border-t border-hairline pt-3">
+          <View className="flex-row items-center gap-2 border-t border-border pt-3">
             <LISkeleton className="h-6 w-12 rounded-pill" />
             <LISkeleton className="h-3 w-32 flex-1" />
             <LISkeleton className="h-9 w-16 rounded-pill" />
@@ -39,7 +39,7 @@ export default function CheckInsSkeleton() {
         </View>
       ))}
 
-      <View className="flex-row items-center gap-3 rounded-card bg-white p-4">
+      <View className="flex-row items-center gap-3 rounded-card bg-surface p-4">
         <View className="flex-1 gap-2">
           <LISkeleton className="h-4 w-48" />
           <LISkeleton className="h-3 w-40" />

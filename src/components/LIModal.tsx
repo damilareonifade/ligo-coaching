@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, type ComponentRef, type ReactNode } fro
 import { View } from 'react-native';
 
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export interface LIModalProps {
   readonly visible: boolean;
@@ -24,6 +24,7 @@ export interface LIModalProps {
  * Requires `BottomSheetModalProvider` in the root layout.
  */
 export function LIModal({ visible, onClose, title, children, snapPoints }: LIModalProps) {
+  const tokens = useThemeTokens();
   const sheetRef = useRef<ComponentRef<typeof BottomSheetModal>>(null);
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export function LIModal({ visible, onClose, title, children, snapPoints }: LIMod
       enablePanDownToClose
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
-      handleIndicatorStyle={{ backgroundColor: tokens.hairline }}
+      handleIndicatorStyle={{ backgroundColor: tokens.border }}
     >
       <BottomSheetView>
         <View className="gap-4 px-4 pb-8 pt-2">

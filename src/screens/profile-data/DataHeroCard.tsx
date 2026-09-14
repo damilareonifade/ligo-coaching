@@ -43,7 +43,7 @@ export default function DataHeroCard({ counts }: DataHeroCardProps) {
           {row.map((count) => (
             <View
               key={count.label}
-              className="flex-1 items-center gap-0.5 rounded-2xl bg-white p-3"
+              className="flex-1 items-center gap-0.5 rounded-2xl bg-surface p-3"
             >
               <LIText
                 size="h5"

@@ -1,7 +1,7 @@
 import { RefreshControl, ScrollView } from 'react-native';
 
 import type { ApiAccessRequest, ApiClientProfile } from '@/api/types';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import AccessRequestList from './AccessRequestList';
 import ProfileCoachSection from './ProfileCoachSection';
@@ -23,6 +23,7 @@ export default function ProfileContent({
   refreshing,
   onRefresh,
 }: ProfileContentProps) {
+  const tokens = useThemeTokens();
   return (
     <ScrollView
       className="flex-1"

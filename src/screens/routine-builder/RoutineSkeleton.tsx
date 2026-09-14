@@ -6,7 +6,7 @@ import { LISkeleton } from '@/components/ui';
 export default function RoutineSkeleton() {
   return (
     <View className="gap-4 px-4 pt-2">
-      <View className="gap-2 rounded-card bg-white p-4">
+      <View className="gap-2 rounded-card bg-surface p-4">
         <LISkeleton className="h-3 w-16" />
         <LISkeleton className="h-11 w-full" />
       </View>

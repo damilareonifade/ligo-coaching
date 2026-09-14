@@ -32,7 +32,7 @@ export function LIToastHost() {
             accessibilityRole="alert"
             className={cn('rounded-2xl px-4 py-3', toneClass[toast.tone])}
           >
-            <Text className="text-p font-semibold text-white">{toast.message}</Text>
+            <Text className="text-p font-semibold text-surface">{toast.message}</Text>
           </Pressable>
         </Animated.View>
       ))}

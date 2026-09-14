@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { LIButton, LIInput } from '@/components/ui';
 import { rosterSortLabel, type RosterSort } from '@/lib/roster';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface RosterSearchBarProps {
   readonly query: string;
@@ -20,6 +20,7 @@ export default function RosterSearchBar({
   sort,
   onCycleSort,
 }: RosterSearchBarProps) {
+  const tokens = useThemeTokens();
   const [focused, setFocused] = useState(false);
 
   return (
@@ -37,7 +38,7 @@ export default function RosterSearchBar({
         accessibilityLabel="Search the roster"
         containerClassName="flex-1"
         fieldClassName={focused ? 'border-violet' : undefined}
-        leading={<Search color={tokens.muted} size={18} />}
+        leading={<Search color={tokens['foreground-subtle']} size={18} />}
         trailing={
           query.length > 0 ? (
             <Pressable
@@ -47,7 +48,7 @@ export default function RosterSearchBar({
               accessibilityLabel="Clear search"
               testID="roster-search-clear"
             >
-              <X color={tokens.muted} size={18} />
+              <X color={tokens['foreground-subtle']} size={18} />
             </Pressable>
           ) : null
         }
@@ -59,10 +60,10 @@ export default function RosterSearchBar({
         onPress={onCycleSort}
         variant="social"
         shape="rounded"
-        icon={<ArrowUpDown color={tokens.muted} size={16} />}
+        icon={<ArrowUpDown color={tokens['foreground-subtle']} size={16} />}
         accessibilityLabel={`Sort: ${rosterSortLabel[sort]}. Change sort`}
         className="h-12 px-4"
-        labelClassName="text-caption font-geist-medium text-dark-gray"
+        labelClassName="text-caption font-geist-medium text-foreground-muted"
         testID="roster-sort-button"
       />
     </View>

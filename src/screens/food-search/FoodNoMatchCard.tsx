@@ -20,7 +20,7 @@ export default function FoodNoMatchCard({ query }: FoodNoMatchCardProps) {
   const createFood = useCallback(() => router.push('/food/new'), [router]);
 
   return (
-    <LICard className="gap-3 border border-dashed border-hairline-strong bg-transparent">
+    <LICard className="gap-3 border border-dashed border-border-strong bg-transparent">
       <LIText
         size="h5"
         color="primary"

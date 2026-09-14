@@ -13,7 +13,7 @@ import {
   parseScheme,
   parseTargetKg,
 } from '@/lib/programs';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export type BlockPatch = Pick<ApiProgramBlock, 'scheme' | 'rpe' | 'targetKg'>;
 
@@ -37,6 +37,7 @@ interface BuilderBlockRowProps {
  * tap to reach instead of a modal to dismiss.
  */
 function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlockRowProps) {
+  const tokens = useThemeTokens();
   const units = useUnits();
   const [open, setOpen] = useState(false);
 
@@ -101,7 +102,7 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
           announcing a gesture that does nothing.
         */}
         <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <GripVertical color={tokens['hairline-strong']} size={18} />
+          <GripVertical color={tokens['border-strong']} size={18} />
         </View>
 
         <View className="flex-1 gap-0.5">
@@ -141,7 +142,7 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
           onPress={remove}
           variant="ghost"
           size="sm"
-          icon={<X color={tokens.muted} size={18} />}
+          icon={<X color={tokens['foreground-subtle']} size={18} />}
           accessibilityLabel={`Remove ${block.name}`}
           className="h-9 w-9 gap-0 px-0"
           testID={`builder-remove-${block.id}`}
@@ -149,7 +150,7 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
       </View>
 
       {open ? (
-        <View className="gap-2 border-t border-hairline pt-3">
+        <View className="gap-2 border-t border-border pt-3">
           <View className="flex-row gap-2">
             <LIInput
               label="Sets"

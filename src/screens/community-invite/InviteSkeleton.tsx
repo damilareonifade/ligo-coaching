@@ -20,14 +20,14 @@ export default function InviteSkeleton() {
         <LISkeleton className="h-3 w-2/3" />
       </View>
 
-      <View className="overflow-hidden rounded-card border border-hairline">
-        <View className="gap-2 bg-white p-4">
+      <View className="overflow-hidden rounded-card border border-border">
+        <View className="gap-2 bg-surface p-4">
           <LISkeleton className="h-3 w-52" />
           <LISkeleton className="h-4 w-full" />
           <LISkeleton className="h-4 w-3/4" />
           <LISkeleton className="h-4 w-2/3" />
         </View>
-        <View className="gap-2 border-t border-hairline bg-canvas p-4">
+        <View className="gap-2 border-t border-border bg-background p-4">
           <LISkeleton className="h-3 w-40" />
           <LISkeleton className="h-4 w-full" />
           <LISkeleton className="h-4 w-3/4" />

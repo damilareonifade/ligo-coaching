@@ -59,7 +59,7 @@ export default function AttachCoachStep() {
           size="h1"
           color="primary"
           text="Working with a coach?"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -69,12 +69,12 @@ export default function AttachCoachStep() {
         />
       </View>
 
-      <LICard className="gap-3 bg-white">
+      <LICard className="gap-3 bg-surface">
         <LIText
           size="h5"
           color="primary"
           text="Invite code"
-          className="font-geist-medium text-ink"
+          className="font-geist-medium text-foreground"
         />
         <LIInput
           value={inviteCode}

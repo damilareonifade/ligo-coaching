@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import type { ApiCommunityBoardSummary } from '@/api/types';
 import { LIBadge, LICard, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface CommunityBoardRowProps {
   readonly board: ApiCommunityBoardSummary;
@@ -22,6 +22,7 @@ interface CommunityBoardRowProps {
  * between two labels, and the row leads somewhere different in each case.
  */
 function CommunityBoardRow({ board, onPress, first, last }: CommunityBoardRowProps) {
+  const tokens = useThemeTokens();
   const press = useCallback(() => onPress(board), [onPress, board]);
 
   return (
@@ -31,7 +32,7 @@ function CommunityBoardRow({ board, onPress, first, last }: CommunityBoardRowPro
         'gap-0 rounded-none px-4 py-3',
         first && 'rounded-t-card',
         last && 'rounded-b-card',
-        !first && 'border-t border-hairline',
+        !first && 'border-t border-border',
       )}
       testID={`community-board-${board.id}`}
     >
@@ -71,7 +72,7 @@ function CommunityBoardRow({ board, onPress, first, last }: CommunityBoardRowPro
           />
         </View>
 
-        <ChevronRight color={tokens.muted} size={18} />
+        <ChevronRight color={tokens['foreground-subtle']} size={18} />
       </View>
     </LICard>
   );

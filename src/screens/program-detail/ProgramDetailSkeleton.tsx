@@ -6,7 +6,7 @@ import { LISkeleton } from '@/components/ui';
 export default function ProgramDetailSkeleton() {
   return (
     <View className="gap-4 px-4 pt-2">
-      <View className="gap-2 rounded-card bg-white p-4">
+      <View className="gap-2 rounded-card bg-surface p-4">
         <LISkeleton className="h-5 w-56" />
         <LISkeleton className="h-3 w-44" />
       </View>
@@ -17,7 +17,7 @@ export default function ProgramDetailSkeleton() {
         ))}
       </View>
 
-      <View className="rounded-card bg-white">
+      <View className="rounded-card bg-surface">
         {[0, 1, 2, 3].map((row) => (
           <View key={row} className="flex-row items-center gap-3 px-4 py-3">
             <LISkeleton className="h-4 w-4" />

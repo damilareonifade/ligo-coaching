@@ -17,10 +17,10 @@ export default function InboxSkeleton() {
         <View
           key={index}
           className={cn(
-            'flex-row items-center gap-3 bg-white px-4 py-3',
+            'flex-row items-center gap-3 bg-surface px-4 py-3',
             index === 0 && 'rounded-t-card',
             index === ROWS - 1 && 'rounded-b-card',
-            index > 0 && 'border-t border-hairline',
+            index > 0 && 'border-t border-border',
           )}
         >
           <LISkeleton className="h-9 w-9 rounded-pill" />

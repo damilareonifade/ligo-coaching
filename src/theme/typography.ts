@@ -12,15 +12,15 @@ export const textSizeClass = {
 export type LITextSize = keyof typeof textSizeClass;
 
 export const textColorClass = {
-  primary: 'text-ink',
-  body: 'text-dark-gray',
-  muted: 'text-muted',
+  primary: 'text-foreground',
+  body: 'text-foreground-muted',
+  muted: 'text-foreground-subtle',
   accent: 'text-violet',
   violet: 'text-violet',
   danger: 'text-danger',
   success: 'text-success',
   warning: 'text-warning',
-  inverse: 'text-white',
+  inverse: 'text-inverse',
 } as const;
 
 export type LITextColor = keyof typeof textColorClass;

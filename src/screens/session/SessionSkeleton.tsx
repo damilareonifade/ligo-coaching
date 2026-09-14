@@ -8,7 +8,7 @@ export default function SessionSkeleton() {
     <View className="gap-4 px-4 pt-2">
       <View className="flex-row gap-3">
         {[0, 1].map((card) => (
-          <View key={card} className="flex-1 gap-2 rounded-card bg-white p-4">
+          <View key={card} className="flex-1 gap-2 rounded-card bg-surface p-4">
             <LISkeleton className="h-3 w-16" />
             <LISkeleton className="h-7 w-24" />
           </View>
@@ -16,7 +16,7 @@ export default function SessionSkeleton() {
       </View>
 
       {[0, 1, 2].map((card) => (
-        <View key={card} className="gap-3 rounded-card bg-white p-4">
+        <View key={card} className="gap-3 rounded-card bg-surface p-4">
           <View className="flex-row items-start gap-3">
             <View className="flex-1 gap-2">
               <LISkeleton className="h-4 w-32" />

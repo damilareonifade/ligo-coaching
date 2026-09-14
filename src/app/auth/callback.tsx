@@ -27,7 +27,7 @@ export default function AuthCallbackScreen() {
     typeof value === 'string' && value.length > 0 ? value : null;
 
   return (
-    <LISafeArea edges={['top', 'bottom']} className="bg-canvas">
+    <LISafeArea edges={['top', 'bottom']} className="bg-background">
       <GoogleCallback code={text(code)} errorDescription={text(description) ?? text(error)} />
     </LISafeArea>
   );

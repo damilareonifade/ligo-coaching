@@ -12,7 +12,7 @@ export default function DataSkeleton() {
         {[0, 1].map((row) => (
           <View key={row} className="flex-row gap-2">
             {[0, 1, 2].map((tile) => (
-              <View key={tile} className="flex-1 items-center gap-2 rounded-2xl bg-white p-3">
+              <View key={tile} className="flex-1 items-center gap-2 rounded-2xl bg-surface p-3">
                 <LISkeleton className="h-4 w-12" />
                 <LISkeleton className="h-3 w-16" />
               </View>
@@ -21,11 +21,11 @@ export default function DataSkeleton() {
         ))}
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <LISkeleton className="h-3 w-28" />
         <LISkeleton className="h-11 w-full rounded-pill" />
         <LISkeleton className="h-3 w-full" />
-        <View className="flex-row items-center gap-3 border-t border-hairline pt-3">
+        <View className="flex-row items-center gap-3 border-t border-border pt-3">
           <View className="flex-1 gap-2">
             <LISkeleton className="h-4 w-56" />
             <LISkeleton className="h-3 w-44" />
@@ -36,7 +36,7 @@ export default function DataSkeleton() {
         <LISkeleton className="h-3 w-40 self-center" />
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <LISkeleton className="h-4 w-48" />
         <LISkeleton className="h-3 w-full" />
         {[0, 1, 2, 3].map((row) => (
@@ -50,7 +50,7 @@ export default function DataSkeleton() {
         ))}
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <LISkeleton className="h-3 w-44" />
         {[0, 1, 2].map((row) => (
           <View key={row} className="flex-row items-center gap-3">
@@ -61,7 +61,7 @@ export default function DataSkeleton() {
         <LISkeleton className="h-12 w-full rounded-pill" />
       </View>
 
-      <View className="gap-3 rounded-card border border-hairline bg-white p-4">
+      <View className="gap-3 rounded-card border border-border bg-surface p-4">
         <LISkeleton className="h-4 w-32" />
         <LISkeleton className="h-12 w-full" />
         <LISkeleton className="h-12 w-full rounded-pill" />

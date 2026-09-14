@@ -31,10 +31,10 @@ export default function CommunitySkeleton() {
             <View
               key={index}
               className={cn(
-                'gap-2 bg-white px-4 py-3',
+                'gap-2 bg-surface px-4 py-3',
                 index === 0 && 'rounded-t-card',
                 index === ROWS - 1 && 'rounded-b-card',
-                index > 0 && 'border-t border-hairline',
+                index > 0 && 'border-t border-border',
               )}
             >
               <LISkeleton className="h-4 w-44" />

@@ -5,7 +5,7 @@ import { LISkeleton } from '@/components/ui';
 /** One routine card — the shape repeated down the whole screen. */
 function RoutineCardSkeleton() {
   return (
-    <View className="gap-3 rounded-card bg-white p-4">
+    <View className="gap-3 rounded-card bg-surface p-4">
       <View className="flex-row items-center justify-between">
         <LISkeleton className="h-3 w-20" />
         <LISkeleton className="h-6 w-16 rounded-pill" />
@@ -43,7 +43,7 @@ export default function TrainSkeleton() {
         <RoutineCardSkeleton />
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <View className="flex-row items-center justify-between">
           <LISkeleton className="h-4 w-28" />
           <LISkeleton className="h-3 w-14" />

@@ -34,7 +34,7 @@ export default function NotificationGroupCard({ group, onToggle }: NotificationG
             accessibilityLabel={`${row.label}. ${row.desc}`}
             className={cn(
               'flex-row items-center gap-3 py-3 active:opacity-70',
-              index > 0 && 'border-t border-hairline',
+              index > 0 && 'border-t border-border',
             )}
             testID={`notification-row-${group.id}-${row.id}`}
           >

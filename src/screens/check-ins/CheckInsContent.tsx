@@ -2,7 +2,7 @@ import { RefreshControl, ScrollView } from 'react-native';
 
 import type { ApiMonthlyCheckIns } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import CheckInAddButton from './CheckInAddButton';
 import CheckInCard from './CheckInCard';
@@ -33,6 +33,7 @@ export default function CheckInsContent({
   refreshing,
   onRefresh,
 }: CheckInsContentProps) {
+  const tokens = useThemeTokens();
   const isOwn = clientId === undefined;
   return (
     <ScrollView

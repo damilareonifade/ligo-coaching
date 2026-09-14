@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react-native';
 
 import { LIButton } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface MessagesNewButtonProps {
   readonly onNew: () => void;
@@ -15,12 +15,13 @@ interface MessagesNewButtonProps {
  * new" that is not on top of a conversation.
  */
 export default function MessagesNewButton({ onNew }: MessagesNewButtonProps) {
+  const tokens = useThemeTokens();
   return (
     <LIButton
       title=""
       accessibilityLabel="Start a group or leaderboard"
       onPress={onNew}
-      icon={<Plus color={tokens.white} size={20} />}
+      icon={<Plus color={tokens.inverse} size={20} />}
       className="h-10 w-10 gap-0 px-0"
       testID="messages-new"
     />

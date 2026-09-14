@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { LIButton, LIText } from '@/components/ui';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface CheckInPhotoRowProps {
   readonly photos: number;
@@ -15,6 +15,7 @@ interface CheckInPhotoRowProps {
  * check-in is visible while editing it, rather than silently disappearing.
  */
 export default function CheckInPhotoRow({ photos }: CheckInPhotoRowProps) {
+  const tokens = useThemeTokens();
   const showToast = useUiStore((state) => state.showToast);
   // 'info', not 'success' — nothing was attached, and a green confirmation
   // for a no-op reads as if the photo went through.
@@ -24,8 +25,8 @@ export default function CheckInPhotoRow({ photos }: CheckInPhotoRowProps) {
   );
 
   return (
-    <View className="flex-row items-center gap-3 rounded-card border border-dashed border-hairline-strong p-4">
-      <ImageIcon color={tokens.muted} size={18} />
+    <View className="flex-row items-center gap-3 rounded-card border border-dashed border-border-strong p-4">
+      <ImageIcon color={tokens['foreground-subtle']} size={18} />
       <LIText
         size="caption"
         color="muted"

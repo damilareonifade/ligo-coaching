@@ -25,14 +25,14 @@ export default function GroupFaces({ members }: GroupFacesProps) {
           <LIAvatar
             name={member.displayName}
             size="sm"
-            className="border-2 border-white"
+            className="border-2 border-surface"
             labelClassName="font-geist-semibold"
           />
         </View>
       ))}
 
       {rest > 0 ? (
-        <View className="-ml-3 h-9 w-9 items-center justify-center rounded-pill border-2 border-white bg-field">
+        <View className="-ml-3 h-9 w-9 items-center justify-center rounded-pill border-2 border-surface bg-surface-sunken">
           <LIText
             size="caption"
             color="muted"

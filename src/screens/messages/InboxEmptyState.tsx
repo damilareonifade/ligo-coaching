@@ -14,7 +14,7 @@ export default function InboxEmptyState() {
   const openRoster = useCallback(() => router.push('/roster'), [router]);
 
   return (
-    <View className="mt-2 items-center gap-3 rounded-card border border-dashed border-hairline-strong px-6 py-10">
+    <View className="mt-2 items-center gap-3 rounded-card border border-dashed border-border-strong px-6 py-10">
       <LIText
         size="p"
         color="primary"

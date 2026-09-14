@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import type { ApiCoachGroupSummary } from '@/api/types';
 import { LIBadge, LICard, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface InboxGroupRowsProps {
   readonly groups: readonly ApiCoachGroupSummary[];
@@ -21,6 +21,7 @@ interface InboxGroupRowsProps {
  * front of everybody. The member count sits on the row for the same reason.
  */
 export default function InboxGroupRows({ groups }: InboxGroupRowsProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const open = useCallback(
@@ -48,7 +49,7 @@ export default function InboxGroupRows({ groups }: InboxGroupRowsProps) {
               'gap-0 rounded-none px-4 py-3',
               index === 0 && 'rounded-t-card',
               index === groups.length - 1 && 'rounded-b-card',
-              index > 0 && 'border-t border-hairline',
+              index > 0 && 'border-t border-border',
             )}
             testID={`inbox-group-${group.id}`}
           >
@@ -94,7 +95,7 @@ export default function InboxGroupRows({ groups }: InboxGroupRowsProps) {
                 />
               ) : null}
 
-              <ChevronRight color={tokens.muted} size={18} />
+              <ChevronRight color={tokens['foreground-subtle']} size={18} />
             </View>
           </LICard>
         ))}

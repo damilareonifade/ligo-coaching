@@ -11,7 +11,7 @@ import { LIText } from '@/components/ui';
  */
 export default function CommunityEmptyState() {
   return (
-    <View className="gap-2 rounded-card bg-white p-6">
+    <View className="gap-2 rounded-card bg-surface p-6">
       <LIText
         size="h4"
         color="primary"

@@ -5,7 +5,7 @@ import { useMarkNotificationReadMutation } from '@/api/notifications';
 import type { ApiNotification, ApiNotificationGroup } from '@/api/types';
 import { LIList, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import NotificationRow from './NotificationRow';
 import NotificationsEmptyState from './NotificationsEmptyState';
@@ -40,6 +40,7 @@ export default function NotificationsContent({
   refreshing,
   onRefresh,
 }: NotificationsContentProps) {
+  const tokens = useThemeTokens();
   const { mutate: markRead } = useMarkNotificationReadMutation();
 
   const items = useMemo<readonly NotificationListItem[]>(

@@ -37,7 +37,7 @@ function ValueChip({
       accessibilityState={{ selected: active }}
       className={cn(
         'min-w-24 flex-row items-baseline justify-center gap-1 rounded-lg px-3 py-2 active:opacity-70',
-        active ? 'bg-violet' : 'bg-field',
+        active ? 'bg-violet' : 'bg-surface-sunken',
       )}
       testID={testID}
     >
@@ -82,7 +82,7 @@ function SessionSetRowBase({
         'flex-row items-center gap-3 px-4 py-2',
         // A done set recedes: the row you are working on should be the bright
         // one, and the ones behind you are a record, not a control.
-        set.completed && 'bg-field/60',
+        set.completed && 'bg-surface-sunken/60',
       )}
       testID={`set-row-${exerciseId}-${set.n}`}
     >

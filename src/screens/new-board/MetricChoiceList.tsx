@@ -29,7 +29,7 @@ export default function MetricChoiceList({ options, value, onChange }: MetricCho
         className="px-1 font-geist-medium tracking-wide"
       />
 
-      <View className="rounded-card bg-white px-4">
+      <View className="rounded-card bg-surface px-4">
         {options.map((option, index) => {
           const selected = option.id === value;
 
@@ -46,7 +46,7 @@ export default function MetricChoiceList({ options, value, onChange }: MetricCho
               }
               className={cn(
                 'flex-row items-start gap-3 py-3 active:opacity-70',
-                index > 0 && 'border-t border-hairline',
+                index > 0 && 'border-t border-border',
               )}
               testID={`metric-${option.id}`}
             >

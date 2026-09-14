@@ -10,7 +10,7 @@ import { LIButton, LIList, LIText } from '@/components/ui';
 import { BOARD_SHARE_NOTE, ordinal } from '@/lib/community';
 import LeaveSheet, { type LeaveConsequence } from '@/components/community/LeaveSheet';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import BoardActions from './BoardActions';
 import BoardHeaderCard from './BoardHeaderCard';
@@ -37,6 +37,7 @@ interface RankListRow {
  * properly at any length.
  */
 export default function BoardContent({ board, refreshing, onRefresh }: BoardContentProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const showToast = useUiStore((state) => state.showToast);
   const leave = useLeaveBoardMutation();
@@ -91,13 +92,13 @@ export default function BoardContent({ board, refreshing, onRefresh }: BoardCont
     },
     {
       id: 'history',
-      icon: <History color={tokens.muted} size={18} />,
+      icon: <History color={tokens['foreground-subtle']} size={18} />,
       title: 'Your history is untouched',
       body: 'Sessions, volume and PRs stay yours.',
     },
     {
       id: 'coach',
-      icon: <UserCheck color={tokens.muted} size={18} />,
+      icon: <UserCheck color={tokens['foreground-subtle']} size={18} />,
       title: `${board.coachName} stays your coach`,
       body: 'Leaving a board changes nothing about coaching.',
     },
@@ -129,7 +130,7 @@ export default function BoardContent({ board, refreshing, onRefresh }: BoardCont
         // rows are not hidden from this reader, they are simply not this
         // reader's business until they have put a row of their own up.
         ListEmptyComponent={
-          <View className="gap-3 rounded-card bg-white p-6">
+          <View className="gap-3 rounded-card bg-surface p-6">
             <LIText
               size="h4"
               color="primary"

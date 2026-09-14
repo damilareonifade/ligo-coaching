@@ -11,7 +11,7 @@ import {
   type RosterSort,
 } from '@/lib/roster';
 import { useRosterFilterStore } from '@/store/rosterFilterStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import RosterEmptyState from './RosterEmptyState';
 import RosterGroups from './RosterGroups';
@@ -37,6 +37,7 @@ export default function RosterContent({
   refreshing,
   onRefresh,
 }: RosterContentProps) {
+  const tokens = useThemeTokens();
   const [query, setQuery] = useState('');
   const [attention, setAttention] = useState<RosterAttentionFilter>('all');
   const [sort, setSort] = useState<RosterSort>('recent');

@@ -11,7 +11,7 @@ import Animated, {
 import { LICard, LIText } from '@/components/ui';
 import { liveBannerText } from '@/lib/clientReview';
 import { liveHeaderLine } from '@/lib/liveSession';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface LiveHeaderCardProps {
   readonly clientName: string;
@@ -22,6 +22,7 @@ interface LiveHeaderCardProps {
 const DOT_SIZE = 8;
 
 function LiveDot() {
+  const tokens = useThemeTokens();
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(1);
 

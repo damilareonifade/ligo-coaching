@@ -2,7 +2,7 @@ import { Copy, RefreshCw } from 'lucide-react-native';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
 import { LIAvatar, LISkeleton, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface CoachHeroCardProps {
   readonly name: string;
@@ -35,13 +35,14 @@ export default function CoachHeroCard({
   onRoll,
   rolling,
 }: CoachHeroCardProps) {
+  const tokens = useThemeTokens();
   return (
     <View className="gap-4 rounded-card bg-violet-weak p-4" testID="coach-hero">
       <View className="flex-row items-center gap-3">
         <LIAvatar
           name={name}
           size="lg"
-          className="bg-white"
+          className="bg-surface"
           labelClassName="font-geist-semibold"
         />
         <View className="flex-1 gap-0.5">
@@ -69,7 +70,7 @@ export default function CoachHeroCard({
         accessibilityLabel={
           inviteCode ? `Copy invite code ${inviteCode}` : 'Invite code loading'
         }
-        className="flex-row items-center gap-3 rounded-2xl bg-white px-4 py-3 active:opacity-80"
+        className="flex-row items-center gap-3 rounded-2xl bg-surface px-4 py-3 active:opacity-80"
         testID="coach-invite-code"
       >
         <View className="flex-1 gap-0.5">

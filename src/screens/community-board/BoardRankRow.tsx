@@ -19,10 +19,10 @@ function BoardRankRow({ row, first, last }: BoardRankRowProps) {
   return (
     <View
       className={cn(
-        'flex-row items-center gap-3 bg-white px-4 py-3',
+        'flex-row items-center gap-3 bg-surface px-4 py-3',
         first && 'rounded-t-card',
         last && 'rounded-b-card',
-        !first && 'border-t border-hairline',
+        !first && 'border-t border-border',
         // Your own row is tinted, not enlarged or pinned to the top. Where you
         // actually stand is the information; a row that follows you around
         // would replace it with a compliment.

@@ -21,7 +21,7 @@ export default function CoachHomeLiveCard({ client, onOpen }: CoachHomeLiveCardP
       testID={`coach-home-live-${client.clientId}`}
     >
       <View className="flex-row items-center gap-3">
-        <LIAvatar name={client.name} className="bg-white" labelClassName="text-violet" />
+        <LIAvatar name={client.name} className="bg-surface" labelClassName="text-violet" />
         <View className="flex-1 gap-0.5">
           <LIText
             size="h5"

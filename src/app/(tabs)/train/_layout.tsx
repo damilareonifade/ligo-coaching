@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
@@ -10,11 +10,12 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
  * Both screens draw their own headers.
  */
 export default function TrainLayout() {
+  const tokens = useThemeTokens();
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: tokens.canvas },
+        contentStyle: { backgroundColor: tokens.background },
       }}
     >
       <Stack.Screen name="index" />

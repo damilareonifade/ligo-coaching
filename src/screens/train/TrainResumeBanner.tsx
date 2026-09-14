@@ -71,7 +71,7 @@ export default function TrainResumeBanner({ session }: TrainResumeBannerProps) {
           {done.map((isDone, index) => (
             <View
               key={session.exercises[index].id}
-              className={cn('h-2 flex-1 rounded-pill', isDone ? 'bg-violet' : 'bg-field')}
+              className={cn('h-2 flex-1 rounded-pill', isDone ? 'bg-violet' : 'bg-surface-sunken')}
             />
           ))}
         </View>

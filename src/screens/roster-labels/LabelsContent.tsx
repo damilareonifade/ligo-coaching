@@ -9,7 +9,7 @@ import { LIModal } from '@/components/LIModal';
 import { LIButton, LICard, LIInput, LIText } from '@/components/ui';
 import { useRosterFilterStore } from '@/store/rosterFilterStore';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import LabelRow from './LabelRow';
 import NewLabelCard from './NewLabelCard';
@@ -21,6 +21,7 @@ interface LabelsContentProps {
 }
 
 export default function LabelsContent({ roster, refreshing, onRefresh }: LabelsContentProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const showToast = useUiStore((state) => state.showToast);
   const setLabelId = useRosterFilterStore((state) => state.setLabelId);

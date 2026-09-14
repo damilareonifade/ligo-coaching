@@ -51,7 +51,7 @@ export default function ReviewDomainCard({
 
   return (
     <LICard
-      className={cn('gap-3', !granted && 'border border-dashed border-hairline-strong')}
+      className={cn('gap-3', !granted && 'border border-dashed border-border-strong')}
       testID={`review-domain-${domain.id}`}
     >
       <View className="flex-row items-center justify-between gap-3">

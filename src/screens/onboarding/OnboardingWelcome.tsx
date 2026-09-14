@@ -3,7 +3,7 @@ import { Check, Target } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIButton, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface BulletConfig {
   readonly title: string;
@@ -26,6 +26,7 @@ const bullets: readonly BulletConfig[] = [
 ];
 
 export default function OnboardingWelcome() {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   return (
@@ -39,7 +40,7 @@ export default function OnboardingWelcome() {
             size="h1"
             color="primary"
             text="Your training. Your data."
-            className="text-center font-geist-semibold text-ink"
+            className="text-center font-geist-semibold text-foreground"
           />
           <LIText
             size="p"
@@ -54,14 +55,14 @@ export default function OnboardingWelcome() {
         {bullets.map((bullet) => (
           <View key={bullet.title} className="flex-row gap-3">
             <View className="mt-0.5 h-6 w-6 items-center justify-center rounded-pill bg-violet">
-              <Check color={tokens.white} size={14} />
+              <Check color={tokens.inverse} size={14} />
             </View>
             <View className="flex-1 gap-0.5">
               <LIText
                 size="h5"
                 color="primary"
                 text={bullet.title}
-                className="font-geist-medium text-ink"
+                className="font-geist-medium text-foreground"
               />
               <LIText size="p" color="body" text={bullet.body} className="font-geist" />
             </View>

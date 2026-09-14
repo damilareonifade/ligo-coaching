@@ -7,7 +7,7 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
 export default function ForgotPasswordScreen() {
   return (
-    <LISafeArea edges={['top', 'bottom']} className="bg-canvas">
+    <LISafeArea edges={['top', 'bottom']} className="bg-background">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"

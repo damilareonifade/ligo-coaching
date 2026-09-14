@@ -6,7 +6,7 @@ import type { ApiRosterClient, ApiRosterLabel } from '@/api/types';
 import { LIList, LIText } from '@/components/ui';
 import type { RosterGroup } from '@/lib/roster';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import RosterRow from './RosterRow';
 
@@ -46,6 +46,7 @@ export default function RosterGroups({
   refreshing,
   onRefresh,
 }: RosterGroupsProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const openClient = useCallback(

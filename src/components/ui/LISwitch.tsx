@@ -1,7 +1,7 @@
 import { Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 const TRACK_WIDTH = 44;
 const TRACK_HEIGHT = 26;
@@ -39,8 +39,9 @@ export function LISwitch({
   accessibilityLabel,
   testID,
 }: LISwitchProps) {
+  const tokens = useThemeTokens();
   const trackStyle = useAnimatedStyle(() => ({
-    backgroundColor: withTiming(value ? tokens.violet : tokens.field, { duration: 150 }),
+    backgroundColor: withTiming(value ? tokens.violet : tokens['surface-sunken'], { duration: 150 }),
   }));
 
   const knobStyle = useAnimatedStyle(() => ({
@@ -77,8 +78,8 @@ export function LISwitch({
               height: KNOB_SIZE,
               borderRadius: KNOB_SIZE / 2,
               marginTop: KNOB_INSET,
-              backgroundColor: tokens.white,
-              shadowColor: tokens.ink,
+              backgroundColor: tokens.inverse,
+              shadowColor: tokens.foreground,
               shadowOpacity: 0.15,
               shadowRadius: 2,
               shadowOffset: { width: 0, height: 1 },

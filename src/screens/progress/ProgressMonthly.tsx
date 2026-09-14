@@ -5,7 +5,7 @@ import { View } from 'react-native';
 
 import type { ApiMonthlyMini } from '@/api/types';
 import { LIBadge, LICard, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 /** A drop reads as progress here; "—" is the first month, with nothing to compare. */
 function deltaColor(delta: string): 'success' | 'muted' {
@@ -19,6 +19,7 @@ interface ProgressMonthlyProps {
 }
 
 export default function ProgressMonthly({ chip, entries, note }: ProgressMonthlyProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   // The card is a summary of the full record — three rows of it, then the door.
   const openCheckIns = useCallback(() => router.push('/check-ins'), [router]);

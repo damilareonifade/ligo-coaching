@@ -9,7 +9,7 @@ export default function ProgramsSkeleton() {
       <LISkeleton className="h-7 w-40" />
 
       {[0, 1, 2].map((row) => (
-        <View key={row} className="gap-3 rounded-card bg-white p-4">
+        <View key={row} className="gap-3 rounded-card bg-surface p-4">
           <View className="flex-row items-start gap-3">
             <View className="flex-1 gap-2">
               <LISkeleton className="h-4 w-40" />
@@ -17,7 +17,7 @@ export default function ProgramsSkeleton() {
             </View>
             <LISkeleton className="h-6 w-24 rounded-pill" />
           </View>
-          <View className="h-px bg-hairline" />
+          <View className="h-px bg-border" />
           <View className="flex-row items-center gap-3">
             <LISkeleton className="h-9 w-24 rounded-pill" />
             <LISkeleton className="h-3 w-32" />

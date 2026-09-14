@@ -81,7 +81,7 @@ export default function NewLabelCard() {
           <LIText size="caption" color="muted" text="Preview" className="font-geist" />
           {/* A View, not an LIChip: the preview is not something you can press,
               and a chip that answers to a screen reader as a button would lie. */}
-          <View className="flex-row items-center gap-2 self-start rounded-pill border border-hairline bg-field px-4 py-2">
+          <View className="flex-row items-center gap-2 self-start rounded-pill border border-border bg-surface-sunken px-4 py-2">
             <LILabelDot color={color} />
             <LIText
               size="caption"

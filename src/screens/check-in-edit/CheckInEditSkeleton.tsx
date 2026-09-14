@@ -6,12 +6,12 @@ import { LISkeleton } from '@/components/ui';
 export default function CheckInEditSkeleton() {
   return (
     <View className="gap-4 px-4 pt-2">
-      <View className="gap-2 rounded-card bg-white p-4">
+      <View className="gap-2 rounded-card bg-surface p-4">
         <LISkeleton className="h-5 w-40" />
         <LISkeleton className="h-3 w-full" />
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         {[0, 1, 2, 3, 4].map((row) => (
           <View key={row} className="flex-row items-center gap-3">
             <LISkeleton className="h-4 w-24 flex-1" />
@@ -21,7 +21,7 @@ export default function CheckInEditSkeleton() {
         ))}
       </View>
 
-      <View className="gap-2 rounded-card bg-white p-4">
+      <View className="gap-2 rounded-card bg-surface p-4">
         <LISkeleton className="h-3 w-12" />
         <LISkeleton className="h-[84px] w-full rounded-2xl" />
       </View>

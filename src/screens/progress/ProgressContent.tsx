@@ -6,7 +6,7 @@ import { useLogBodyWeightMutation } from '@/api/clientProgress';
 import type { ApiClientProgress } from '@/api/types';
 import { hasFeature } from '@/lib/features';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import ProgressBodyWeight from './ProgressBodyWeight';
 import ProgressMonthly from './ProgressMonthly';
@@ -25,6 +25,7 @@ export default function ProgressContent({
   refreshing,
   onRefresh,
 }: ProgressContentProps) {
+  const tokens = useThemeTokens();
   const showToast = useUiStore((state) => state.showToast);
   const logWeight = useLogBodyWeightMutation();
 

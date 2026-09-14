@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import type { ApiClientCoachSummary } from '@/api/types';
 import { LIAvatar, LIBadge, LIButton, LICard, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface TodayCoachCardProps {
   readonly coach: ApiClientCoachSummary | null;
@@ -12,6 +12,7 @@ interface TodayCoachCardProps {
 
 /** Training alone is the default, not a failure state — so is the empty card. */
 export default function TodayCoachCard({ coach }: TodayCoachCardProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   if (!coach) {
@@ -49,7 +50,7 @@ export default function TodayCoachCard({ coach }: TodayCoachCardProps) {
           <LIText size="h5" color="primary" text={coach.line1} className="font-geist-semibold" />
           <LIText size="caption" color="muted" text={coach.line2} className="font-geist" />
         </View>
-        <ChevronRight color={tokens.muted} size={20} />
+        <ChevronRight color={tokens['foreground-subtle']} size={20} />
       </Pressable>
     </LICard>
   );

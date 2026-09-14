@@ -2,7 +2,7 @@ import { Lock } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIButton, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface HealthShareNoticeProps {
   readonly shared: boolean;
@@ -21,10 +21,11 @@ export default function HealthShareNotice({
   onToggle,
   pending,
 }: HealthShareNoticeProps) {
+  const tokens = useThemeTokens();
   return (
-    <View className="gap-3 rounded-card bg-field p-4">
+    <View className="gap-3 rounded-card bg-surface-sunken p-4">
       <View className="flex-row items-start gap-3">
-        <Lock color={tokens.muted} size={16} />
+        <Lock color={tokens['foreground-subtle']} size={16} />
         <LIText size="caption" color="muted" text={note} className="flex-1 font-geist" />
       </View>
       <LIButton

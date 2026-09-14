@@ -4,7 +4,7 @@ import { useCallback, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 import type { LITextSize } from '@/theme/typography';
 
 export interface ScreenHeaderProps {
@@ -87,6 +87,7 @@ export default function ScreenHeader({
   right,
   testID,
 }: ScreenHeaderProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const back = useCallback(() => {
@@ -110,7 +111,7 @@ export default function ScreenHeader({
           className="-ml-1 flex-row items-center gap-1 self-start py-1 active:opacity-60"
           testID="screen-header-back"
         >
-          <ChevronLeft color={tokens['dark-gray']} size={20} />
+          <ChevronLeft color={tokens['foreground-muted']} size={20} />
           <LIText size="p" color="body" text={backLabel} className="font-geist-medium" />
         </Pressable>
       ) : null}
@@ -152,6 +153,7 @@ export default function ScreenHeader({
  * because there was no events table and nothing could say what was waiting.
  */
 function ScreenHeaderBell({ unread }: { readonly unread: boolean }) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const open = useCallback(() => router.push('/notifications'), [router]);
 
@@ -161,13 +163,13 @@ function ScreenHeaderBell({ unread }: { readonly unread: boolean }) {
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={unread ? 'Notifications, unread' : 'Notifications'}
-      className="h-11 w-11 items-center justify-center rounded-pill bg-white active:opacity-70"
+      className="h-11 w-11 items-center justify-center rounded-pill bg-surface active:opacity-70"
       testID="screen-header-bell"
     >
-      <Bell color={tokens.ink} size={20} />
+      <Bell color={tokens.foreground} size={20} />
       {unread ? (
         <View
-          className="absolute right-2.5 top-2.5 h-2 w-2 rounded-pill border border-white bg-violet"
+          className="absolute right-2.5 top-2.5 h-2 w-2 rounded-pill border border-surface bg-violet"
           testID="screen-header-bell-dot"
         />
       ) : null}

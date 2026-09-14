@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { Pressable } from 'react-native';
 
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface SessionAddExerciseProps {
   readonly sessionId: string;
@@ -16,6 +16,7 @@ interface SessionAddExerciseProps {
  * picked exercise lands.
  */
 export default function SessionAddExercise({ sessionId }: SessionAddExerciseProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const open = useCallback(() => {
@@ -26,7 +27,7 @@ export default function SessionAddExercise({ sessionId }: SessionAddExerciseProp
     <Pressable
       onPress={open}
       accessibilityRole="button"
-      className="h-12 w-full flex-row items-center justify-center gap-2 rounded-card border border-dashed border-hairline-strong active:opacity-70"
+      className="h-12 w-full flex-row items-center justify-center gap-2 rounded-card border border-dashed border-border-strong active:opacity-70"
       testID="session-add-exercise"
     >
       <Plus color={tokens.violet} size={18} />

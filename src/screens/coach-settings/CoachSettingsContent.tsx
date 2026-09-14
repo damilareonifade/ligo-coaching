@@ -13,7 +13,7 @@ import { COACH_EXPORT_NOTE } from '@/lib/coachProfile';
 import { hasFeature } from '@/lib/features';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import CoachHeroCard from './CoachHeroCard';
 import CoachNotificationsCard from './CoachNotificationsCard';
@@ -40,6 +40,7 @@ export default function CoachSettingsContent({
   refreshing,
   onRefresh,
 }: CoachSettingsContentProps) {
+  const tokens = useThemeTokens();
   const showToast = useUiStore((state) => state.showToast);
   const signOut = useAuthStore((state) => state.signOut);
   const toggle = useToggleCoachNotificationMutation();

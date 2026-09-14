@@ -3,7 +3,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import type { ApiFoodMacro } from '@/api/types';
 import { LICard, LIProgressBar, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 const RING_SIZE = 86;
 const RING_STROKE = 8;
@@ -21,6 +21,7 @@ interface KcalRingProps {
  * a dash-offset arc costs nothing next to a Skia canvas for one number.
  */
 function KcalRing({ consumed, target }: KcalRingProps) {
+  const tokens = useThemeTokens();
   // A zero target would divide by zero and paint a full ring — read it as empty.
   const ratio = target > 0 ? Math.min(Math.max(consumed / target, 0), 1) : 0;
 
@@ -36,7 +37,7 @@ function KcalRing({ consumed, target }: KcalRingProps) {
           cx={RING_CENTRE}
           cy={RING_CENTRE}
           r={RING_RADIUS}
-          stroke={tokens.field}
+          stroke={tokens['surface-sunken']}
           strokeWidth={RING_STROKE}
           fill="none"
         />

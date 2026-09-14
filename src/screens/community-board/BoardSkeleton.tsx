@@ -9,7 +9,7 @@ const ROWS = 6;
 export default function BoardSkeleton() {
   return (
     <View className="gap-3 px-4 pt-2">
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <View className="flex-row items-start gap-2">
           <View className="flex-1 gap-2">
             <LISkeleton className="h-5 w-52" />
@@ -18,7 +18,7 @@ export default function BoardSkeleton() {
           <LISkeleton className="h-6 w-20 rounded-pill" />
         </View>
 
-        <View className="flex-row gap-2 border-t border-hairline pt-3">
+        <View className="flex-row gap-2 border-t border-border pt-3">
           {Array.from({ length: 3 }, (_, index) => (
             <View key={index} className="flex-1 gap-1">
               <LISkeleton className="h-4 w-20" />
@@ -33,10 +33,10 @@ export default function BoardSkeleton() {
           <View
             key={index}
             className={cn(
-              'flex-row items-center gap-3 bg-white px-4 py-3',
+              'flex-row items-center gap-3 bg-surface px-4 py-3',
               index === 0 && 'rounded-t-card',
               index === ROWS - 1 && 'rounded-b-card',
-              index > 0 && 'border-t border-hairline',
+              index > 0 && 'border-t border-border',
             )}
           >
             <LISkeleton className="h-4 w-4" />

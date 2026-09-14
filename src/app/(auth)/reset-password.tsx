@@ -15,7 +15,7 @@ export default function ResetPasswordScreen() {
   const { code } = useLocalSearchParams<{ code?: string }>();
 
   return (
-    <LISafeArea edges={['top', 'bottom']} className="bg-canvas">
+    <LISafeArea edges={['top', 'bottom']} className="bg-background">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"

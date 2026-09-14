@@ -8,7 +8,7 @@ const chip = cva('flex-row items-center gap-2 rounded-pill border px-4 py-2', {
   variants: {
     selected: {
       true: 'border-violet bg-violet',
-      false: 'border-hairline bg-field',
+      false: 'border-border bg-surface-sunken',
     },
   },
   defaultVariants: { selected: false },
@@ -17,8 +17,8 @@ const chip = cva('flex-row items-center gap-2 rounded-pill border px-4 py-2', {
 const chipLabel = cva('text-caption font-semibold font-geist-medium', {
   variants: {
     selected: {
-      true: 'text-white',
-      false: 'text-dark-gray',
+      true: 'text-surface',
+      false: 'text-foreground-muted',
     },
   },
   defaultVariants: { selected: false },

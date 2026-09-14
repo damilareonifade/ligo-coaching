@@ -42,7 +42,7 @@ export default function AccessRequestCard({
           size="h5"
           color="primary"
           text={request.title}
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText size="p" color="body" text={request.body} className="font-geist" />
       </View>
@@ -53,8 +53,8 @@ export default function AccessRequestCard({
           onPress={() => onAnswer(request.id, false)}
           disabled={answering}
           variant="outline"
-          className="flex-1 border-violet-line bg-white"
-          labelClassName="text-dark-gray"
+          className="flex-1 border-violet-line bg-surface"
+          labelClassName="text-foreground-muted"
           testID={`access-decline-${request.domain}`}
         />
         <LIButton

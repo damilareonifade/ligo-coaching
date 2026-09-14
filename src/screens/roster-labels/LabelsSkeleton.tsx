@@ -13,7 +13,7 @@ export default function LabelsSkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-20" />
-        <View className="rounded-card bg-white">
+        <View className="rounded-card bg-surface">
           {[0, 1, 2, 3, 4].map((row) => (
             <View key={row} className="flex-row items-center gap-3 px-4 py-3">
               <LISkeleton className="h-6 w-6 rounded-pill" />
@@ -31,7 +31,7 @@ export default function LabelsSkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-24" />
-        <View className="gap-4 rounded-card bg-white p-4">
+        <View className="gap-4 rounded-card bg-surface p-4">
           <LISkeleton className="h-12 w-full rounded-2xl" />
           <LISkeleton className="h-11 w-2/3 rounded-pill" />
           <LISkeleton className="h-9 w-32 rounded-pill" />

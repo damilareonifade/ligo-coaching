@@ -2,7 +2,7 @@ import { Lock } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIButton, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ChatArchivedNoticeProps {
   /** Worded by the caller — detaching reads differently from each seat. */
@@ -24,10 +24,11 @@ export default function ChatArchivedNotice({
   onAction,
   actionTestID,
 }: ChatArchivedNoticeProps) {
+  const tokens = useThemeTokens();
   return (
-    <View className="gap-3 border-t border-hairline bg-canvas px-4 py-3">
-      <View className="flex-row items-start gap-3 rounded-card border border-dashed border-hairline-strong p-4">
-        <Lock color={tokens.muted} size={16} />
+    <View className="gap-3 border-t border-border bg-background px-4 py-3">
+      <View className="flex-row items-start gap-3 rounded-card border border-dashed border-border-strong p-4">
+        <Lock color={tokens['foreground-subtle']} size={16} />
         <LIText size="caption" color="muted" text={message} className="flex-1 font-geist" />
       </View>
 

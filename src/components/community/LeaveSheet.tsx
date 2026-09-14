@@ -65,7 +65,7 @@ export default function LeaveSheet({
       <View className="gap-4" testID={testID}>
         <LIText size="p" color="body" text={body} className="font-geist" />
 
-        <View className="gap-3 rounded-card bg-canvas p-4">
+        <View className="gap-3 rounded-card bg-background p-4">
           {consequences.map((consequence) => (
             <View key={consequence.id} className="flex-row items-start gap-3">
               <View className="mt-0.5">{consequence.icon}</View>

@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import { errorMessage } from '@/api/client';
 import { LIButton, LIInput } from '@/components/ui';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ChatComposerProps {
   /** Resolves when the message is accepted; rejects to restore the draft. */
@@ -26,6 +26,7 @@ export default function ChatComposer({
   isPending,
   placeholder = 'Message',
 }: ChatComposerProps) {
+  const tokens = useThemeTokens();
   const [text, setText] = useState('');
   const showToast = useUiStore((state) => state.showToast);
 
@@ -43,7 +44,7 @@ export default function ChatComposer({
   }, [onSend, showToast, text]);
 
   return (
-    <View className="flex-row items-center gap-2 border-t border-hairline bg-canvas px-4 py-3">
+    <View className="flex-row items-center gap-2 border-t border-border bg-background px-4 py-3">
       <LIInput
         containerClassName="flex-1"
         fieldClassName="rounded-pill"
@@ -61,7 +62,7 @@ export default function ChatComposer({
         onPress={send}
         loading={isPending}
         disabled={text.trim().length === 0}
-        icon={<Send color={tokens.white} size={18} />}
+        icon={<Send color={tokens.inverse} size={18} />}
         className="h-12 w-12 gap-0 px-0"
         testID="chat-send"
       />

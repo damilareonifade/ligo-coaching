@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { LIBadge, LIInput, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface SessionHeaderProps {
   readonly title: string;
@@ -23,6 +23,7 @@ interface SessionHeaderProps {
  * the most. The bell lives on Today now, on both sides.
  */
 export default function SessionHeader({ title, onRename }: SessionHeaderProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const [renaming, setRenaming] = useState(false);
@@ -53,7 +54,7 @@ export default function SessionHeader({ title, onRename }: SessionHeaderProps) {
         className="flex-row items-center gap-0.5 self-start active:opacity-70"
         testID="session-back"
       >
-        <ChevronLeft color={tokens['dark-gray']} size={18} />
+        <ChevronLeft color={tokens['foreground-muted']} size={18} />
         <LIText size="p" color="body" text="Train" className="font-geist" />
       </Pressable>
 
@@ -73,7 +74,7 @@ export default function SessionHeader({ title, onRename }: SessionHeaderProps) {
             variant="filled"
             inputSize="lg"
             containerClassName="flex-1"
-            inputClassName="text-h2 font-geist-bold text-ink"
+            inputClassName="text-h2 font-geist-bold text-foreground"
             testID="session-title-input"
           />
         ) : (

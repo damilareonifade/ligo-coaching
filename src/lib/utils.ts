@@ -5,7 +5,7 @@ import { extendTailwindMerge } from 'tailwind-merge';
  * Our type scale uses custom `text-*` keys (`text-h1`…`text-caption`, see
  * tailwind.config.js). tailwind-merge only knows the stock size scale, so it
  * classifies these as text *colors* and silently drops the real color whenever
- * the two collide — e.g. `cn('text-white', 'text-h5')` returned just `text-h5`,
+ * the two collide — e.g. `cn('text-inverse', 'text-h5')` returned just `text-h5`,
  * which is why every LIButton label rendered black. Registering them as
  * font-size keeps colors and sizes in separate groups.
  */

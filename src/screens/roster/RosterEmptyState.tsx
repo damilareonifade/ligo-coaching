@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { LIButton, LISkeleton, LIText } from '@/components/ui';
 import { useInviteCodeActions } from '@/hooks/useInviteCodeActions';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface RosterEmptyStateProps {
   /** `undefined` while it loads — this card is the first thing a coach sees. */
@@ -22,6 +22,7 @@ const expectations = [
 ] as const;
 
 export default function RosterEmptyState({ inviteCode }: RosterEmptyStateProps) {
+  const tokens = useThemeTokens();
   const { copy } = useInviteCodeActions(inviteCode);
 
   return (
@@ -36,7 +37,7 @@ export default function RosterEmptyState({ inviteCode }: RosterEmptyStateProps) 
         />
       </View>
 
-      <View className="flex-row items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3">
+      <View className="flex-row items-center justify-between gap-3 rounded-2xl bg-surface px-4 py-3">
         {inviteCode ? (
           <LIText
             size="h4"

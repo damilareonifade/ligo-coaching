@@ -5,9 +5,10 @@ import { View } from 'react-native';
 import { LIButton, LIText } from '@/components/ui';
 import { useFinishOnboarding } from '@/hooks/useFinishOnboarding';
 import { useOnboardingStore } from '@/store/onboardingStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export default function AttachedConfirmation() {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const lookedUpCoach = useOnboardingStore((state) => state.lookedUpCoach);
   const finishOnboarding = useFinishOnboarding();
@@ -21,7 +22,7 @@ export default function AttachedConfirmation() {
   return (
     <View className="flex-1 items-center justify-center gap-6 px-6">
       <View className="h-20 w-20 items-center justify-center rounded-pill bg-violet">
-        <Check color={tokens.white} size={36} />
+        <Check color={tokens.inverse} size={36} />
       </View>
 
       <View className="items-center gap-2">
@@ -29,7 +30,7 @@ export default function AttachedConfirmation() {
           size="h1"
           color="primary"
           text="You're all set"
-          className="text-center font-geist-semibold text-ink"
+          className="text-center font-geist-semibold text-foreground"
         />
         <LIText
           size="p"

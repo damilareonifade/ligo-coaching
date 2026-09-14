@@ -57,7 +57,7 @@ export default function TodayWeek({ week }: TodayWeekProps) {
               key={index}
               className={cn(
                 'h-2 flex-1 rounded-pill',
-                index < week.done ? (met ? 'bg-success' : 'bg-violet') : 'bg-field',
+                index < week.done ? (met ? 'bg-success' : 'bg-violet') : 'bg-surface-sunken',
               )}
             />
           ))}

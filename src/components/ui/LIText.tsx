@@ -3,7 +3,7 @@ import { Pressable, Text } from 'react-native';
 
 import { cn } from '@/lib/utils';
 import { textColorClass, textSizeClass, type LITextColor, type LITextSize } from '@/theme/typography';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export interface LITextProps {
   readonly text: string;
@@ -39,10 +39,11 @@ export function LIText({
   link = false,
   linkValue,
   linkHref,
-  linkColor = tokens.violet,
+  linkColor,
   handleClick,
   testID,
 }: LITextProps) {
+  const tokens = useThemeTokens();
   const classes = cn(textSizeClass[size], textColorClass[color], className);
 
   const body = (
@@ -51,7 +52,10 @@ export function LIText({
       {link && linkValue && linkHref ? (
         <>
           {' '}
-          <Link href={linkHref} style={{ color: linkColor, textDecorationLine: 'underline' }}>
+          <Link
+            href={linkHref}
+            style={{ color: linkColor ?? tokens.violet, textDecorationLine: 'underline' }}
+          >
             {linkValue}
           </Link>
         </>

@@ -4,7 +4,7 @@ import { RefreshControl, View } from 'react-native';
 
 import type { ApiCoachGroupSummary, ApiInboxEntry } from '@/api/types';
 import { LIList } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import InboxEmptyState from './InboxEmptyState';
 import InboxGroupRows from './InboxGroupRows';
@@ -39,6 +39,7 @@ export default function InboxContent({
   refreshing,
   onRefresh,
 }: InboxContentProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const trimmed = query.trim();
 

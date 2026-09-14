@@ -9,7 +9,7 @@ export default function NotificationsSkeleton() {
       {[0, 1].map((group) => (
         <View key={group} className="gap-2">
           <LISkeleton className="h-3 w-24" />
-          <View className="gap-4 rounded-card bg-white p-4">
+          <View className="gap-4 rounded-card bg-surface p-4">
             {[0, 1, 2].map((row) => (
               <View key={row} className="flex-row items-center gap-3">
                 <LISkeleton className="h-9 w-9 rounded-pill" />

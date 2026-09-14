@@ -4,7 +4,7 @@ import { RefreshControl, ScrollView, View } from 'react-native';
 
 import type { ApiCoachHome } from '@/api/types';
 import { LIButton, LIEmptyState, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import CoachHomeAttentionRow from './CoachHomeAttentionRow';
 import CoachHomeLiveCard from './CoachHomeLiveCard';
@@ -31,6 +31,7 @@ export default function CoachHomeContent({
   refreshing,
   onRefresh,
 }: CoachHomeContentProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const openLive = useCallback(

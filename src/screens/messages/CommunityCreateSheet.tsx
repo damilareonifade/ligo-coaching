@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 
 import { LIModal } from '@/components/LIModal';
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface CommunityCreateSheetProps {
   readonly visible: boolean;
@@ -26,7 +26,7 @@ function Choice({ icon, title, body, onPress, testID }: ChoiceProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${body}`}
-      className="flex-row items-start gap-3 rounded-card bg-canvas p-4 active:opacity-80"
+      className="flex-row items-start gap-3 rounded-card bg-background p-4 active:opacity-80"
       testID={testID}
     >
       <View className="mt-0.5">{icon}</View>
@@ -47,6 +47,7 @@ function Choice({ icon, title, body, onPress, testID }: ChoiceProps) {
  * Each line says what it costs the client, not what it gives the coach.
  */
 export default function CommunityCreateSheet({ visible, onClose }: CommunityCreateSheetProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const openGroup = useCallback(() => {

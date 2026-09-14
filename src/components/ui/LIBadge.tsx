@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const badge = cva('self-start rounded-pill px-3 py-1', {
   variants: {
     tone: {
-      neutral: 'bg-field',
+      neutral: 'bg-surface-sunken',
       accent: 'bg-violet-weak',
       violet: 'bg-violet-weak',
       success: 'bg-success/15',
@@ -20,7 +20,7 @@ const badge = cva('self-start rounded-pill px-3 py-1', {
 const badgeLabel = cva('text-caption font-semibold', {
   variants: {
     tone: {
-      neutral: 'text-dark-gray',
+      neutral: 'text-foreground-muted',
       accent: 'text-violet',
       violet: 'text-violet',
       success: 'text-success',

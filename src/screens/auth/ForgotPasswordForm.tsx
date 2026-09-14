@@ -45,7 +45,7 @@ export default function ForgotPasswordForm() {
             size="h1"
             color="primary"
             text="Check your email"
-            className="font-geist-semibold text-ink"
+            className="font-geist-semibold text-foreground"
           />
           <LIText
             size="p"
@@ -81,7 +81,7 @@ export default function ForgotPasswordForm() {
           size="h1"
           color="primary"
           text="Reset your password"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -95,7 +95,7 @@ export default function ForgotPasswordForm() {
         <LIFormInput<Values>
           name="email"
           label="Email"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"

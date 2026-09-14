@@ -101,7 +101,7 @@ export default function OptInContent({ board, realName }: OptInContentProps) {
             onHandleChange={setHandle}
           />
 
-          <View className="flex-row items-center gap-3 rounded-card bg-white px-4 py-3">
+          <View className="flex-row items-center gap-3 rounded-card bg-surface px-4 py-3">
             <LIText
               size="caption"
               color="muted"

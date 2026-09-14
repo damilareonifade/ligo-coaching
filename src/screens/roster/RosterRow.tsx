@@ -6,7 +6,7 @@ import type { ApiRosterClient, ApiRosterLabel, RosterAttention } from '@/api/typ
 import { LIAvatar, LIBadge, LICard, LILabelDot, LIText } from '@/components/ui';
 import { accessLabel } from '@/lib/roster';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface RosterRowProps {
   readonly client: ApiRosterClient;
@@ -37,6 +37,7 @@ function chipTone(attention: RosterAttention): 'violet' | 'warning' {
 
 /** Memoised: FlashList recycles rows, and a long roster re-renders on every tick. */
 function RosterRow({ client, label, onPress, first, last }: RosterRowProps) {
+  const tokens = useThemeTokens();
   const handlePress = useCallback(() => onPress(client.id), [onPress, client.id]);
   const chip = attentionChip[client.attention];
 
@@ -47,7 +48,7 @@ function RosterRow({ client, label, onPress, first, last }: RosterRowProps) {
         'gap-0 rounded-none px-4 py-3',
         first && 'rounded-t-card',
         last && 'rounded-b-card',
-        !first && 'border-t border-hairline',
+        !first && 'border-t border-border',
       )}
       testID={`roster-row-${client.id}`}
     >
@@ -70,7 +71,7 @@ function RosterRow({ client, label, onPress, first, last }: RosterRowProps) {
                 className={cn('px-2 py-0.5', chip.className)}
                 labelClassName={cn(
                   'font-geist-medium',
-                  client.attention === 'live' && 'text-white',
+                  client.attention === 'live' && 'text-surface',
                 )}
               />
             ) : null}
@@ -118,7 +119,7 @@ function RosterRow({ client, label, onPress, first, last }: RosterRowProps) {
           />
         </View>
 
-        <ChevronRight color={tokens.muted} size={18} />
+        <ChevronRight color={tokens['foreground-subtle']} size={18} />
       </View>
     </LICard>
   );

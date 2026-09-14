@@ -3,13 +3,14 @@ import { View } from 'react-native';
 
 import type { ApiPersonalRecord } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ProgressRecordsProps {
   readonly records: readonly ApiPersonalRecord[];
 }
 
 export default function ProgressRecords({ records }: ProgressRecordsProps) {
+  const tokens = useThemeTokens();
   return (
     <LICard className="gap-3">
       <LIText size="h5" color="primary" text="Personal records" className="font-geist-semibold" />

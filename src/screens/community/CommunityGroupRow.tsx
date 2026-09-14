@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import type { ApiCommunityGroupSummary } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface CommunityGroupRowProps {
   readonly group: ApiCommunityGroupSummary;
@@ -16,6 +16,7 @@ interface CommunityGroupRowProps {
 
 /** One group the client is in. Rows form a single card, as elsewhere. */
 function CommunityGroupRow({ group, onPress, first, last }: CommunityGroupRowProps) {
+  const tokens = useThemeTokens();
   const press = useCallback(() => onPress(group.id), [onPress, group.id]);
 
   return (
@@ -25,7 +26,7 @@ function CommunityGroupRow({ group, onPress, first, last }: CommunityGroupRowPro
         'gap-0 rounded-none px-4 py-3',
         first && 'rounded-t-card',
         last && 'rounded-b-card',
-        !first && 'border-t border-hairline',
+        !first && 'border-t border-border',
       )}
       testID={`community-group-${group.id}`}
     >
@@ -58,7 +59,7 @@ function CommunityGroupRow({ group, onPress, first, last }: CommunityGroupRowPro
           <LIText size="caption" color="muted" text={group.when} className="font-geist-medium" />
         ) : null}
 
-        <ChevronRight color={tokens.muted} size={18} />
+        <ChevronRight color={tokens['foreground-subtle']} size={18} />
       </View>
     </LICard>
   );

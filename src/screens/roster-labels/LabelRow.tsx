@@ -5,7 +5,7 @@ import { View } from 'react-native';
 import type { ApiRosterLabel } from '@/api/types';
 import { LIButton, LICard, LILabelDot, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface LabelRowProps {
   readonly label: ApiRosterLabel;
@@ -18,6 +18,7 @@ interface LabelRowProps {
 }
 
 function LabelRow({ label, onPress, onRename, onDelete, first, last }: LabelRowProps) {
+  const tokens = useThemeTokens();
   const open = useCallback(() => onPress(label), [onPress, label]);
   const rename = useCallback(() => onRename(label), [onRename, label]);
   const remove = useCallback(() => onDelete(label), [onDelete, label]);
@@ -29,7 +30,7 @@ function LabelRow({ label, onPress, onRename, onDelete, first, last }: LabelRowP
         'gap-0 rounded-none px-4 py-3',
         first && 'rounded-t-card',
         last && 'rounded-b-card',
-        !first && 'border-t border-hairline',
+        !first && 'border-t border-border',
       )}
       testID={`label-row-${label.id}`}
     >
@@ -58,7 +59,7 @@ function LabelRow({ label, onPress, onRename, onDelete, first, last }: LabelRowP
           variant="ghost"
           size="sm"
           shape="pill"
-          icon={<Pencil color={tokens.muted} size={18} />}
+          icon={<Pencil color={tokens['foreground-subtle']} size={18} />}
           accessibilityLabel={`Rename ${label.name}`}
           className="h-10 w-10 gap-0 px-0"
           testID={`label-rename-${label.id}`}

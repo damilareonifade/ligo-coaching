@@ -50,7 +50,7 @@ export default function ChooseRoleAfterSignIn() {
           size="h1"
           color="primary"
           text="How will you use Ligo?"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"

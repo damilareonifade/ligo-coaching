@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import type { ApiSessionExercise, ApiSessionSet } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
 import { setProgressLabel, type SetField } from '@/lib/session';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import SessionExerciseNote from './SessionExerciseNote';
 import SessionSetRow from './SessionSetRow';
@@ -33,6 +33,7 @@ function SessionExerciseCardBase({
   onAddSet,
   onSaveNote,
 }: SessionExerciseCardProps) {
+  const tokens = useThemeTokens();
   return (
     // No padding on the card itself: a completed set tints its whole row, and
     // that tint has to run to both edges to read as a row rather than a patch.
@@ -50,7 +51,7 @@ function SessionExerciseCardBase({
         />
       </View>
 
-      <View className="border-t border-hairline">
+      <View className="border-t border-border">
         {sets.map((set) => (
           <SessionSetRow
             key={set.n}
@@ -68,7 +69,7 @@ function SessionExerciseCardBase({
           onPress={() => onAddSet(exercise.id)}
           accessibilityRole="button"
           accessibilityLabel={`Add a set to ${exercise.name}`}
-          className="flex-row items-center gap-1.5 border-t border-hairline px-4 py-3 active:opacity-70"
+          className="flex-row items-center gap-1.5 border-t border-border px-4 py-3 active:opacity-70"
           testID={`add-set-${exercise.id}`}
         >
           <Plus color={tokens.violet} size={16} />

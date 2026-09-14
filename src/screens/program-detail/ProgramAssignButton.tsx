@@ -3,7 +3,7 @@ import { UserPlus } from 'lucide-react-native';
 import { useCallback } from 'react';
 
 import { LIButton } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ProgramAssignButtonProps {
   readonly programId: string;
@@ -21,6 +21,7 @@ export default function ProgramAssignButton({
   programId,
   assignedCount,
 }: ProgramAssignButtonProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const open = useCallback(() => {

@@ -79,7 +79,7 @@ export default function SignupDetails() {
             size="h1"
             color="primary"
             text="Confirm your email"
-            className="font-geist-semibold text-ink"
+            className="font-geist-semibold text-foreground"
           />
           <LIText
             size="p"
@@ -123,7 +123,7 @@ export default function SignupDetails() {
           size="h1"
           color="primary"
           text={role === 'coach' ? 'Create your coach account' : 'Create your client account'}
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -137,7 +137,7 @@ export default function SignupDetails() {
         <LIFormInput<DetailsValues>
           name="name"
           label="Name"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           placeholder="Ada Bello"
           autoCapitalize="words"
           description="How coaches and training partners will see you"
@@ -145,7 +145,7 @@ export default function SignupDetails() {
         <LIFormInput<DetailsValues>
           name="email"
           label="Email"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -154,7 +154,7 @@ export default function SignupDetails() {
         <LIFormInput<DetailsValues>
           name="password"
           label="Password"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           placeholder="At least 8 characters"
           secureTextEntry
           autoCapitalize="none"

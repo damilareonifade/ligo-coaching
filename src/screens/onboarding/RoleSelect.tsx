@@ -9,7 +9,7 @@ import { useGoogleSignUp } from '@/hooks/useGoogleSignUp';
 import { cn } from '@/lib/utils';
 import SocialSignIn from '@/components/auth/SocialSignIn';
 import { useOnboardingStore } from '@/store/onboardingStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface RoleCardConfig {
   readonly role: UserRole;
@@ -37,6 +37,7 @@ const cards: readonly RoleCardConfig[] = [
 ];
 
 export default function RoleSelect() {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const role = useOnboardingStore((state) => state.role);
   const setRole = useOnboardingStore((state) => state.setRole);
@@ -53,7 +54,7 @@ export default function RoleSelect() {
           size="h1"
           color="primary"
           text="Create an account"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -73,7 +74,7 @@ export default function RoleSelect() {
               onPress={() => setRole(card.role)}
               testID={card.testID}
               className={cn(
-                'gap-2 border-2 bg-white',
+                'gap-2 border-2 bg-surface',
                 selected ? 'border-violet-line' : 'border-transparent',
               )}
             >
@@ -83,7 +84,7 @@ export default function RoleSelect() {
                 </View>
                 {selected ? (
                   <View className="h-6 w-6 items-center justify-center rounded-pill bg-violet">
-                    <Check color={tokens.white} size={14} />
+                    <Check color={tokens.inverse} size={14} />
                   </View>
                 ) : null}
               </View>
@@ -91,7 +92,7 @@ export default function RoleSelect() {
                 size="h4"
                 color="primary"
                 text={card.title}
-                className="font-geist-medium text-ink"
+                className="font-geist-medium text-foreground"
               />
               <LIText size="p" color="body" text={card.body} className="font-geist" />
             </LICard>

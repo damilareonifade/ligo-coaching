@@ -23,7 +23,7 @@ export default function CommunityInviteCard({ invite, onReview }: CommunityInvit
   return (
     <View className="gap-3 rounded-card border border-violet-line bg-violet-weak/40 p-4">
       <View className="flex-row items-center gap-3">
-        <LIAvatar name={invite.coachName} size="sm" className="bg-white" />
+        <LIAvatar name={invite.coachName} size="sm" className="bg-surface" />
         <View className="flex-1 gap-0.5">
           <LIText size="h5" color="primary" text={invite.name} className="font-geist-semibold" />
           <LIText

@@ -55,7 +55,7 @@ export default function DataExportCard({ lastExport }: DataExportCardProps) {
         className="font-geist"
       />
 
-      <View className="flex-row items-center gap-3 border-t border-hairline pt-3">
+      <View className="flex-row items-center gap-3 border-t border-border pt-3">
         <View className="flex-1 gap-0.5">
           <LIText
             size="p"

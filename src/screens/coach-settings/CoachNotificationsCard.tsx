@@ -5,7 +5,7 @@ import type { ApiCoachNotification } from '@/api/types';
 import { LICard, LISwitch, LIText } from '@/components/ui';
 import { NOTIFICATION_LOCK_NOTE, canToggleNotification } from '@/lib/coachProfile';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface CoachNotificationsCardProps {
   readonly rows: readonly ApiCoachNotification[];
@@ -30,6 +30,7 @@ export default function CoachNotificationsCard({
   rows,
   onToggle,
 }: CoachNotificationsCardProps) {
+  const tokens = useThemeTokens();
   return (
     <View className="gap-2">
       <LIText
@@ -48,7 +49,7 @@ export default function CoachNotificationsCard({
               key={row.id}
               className={cn(
                 'flex-row items-center gap-3 py-3',
-                index > 0 && 'border-t border-hairline',
+                index > 0 && 'border-t border-border',
               )}
               testID={`coach-notification-${row.id}`}
             >
@@ -60,7 +61,7 @@ export default function CoachNotificationsCard({
                     text={row.label}
                     className="font-geist-medium"
                   />
-                  {togglable ? null : <Lock color={tokens.muted} size={14} />}
+                  {togglable ? null : <Lock color={tokens['foreground-subtle']} size={14} />}
                 </View>
                 <LIText size="caption" color="muted" text={row.desc} className="font-geist" />
               </View>

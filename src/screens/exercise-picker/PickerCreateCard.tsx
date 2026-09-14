@@ -21,7 +21,7 @@ export default function PickerCreateCard() {
   }, [router, programId, routineId]);
 
   return (
-    <LICard className="gap-3 border border-dashed border-hairline-strong bg-transparent">
+    <LICard className="gap-3 border border-dashed border-border-strong bg-transparent">
       <LIText size="h5" color="primary" text="Not in the list?" className="font-geist-semibold" />
       <LIText
         size="caption"

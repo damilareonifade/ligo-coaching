@@ -3,7 +3,7 @@ import { Bar, CartesianChart } from 'victory-native';
 
 import { LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export interface LIChartDatum {
   readonly label: string;
@@ -20,15 +20,13 @@ export interface LIChartProps {
 /** Index signature is required by victory-native generics. */
 type ChartRow = { [key: string]: number; index: number; value: number };
 
-/**
- * Every tone resolves to violet post-palette-migration. The prop is kept so the
- * existing call sites (`tone="accent"` / `tone="primary"`) keep type-checking.
+/*
+ * Every tone resolves to violet post-palette-migration, and the prop is kept
+ * so the existing call sites (`tone="accent"` / `tone="primary"`) keep
+ * type-checking. The lookup table it used to be could not be a table any more:
+ * the value now depends on the theme, and a module-scope constant is read once
+ * at import and never hears that the theme changed.
  */
-const toneColor: Record<NonNullable<LIChartProps['tone']>, string> = {
-  accent: tokens.violet,
-  violet: tokens.violet,
-  primary: tokens.violet,
-};
 
 /**
  * Bar chart for progress over time (weekly volume, adherence).
@@ -36,8 +34,11 @@ const toneColor: Record<NonNullable<LIChartProps['tone']>, string> = {
  * so they follow the app's type scale and need no font asset.
  */
 export function LIChart({ data, height = 180, tone = 'accent', className }: LIChartProps) {
+  const tokens = useThemeTokens();
   const rows: ChartRow[] = data.map((datum, index) => ({ index, value: datum.value }));
-  const color = toneColor[tone];
+  // `tone` is honoured by keeping the prop, not by branching: all three
+  // values are violet. See the note above.
+  const color = tokens.violet;
   // Anchor the axis at zero. Left to auto-scale, victory-native fits the domain
   // to [min, max], so the smallest bar renders at zero height — eight weeks of
   // volume between 31t and 42t looked like a jump from nothing to everything.

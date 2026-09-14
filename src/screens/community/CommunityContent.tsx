@@ -4,7 +4,7 @@ import { RefreshControl, ScrollView, View } from 'react-native';
 
 import type { ApiCommunity, ApiCommunityBoardSummary } from '@/api/types';
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import CommunityBoardRow from './CommunityBoardRow';
 import CommunityEmptyState from './CommunityEmptyState';
@@ -28,6 +28,7 @@ export default function CommunityContent({
   refreshing,
   onRefresh,
 }: CommunityContentProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const openInvite = useCallback(

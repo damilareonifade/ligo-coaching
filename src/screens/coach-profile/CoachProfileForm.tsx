@@ -69,7 +69,7 @@ export default function CoachProfileForm({ initial }: CoachProfileFormProps) {
       <View className="gap-4">
         <LIInput
           label="Display name"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
@@ -77,7 +77,7 @@ export default function CoachProfileForm({ initial }: CoachProfileFormProps) {
         />
         <LIInput
           label="Gym or studio"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           value={gym}
           onChangeText={setGym}
           placeholder="Ironworks Lagos"
@@ -86,7 +86,7 @@ export default function CoachProfileForm({ initial }: CoachProfileFormProps) {
         />
         <LIInput
           label="Short bio"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           value={bio}
           onChangeText={setBio}
           placeholder="A line or two about your coaching style"
@@ -101,7 +101,7 @@ export default function CoachProfileForm({ initial }: CoachProfileFormProps) {
           size="h5"
           color="primary"
           text="Specialties"
-          className="font-geist-medium text-ink"
+          className="font-geist-medium text-foreground"
         />
         <LIText
           size="caption"

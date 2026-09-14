@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { LIInput, LIText } from '@/components/ui';
 import { resultCountLabel } from '@/lib/programs';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface PickerSearchFieldProps {
   readonly value: string;
@@ -20,6 +20,7 @@ export default function PickerSearchField({
   onChange,
   resultCount,
 }: PickerSearchFieldProps) {
+  const tokens = useThemeTokens();
   const [focused, setFocused] = useState(false);
 
   return (
@@ -34,7 +35,7 @@ export default function PickerSearchField({
       returnKeyType="search"
       accessibilityLabel="Search exercises"
       fieldClassName={focused ? 'border-violet' : undefined}
-      leading={<Search color={tokens.muted} size={18} />}
+      leading={<Search color={tokens['foreground-subtle']} size={18} />}
       trailing={
         <LIText
           size="caption"

@@ -110,6 +110,12 @@ export function buildProfileGroups({
           value: units,
           route: '/profile/units',
         },
+        {
+          id: 'appearance',
+          label: 'Appearance',
+          desc: 'Light, dark, or follow your phone',
+          route: '/profile/theme',
+        },
       ],
     },
     // Both of these are nutrition, which is off. Gated rather than stubbed, so

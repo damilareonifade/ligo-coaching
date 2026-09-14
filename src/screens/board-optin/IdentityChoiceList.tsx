@@ -38,7 +38,7 @@ export default function IdentityChoiceList({
         className="font-geist-medium tracking-wide"
       />
 
-      <View className="overflow-hidden rounded-card bg-white px-4">
+      <View className="overflow-hidden rounded-card bg-surface px-4">
         {options.map((option, index) => {
           const selected = option.id === value;
 
@@ -51,7 +51,7 @@ export default function IdentityChoiceList({
                 accessibilityLabel={`${option.label}. ${option.desc} Shown as ${option.sample}.`}
                 className={cn(
                   'flex-row items-start gap-3 py-3 active:opacity-70',
-                  index > 0 && 'border-t border-hairline',
+                  index > 0 && 'border-t border-border',
                 )}
                 testID={`identity-${option.id}`}
               >

@@ -7,7 +7,7 @@ import { LIButton, LIInput, LIText } from '@/components/ui';
 import { useUnits } from '@/hooks/useUnits';
 import { parseSetInput } from '@/lib/session';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface LiveSetRowProps {
   readonly set: ApiLiveSet;
@@ -36,6 +36,7 @@ export default function LiveSetRow({
   onAdjust,
   saving,
 }: LiveSetRowProps) {
+  const tokens = useThemeTokens();
   const units = useUnits();
   const [editing, setEditing] = useState(false);
   const [weight, setWeight] = useState(String(set.weightKg));
@@ -59,7 +60,7 @@ export default function LiveSetRow({
 
   if (editing) {
     return (
-      <View className="gap-2 rounded-card bg-field p-3" testID={`live-set-edit-${set.id}`}>
+      <View className="gap-2 rounded-card bg-surface-sunken p-3" testID={`live-set-edit-${set.id}`}>
         <LIText
           size="caption"
           color="muted"
@@ -70,7 +71,7 @@ export default function LiveSetRow({
           <View className="flex-1">
             <LIInput
               label={units.weight}
-              labelClassName="text-dark-gray"
+              labelClassName="text-foreground-muted"
               value={weight}
               onChangeText={setWeight}
               keyboardType="decimal-pad"
@@ -81,7 +82,7 @@ export default function LiveSetRow({
           <View className="flex-1">
             <LIInput
               label="reps"
-              labelClassName="text-dark-gray"
+              labelClassName="text-foreground-muted"
               value={reps}
               onChangeText={setReps}
               keyboardType="number-pad"
@@ -95,7 +96,7 @@ export default function LiveSetRow({
             onPress={() => setEditing(false)}
             variant="ghost"
             className="flex-1"
-            labelClassName="text-dark-gray"
+            labelClassName="text-foreground-muted"
           />
           <LIButton
             title="Save"
@@ -123,12 +124,12 @@ export default function LiveSetRow({
         disabled={!openable}
         variant="outline"
         className={cn(
-          'flex-1 justify-start border-hairline bg-white',
+          'flex-1 justify-start border-border bg-surface',
           // Marked where the coach changed it. The client is entitled to know
           // which numbers on their screen they did not put there.
           set.changedByCoach && 'border-violet-line bg-violet-weak',
         )}
-        labelClassName="text-dark-gray"
+        labelClassName="text-foreground-muted"
         testID={`live-set-${set.id}`}
       />
 
@@ -140,10 +141,10 @@ export default function LiveSetRow({
         }
         className={cn(
           'h-8 w-8 items-center justify-center rounded-pill',
-          set.completed ? 'bg-violet' : 'border border-hairline bg-field',
+          set.completed ? 'bg-violet' : 'border border-border bg-surface-sunken',
         )}
       >
-        {set.completed ? <Check color={tokens.white} size={18} /> : null}
+        {set.completed ? <Check color={tokens.inverse} size={18} /> : null}
       </View>
     </View>
   );

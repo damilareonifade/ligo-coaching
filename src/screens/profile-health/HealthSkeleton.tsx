@@ -6,7 +6,7 @@ import { LISkeleton } from '@/components/ui';
 export default function HealthSkeleton() {
   return (
     <View className="gap-4 px-4 pt-2">
-      <View className="gap-3 rounded-card bg-field p-4">
+      <View className="gap-3 rounded-card bg-surface-sunken p-4">
         <View className="flex-row items-start gap-3">
           <LISkeleton className="h-4 w-4 rounded-pill" />
           <LISkeleton className="h-10 flex-1" />
@@ -17,7 +17,7 @@ export default function HealthSkeleton() {
       {[2, 1, 2].map((rowCount, section) => (
         <View key={section} className="gap-2">
           <LISkeleton className="h-3 w-40" />
-          <View className="rounded-card bg-white px-4 py-1">
+          <View className="rounded-card bg-surface px-4 py-1">
             {Array.from({ length: rowCount }, (_, row) => (
               <View key={row} className="flex-row items-center gap-3 py-3">
                 <LISkeleton className="h-3 w-[108px]" />

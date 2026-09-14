@@ -10,7 +10,7 @@ export default function PermissionsSkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-28" />
-        <View className="gap-4 rounded-card bg-white p-4">
+        <View className="gap-4 rounded-card bg-surface p-4">
           {[0, 1, 2, 3, 4].map((row) => (
             <View key={row} className="flex-row items-center gap-3">
               <View className="flex-1 gap-2">
@@ -25,7 +25,7 @@ export default function PermissionsSkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-32" />
-        <View className="gap-3 rounded-card bg-white p-4">
+        <View className="gap-3 rounded-card bg-surface p-4">
           <View className="flex-row items-center gap-3">
             <View className="flex-1 gap-2">
               <LISkeleton className="h-4 w-40" />

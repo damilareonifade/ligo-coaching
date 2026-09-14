@@ -2,7 +2,7 @@ import { Eye, EyeOff } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface InviteVisibilityPanelProps {
   readonly visible: readonly string[];
@@ -16,8 +16,9 @@ interface HalfProps {
 }
 
 function Half({ title, rows, shown }: HalfProps) {
+  const tokens = useThemeTokens();
   return (
-    <View className={shown ? 'gap-2 bg-white p-4' : 'gap-2 border-t border-hairline bg-canvas p-4'}>
+    <View className={shown ? 'gap-2 bg-surface p-4' : 'gap-2 border-t border-border bg-background p-4'}>
       <LIText
         size="caption"
         color="muted"
@@ -29,7 +30,7 @@ function Half({ title, rows, shown }: HalfProps) {
           {shown ? (
             <Eye color={tokens.violet} size={16} />
           ) : (
-            <EyeOff color={tokens.muted} size={16} />
+            <EyeOff color={tokens['foreground-subtle']} size={16} />
           )}
           <LIText
             size="p"
@@ -54,7 +55,7 @@ function Half({ title, rows, shown }: HalfProps) {
  */
 export default function InviteVisibilityPanel({ visible, hidden }: InviteVisibilityPanelProps) {
   return (
-    <View className="overflow-hidden rounded-card border border-hairline">
+    <View className="overflow-hidden rounded-card border border-border">
       <Half title="If you accept, members can see" rows={visible} shown />
       <Half title="Stays private, always" rows={hidden} shown={false} />
     </View>

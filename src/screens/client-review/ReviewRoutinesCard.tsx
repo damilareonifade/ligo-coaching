@@ -4,9 +4,9 @@ import { useCallback } from 'react';
 import { Pressable, View } from 'react-native';
 
 import type { ApiRoutineInstance, ApiWeeklyProgress } from '@/api/types';
-import { LIBadge, LICard, LIText } from '@/components/ui';
+import { LIBadge, LICard, LISkeleton, LIText } from '@/components/ui';
 import { lastDoneLabel, nextInRotation } from '@/lib/rotation';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ReviewRoutinesCardProps {
   readonly clientId: string;
@@ -21,7 +21,32 @@ interface RoutineRowProps {
   readonly isNext: boolean;
 }
 
+/**
+ * Mirrors `RoutineRow`: a name over its exercise count, and the chevron.
+ *
+ * It replaced the word "Loading…", which told a coach that something was
+ * happening without telling them what was about to be there — and moved the
+ * card's height twice, once when the text appeared and again when the rows
+ * did.
+ */
+function RoutineRowSkeleton() {
+  return (
+    <View className="gap-3" testID="review-routines-skeleton">
+      {[0, 1].map((row) => (
+        <View key={row} className="flex-row items-center gap-3">
+          <View className="flex-1 gap-2">
+            <LISkeleton className="h-4 w-36" />
+            <LISkeleton className="h-3 w-48" />
+          </View>
+          <LISkeleton className="h-4 w-4 rounded-pill" />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function RoutineRow({ clientId, routine, isNext }: RoutineRowProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const open = useCallback(() => {
@@ -73,7 +98,7 @@ function RoutineRow({ clientId, routine, isNext }: RoutineRowProps) {
         <LIBadge tone="warning" label="Changed" labelClassName="font-geist-medium" />
       ) : null}
 
-      <ChevronRight color={tokens['dark-gray']} size={16} />
+      <ChevronRight color={tokens['foreground-muted']} size={16} />
     </Pressable>
   );
 }
@@ -108,7 +133,7 @@ export default function ReviewRoutinesCard({
       </View>
 
       {loading ? (
-        <LIText size="caption" color="muted" text="Loading…" className="font-geist" />
+        <RoutineRowSkeleton />
       ) : routines.length === 0 ? (
         <LIText
           size="caption"
@@ -131,7 +156,7 @@ export default function ReviewRoutinesCard({
         size="caption"
         color="muted"
         text="Editing here changes this client's copy only."
-        className="border-t border-hairline pt-3 font-geist"
+        className="border-t border-border pt-3 font-geist"
       />
     </LICard>
   );

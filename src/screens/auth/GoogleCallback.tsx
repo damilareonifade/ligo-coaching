@@ -71,7 +71,7 @@ export default function GoogleCallback({ code, errorDescription }: GoogleCallbac
             size="h1"
             color="primary"
             text="Sign-in didn't finish"
-            className="font-geist-semibold text-ink"
+            className="font-geist-semibold text-foreground"
           />
           <LIText size="p" color="body" text={failure} className="font-geist" />
           <LIText
@@ -100,7 +100,7 @@ export default function GoogleCallback({ code, errorDescription }: GoogleCallbac
         size="h1"
         color="primary"
         text="Finishing sign-in"
-        className="font-geist-semibold text-ink"
+        className="font-geist-semibold text-foreground"
       />
       <LIText size="p" color="body" text="One moment." className="font-geist" />
     </View>

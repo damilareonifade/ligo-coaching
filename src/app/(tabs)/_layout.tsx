@@ -17,7 +17,7 @@ import { View } from 'react-native';
 import { hasFeature } from '@/lib/features';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 /**
  * The selected tab carries a filled pill behind its icon, not just a tint —
@@ -28,6 +28,9 @@ function tabIcon(Icon: LucideIcon) {
   // The tab bar hands back a `ColorValue`; lucide wants a string. Both are the
   // token we set in `screenOptions`, so read the focused state instead.
   return function TabIcon({ focused }: { focused: boolean }) {
+    // Inside the returned component, not in `tabIcon` — that is a factory, and
+    // a hook there would run once at module setup and never follow the theme.
+    const tokens = useThemeTokens();
     return (
       <View
         className={cn(
@@ -35,7 +38,7 @@ function tabIcon(Icon: LucideIcon) {
           focused && 'bg-violet-weak',
         )}
       >
-        <Icon color={focused ? tokens.violet : tokens.muted} size={22} />
+        <Icon color={focused ? tokens.violet : tokens['foreground-subtle']} size={22} />
       </View>
     );
   };
@@ -50,6 +53,7 @@ function tabIcon(Icon: LucideIcon) {
  * `href: null` so a deep link still resolves.
  */
 export default function TabsLayout() {
+  const tokens = useThemeTokens();
   const role = useAuthStore((state) => state.user?.role);
   const needsRole = useAuthStore((state) => state.needsRole);
   const needsOnboarding = useAuthStore((state) => state.needsOnboarding);
@@ -82,8 +86,8 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: tokens.violet,
-        tabBarInactiveTintColor: tokens.muted,
-        tabBarStyle: { backgroundColor: tokens.white, borderTopColor: tokens.hairline },
+        tabBarInactiveTintColor: tokens['foreground-subtle'],
+        tabBarStyle: { backgroundColor: tokens.inverse, borderTopColor: tokens.border },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >

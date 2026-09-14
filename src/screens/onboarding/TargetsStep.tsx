@@ -39,7 +39,7 @@ export default function TargetsStep() {
           size="h1"
           color="primary"
           text="Set your baseline"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -50,7 +50,7 @@ export default function TargetsStep() {
       </View>
 
       <View className="gap-2">
-        <LIText size="h5" color="primary" text="Units" className="font-geist-medium text-ink" />
+        <LIText size="h5" color="primary" text="Units" className="font-geist-medium text-foreground" />
         <LISegmented options={UNIT_OPTIONS} value={units} onChange={setUnits} />
       </View>
 
@@ -59,7 +59,7 @@ export default function TargetsStep() {
           size="h5"
           color="primary"
           text="Sessions per week"
-          className="font-geist-medium text-ink"
+          className="font-geist-medium text-foreground"
         />
         <View className="flex-row gap-2">
           {SESSION_OPTIONS.map((count) => (
@@ -74,21 +74,21 @@ export default function TargetsStep() {
         </View>
       </View>
 
-      <LICard className="gap-3 bg-white">
+      <LICard className="gap-3 bg-surface">
         <LIText
           size="h5"
           color="primary"
           text="Suggested targets"
-          className="font-geist-medium text-ink"
+          className="font-geist-medium text-foreground"
         />
         <View className="flex-row gap-3">
           {SUGGESTED_TARGETS.map((target) => (
-            <View key={target.label} className="flex-1 items-center gap-1 rounded-card bg-white p-3">
+            <View key={target.label} className="flex-1 items-center gap-1 rounded-card bg-surface p-3">
               <LIText
                 size="h3"
                 color="primary"
                 text={target.value}
-                className="font-geist-medium text-ink"
+                className="font-geist-medium text-foreground"
               />
               <LIText
                 size="caption"

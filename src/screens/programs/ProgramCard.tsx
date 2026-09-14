@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import type { ApiProgramSummary } from '@/api/types';
 import { LIAvatar, LIBadge, LICard, LIText } from '@/components/ui';
 import { statusTone } from '@/lib/programs';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ProgramCardProps {
   readonly program: ApiProgramSummary;
@@ -18,6 +18,7 @@ interface ProgramCardProps {
 const VISIBLE_AVATARS = 3;
 
 function ProgramCardBase({ program, assignedNames }: ProgramCardProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const open = useCallback(
@@ -54,7 +55,7 @@ function ProgramCardBase({ program, assignedNames }: ProgramCardProps) {
         />
       </View>
 
-      <View className="h-px bg-hairline" />
+      <View className="h-px bg-border" />
 
       <View className="flex-row items-center gap-3">
         {shown.length > 0 ? (
@@ -69,12 +70,12 @@ function ProgramCardBase({ program, assignedNames }: ProgramCardProps) {
                 // overlap stops at 8px: a 36px avatar centres two initials
                 // across its middle 18px, and -ml-3 clipped the second glyph
                 // (PB read as PE, AH as AI).
-                className={index === 0 ? 'border-2 border-white' : '-ml-2 border-2 border-white'}
+                className={index === 0 ? 'border-2 border-surface' : '-ml-2 border-2 border-surface'}
                 labelClassName="text-caption"
               />
             ))}
             {overflow > 0 ? (
-              <View className="-ml-2 h-9 items-center justify-center rounded-pill border-2 border-white bg-field px-2">
+              <View className="-ml-2 h-9 items-center justify-center rounded-pill border-2 border-surface bg-surface-sunken px-2">
                 <LIText
                   size="caption"
                   color="muted"
@@ -93,7 +94,7 @@ function ProgramCardBase({ program, assignedNames }: ProgramCardProps) {
           numberOfLines={1}
           className="flex-1 font-geist"
         />
-        <ChevronRight color={tokens.muted} size={18} />
+        <ChevronRight color={tokens['foreground-subtle']} size={18} />
       </View>
     </LICard>
   );

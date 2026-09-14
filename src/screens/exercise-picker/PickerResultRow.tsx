@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import type { ApiExerciseOption } from '@/api/types';
 import { LIBadge, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface PickerResultRowProps {
   readonly option: ApiExerciseOption;
@@ -13,6 +13,7 @@ interface PickerResultRowProps {
 }
 
 function PickerResultRowBase({ option, onAdd, disabled }: PickerResultRowProps) {
+  const tokens = useThemeTokens();
   const add = useCallback(() => onAdd(option), [onAdd, option]);
 
   return (
@@ -22,7 +23,7 @@ function PickerResultRowBase({ option, onAdd, disabled }: PickerResultRowProps) 
       accessibilityRole="button"
       accessibilityLabel={`Add ${option.name}, ${option.meta}`}
       accessibilityState={{ disabled }}
-      className="flex-row items-center gap-3 rounded-card bg-white px-4 py-3 active:opacity-70"
+      className="flex-row items-center gap-3 rounded-card bg-surface px-4 py-3 active:opacity-70"
       testID={`picker-result-${option.id}`}
     >
       <View className="flex-1 gap-0.5">

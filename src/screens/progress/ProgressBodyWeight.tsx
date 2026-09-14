@@ -6,7 +6,7 @@ import type { ApiBodyWeightPoint } from '@/api/types';
 import { LIButton, LICard, LIInput, LIText } from '@/components/ui';
 import { useUnits } from '@/hooks/useUnits';
 import { parseSetInput } from '@/lib/session';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 const CHART_HEIGHT = 96;
 const DOT_RADIUS = 4;
@@ -30,6 +30,7 @@ export default function ProgressBodyWeight({
   onLog,
   logging,
 }: ProgressBodyWeightProps) {
+  const tokens = useThemeTokens();
   const units = useUnits();
   // Width is only known after layout; the SVG paints on the second pass.
   const [width, setWidth] = useState(0);

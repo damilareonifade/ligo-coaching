@@ -27,7 +27,7 @@ export default function OptInSkeleton() {
 
         <View className="gap-2">
           <LISkeleton className="h-3 w-44" />
-          <View className="gap-3 rounded-card bg-white p-4">
+          <View className="gap-3 rounded-card bg-surface p-4">
             {Array.from({ length: IDENTITY_ROWS }, (_, index) => (
               <View key={index} className="flex-row items-center gap-3">
                 <LISkeleton className="h-5 w-5 rounded-pill" />

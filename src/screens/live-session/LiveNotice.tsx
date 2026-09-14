@@ -2,7 +2,7 @@ import { Lock } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface LiveNoticeProps {
   readonly notice: string;
@@ -19,13 +19,14 @@ interface LiveNoticeProps {
  * once, at the top, with a lock next to it.
  */
 export default function LiveNotice({ notice }: LiveNoticeProps) {
+  const tokens = useThemeTokens();
   return (
     <View
-      className="flex-row items-start gap-3 rounded-card bg-field px-4 py-3"
+      className="flex-row items-start gap-3 rounded-card bg-surface-sunken px-4 py-3"
       testID="live-notice"
     >
       <View className="mt-0.5">
-        <Lock color={tokens.muted} size={16} />
+        <Lock color={tokens['foreground-subtle']} size={16} />
       </View>
       <LIText size="caption" color="muted" text={notice} className="flex-1 font-geist" />
     </View>

@@ -6,7 +6,7 @@ import { useUnreadNotificationsQuery } from '@/api/notifications';
 import HomeHeader from '@/components/chrome/HomeHeader';
 import { LIErrorState } from '@/components/ui';
 import { useStartWorkout } from '@/hooks/useStartWorkout';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import ClientTodaySkeleton from './ClientTodaySkeleton';
 import TodayCoachCard from './TodayCoachCard';
@@ -25,6 +25,7 @@ import TodayWeek from './TodayWeek';
  * session, and a header that repeats the card under it is noise.
  */
 export default function ClientTodayContent() {
+  const tokens = useThemeTokens();
   const { data, isPending, error, refetch, isRefetching } = useClientTodayQuery();
   const { start, pendingPlanId } = useStartWorkout();
   // Fetched here rather than inside the bell: every call in this app is made

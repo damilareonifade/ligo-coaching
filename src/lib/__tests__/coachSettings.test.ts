@@ -44,3 +44,13 @@ describe('buildCoachSettingsGroups', () => {
     expect(last?.danger).toBe(true);
   });
 });
+
+describe('appearance', () => {
+  it('is offered on the coach side too, at the same route as the client', () => {
+    const rows = buildCoachSettingsGroups({ inviteCode: 'SAM-4KQ2', labelCount: 3 }).flatMap(
+      (group) => group.rows,
+    );
+
+    expect(rows.find((row) => row.id === 'appearance')?.route).toBe('/profile/theme');
+  });
+});

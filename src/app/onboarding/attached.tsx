@@ -5,7 +5,7 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
 export default function AttachedScreen() {
   return (
-    <LISafeArea edges={['top', 'bottom']} className="bg-canvas">
+    <LISafeArea edges={['top', 'bottom']} className="bg-background">
       <AttachedConfirmation />
     </LISafeArea>
   );

@@ -9,7 +9,7 @@ import { LISkeleton } from '@/components/ui';
 export default function ProgressSkeleton() {
   return (
     <View className="gap-4 px-4 pt-2">
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <View className="flex-row items-start justify-between">
           <View className="gap-2">
             <LISkeleton className="h-3 w-24" />
@@ -21,7 +21,7 @@ export default function ProgressSkeleton() {
         <LISkeleton className="h-3 w-full" />
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <LISkeleton className="h-4 w-36" />
         {[0, 1, 2].map((row) => (
           <View key={row} className="flex-row items-center gap-3">
@@ -35,7 +35,7 @@ export default function ProgressSkeleton() {
         ))}
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <View className="flex-row items-center justify-between">
           <LISkeleton className="h-3 w-24" />
           <LISkeleton className="h-5 w-20" />
@@ -44,7 +44,7 @@ export default function ProgressSkeleton() {
         <LISkeleton className="h-3 w-full" />
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <View className="flex-row items-center gap-2">
           <LISkeleton className="h-5 w-5 rounded-pill" />
           <LISkeleton className="h-4 w-40" />
@@ -60,7 +60,7 @@ export default function ProgressSkeleton() {
         <LISkeleton className="h-3 w-full" />
       </View>
 
-      <View className="flex-row items-start gap-3 rounded-card border border-dashed border-hairline-strong p-4">
+      <View className="flex-row items-start gap-3 rounded-card border border-dashed border-border-strong p-4">
         <LISkeleton className="h-4 w-4 rounded-pill" />
         <LISkeleton className="h-8 flex-1" />
       </View>

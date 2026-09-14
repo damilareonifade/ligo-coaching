@@ -10,7 +10,7 @@ export interface LIImageProps extends ImageProps {
 export function LIImage({ className, transition = 200, ...props }: LIImageProps) {
   return (
     <Image
-      className={cn('bg-field', className)}
+      className={cn('bg-surface-sunken', className)}
       transition={transition}
       cachePolicy="memory-disk"
       {...props}

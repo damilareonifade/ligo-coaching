@@ -7,7 +7,7 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
 export default function CoachPermissionsScreen() {
   return (
-    <LISafeArea edges={['top', 'bottom']} className="bg-canvas">
+    <LISafeArea edges={['top', 'bottom']} className="bg-background">
       <ScrollView contentContainerClassName="flex-grow" keyboardShouldPersistTaps="handled">
         <CoachPermissionsStep />
       </ScrollView>

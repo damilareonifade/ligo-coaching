@@ -73,7 +73,7 @@ export default function PermissionsContent({ detail }: PermissionsContentProps) 
               key={copy.key}
               className={cn(
                 'flex-row items-center gap-3 py-3',
-                index > 0 && 'border-t border-hairline',
+                index > 0 && 'border-t border-border',
               )}
             >
               <View className="flex-1 gap-0.5">

@@ -7,7 +7,7 @@ import type { ApiRoutine } from '@/api/types';
 import { LIButton, LICard, LIText } from '@/components/ui';
 import { lastDoneLabel } from '@/lib/rotation';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import TrainRoutineUpdate from './TrainRoutineUpdate';
 
@@ -39,6 +39,7 @@ export default function TrainRoutineCard({
   deciding,
   disabled,
 }: TrainRoutineCardProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   // Every routine here is the client's own copy — a coach's is one they were
   // handed, not one they are borrowing. Both are theirs to change.
@@ -97,7 +98,7 @@ export default function TrainRoutineCard({
           variant="ghost"
           size="sm"
           disabled={disabled}
-          icon={<Trash2 color={tokens.muted} size={18} />}
+          icon={<Trash2 color={tokens['foreground-subtle']} size={18} />}
           accessibilityLabel={
             fromCoach ? `Remove your copy of ${routine.name}` : `Delete ${routine.name}`
           }
@@ -114,7 +115,7 @@ export default function TrainRoutineCard({
       </View>
 
       {routine.preview.length > 0 ? (
-        <View className="gap-2 border-t border-hairline pt-3">
+        <View className="gap-2 border-t border-border pt-3">
           {routine.preview.map((row) => (
             <View key={row.name} className="flex-row items-center justify-between gap-3">
               <LIText

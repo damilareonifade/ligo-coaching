@@ -69,7 +69,7 @@ function NotificationRow({ item, onRead, first, last }: NotificationRowProps) {
         'gap-0 rounded-none px-4 py-3',
         first && 'rounded-t-card',
         last && 'rounded-b-card',
-        !first && 'border-t border-hairline',
+        !first && 'border-t border-border',
       )}
       testID={`notification-row-${item.id}`}
     >

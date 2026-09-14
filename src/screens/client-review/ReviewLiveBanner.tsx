@@ -12,7 +12,7 @@ import Animated, {
 
 import { LIText } from '@/components/ui';
 import { liveBannerText } from '@/lib/clientReview';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface ReviewLiveBannerProps {
   readonly clientId: string;
@@ -28,6 +28,7 @@ const DOT_SIZE = 8;
  * either way.
  */
 function LiveDot() {
+  const tokens = useThemeTokens();
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(1);
 
@@ -63,6 +64,7 @@ function LiveDot() {
  * choice, not a prompt.
  */
 export default function ReviewLiveBanner({ clientId, name }: ReviewLiveBannerProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
 
   const openLive = useCallback(

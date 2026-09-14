@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 const button = cva('flex-row items-center justify-center gap-2', {
   variants: {
@@ -11,11 +11,11 @@ const button = cva('flex-row items-center justify-center gap-2', {
       primary: 'bg-violet active:bg-violet-pressed',
       accent: 'bg-violet active:bg-violet-pressed',
       violet: 'bg-violet active:bg-violet-pressed',
-      outline: 'border border-violet bg-transparent active:bg-field',
-      ghost: 'bg-transparent active:bg-field',
+      outline: 'border border-violet bg-transparent active:bg-surface-sunken',
+      ghost: 'bg-transparent active:bg-surface-sunken',
       danger: 'bg-danger active:opacity-90',
       /** Third-party sign-in: white card on a tinted surface. */
-      social: 'border border-hairline bg-white active:bg-field',
+      social: 'border border-border bg-surface active:bg-surface-sunken',
     },
     size: {
       sm: 'h-9 px-4',
@@ -37,13 +37,13 @@ const button = cva('flex-row items-center justify-center gap-2', {
 const label = cva('font-semibold', {
   variants: {
     variant: {
-      primary: 'text-white',
-      accent: 'text-white',
-      violet: 'text-white',
+      primary: 'text-surface',
+      accent: 'text-surface',
+      violet: 'text-surface',
       outline: 'text-violet',
       ghost: 'text-violet',
-      danger: 'text-white',
-      social: 'text-dark-gray',
+      danger: 'text-surface',
+      social: 'text-foreground-muted',
     },
     size: {
       sm: 'text-caption',
@@ -88,9 +88,10 @@ export function LIButton({
   accessibilityLabel,
   testID,
 }: LIButtonProps) {
+  const tokens = useThemeTokens();
   const isInactive = disabled || loading;
   const spinnerColor =
-    variant === 'primary' || variant === 'danger' || variant === 'violet' ? tokens.white : tokens.violet;
+    variant === 'primary' || variant === 'danger' || variant === 'violet' ? tokens.inverse : tokens.violet;
 
   return (
     <Pressable

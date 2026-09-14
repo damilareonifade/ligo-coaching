@@ -3,7 +3,7 @@ import { RefreshControl, ScrollView, View } from 'react-native';
 
 import type { ApiProgramSummary, ApiRosterClient } from '@/api/types';
 import { LIEmptyState } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import ProgramCard from './ProgramCard';
 import ProgramsNewButton from './ProgramsNewButton';
@@ -28,6 +28,7 @@ export default function ProgramsContent({
   refreshing,
   onRefresh,
 }: ProgramsContentProps) {
+  const tokens = useThemeTokens();
   // One pass over the roster instead of one lookup per card per render.
   const nameById = useMemo(
     () => new Map(clients.map((entry) => [entry.id, entry.name])),

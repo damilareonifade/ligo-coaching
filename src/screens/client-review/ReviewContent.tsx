@@ -10,7 +10,7 @@ import {
 } from '@/api/coachClient';
 import type { ApiClientReview, ApiReviewDomain, ApiRosterLabel } from '@/api/types';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import ReviewDomainCard from './ReviewDomainCard';
 import ReviewHeaderCard from './ReviewHeaderCard';
@@ -48,6 +48,7 @@ export default function ReviewContent({
   refreshing,
   onRefresh,
 }: ReviewContentProps) {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const showToast = useUiStore((state) => state.showToast);
   const setLabel = useSetClientLabelMutation();

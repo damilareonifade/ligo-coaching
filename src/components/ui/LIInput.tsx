@@ -3,15 +3,15 @@ import { forwardRef, useState, type ReactNode } from 'react';
 import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 const field = cva('flex-row items-center rounded-2xl px-4', {
   variants: {
     variant: {
       /** Bordered on white — the default for labelled forms. */
-      outline: 'border border-hairline bg-white',
+      outline: 'border border-border bg-surface',
       /** Filled neutral surface, no visible border — label-less auth fields. */
-      filled: 'border border-transparent bg-field',
+      filled: 'border border-transparent bg-surface-sunken',
     },
     inputSize: {
       md: 'h-12',
@@ -71,13 +71,14 @@ export const LIInput = forwardRef<TextInput, LIInputProps>(function LIInput(
   },
   ref,
 ) {
+  const tokens = useThemeTokens();
   const [revealed, setRevealed] = useState(false);
   const isPassword = secureTextEntry === true;
 
   return (
     <View className={cn('gap-1.5', containerClassName)}>
       {label ? (
-        <Text className={cn('text-caption font-semibold text-ink', labelClassName)}>{label}</Text>
+        <Text className={cn('text-caption font-semibold text-foreground', labelClassName)}>{label}</Text>
       ) : null}
 
       <View
@@ -90,9 +91,9 @@ export const LIInput = forwardRef<TextInput, LIInputProps>(function LIInput(
         {leading}
         <TextInput
           ref={ref}
-          className={cn('flex-1 text-p text-dark-gray', inputClassName)}
+          className={cn('flex-1 text-p text-foreground-muted', inputClassName)}
           placeholder={placeholder}
-          placeholderTextColor={tokens.muted}
+          placeholderTextColor={tokens['foreground-subtle']}
           secureTextEntry={isPassword && !revealed}
           // Label-less fields still need a name for screen readers.
           accessibilityLabel={label ?? placeholder}
@@ -116,7 +117,7 @@ export const LIInput = forwardRef<TextInput, LIInputProps>(function LIInput(
       {error ? (
         <Text className="text-caption text-danger">{error}</Text>
       ) : hint ? (
-        <Text className="text-caption text-muted">{hint}</Text>
+        <Text className="text-caption text-foreground-subtle">{hint}</Text>
       ) : null}
     </View>
   );

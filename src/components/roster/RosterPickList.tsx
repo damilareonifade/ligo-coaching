@@ -17,7 +17,7 @@ function RosterPickRowBase({ client, selected, onToggle, divided }: RosterPickRo
 
   return (
     <View
-      className={cn('flex-row items-center gap-3 py-3', divided && 'border-t border-hairline')}
+      className={cn('flex-row items-center gap-3 py-3', divided && 'border-t border-border')}
     >
       <LICheckbox
         checked={selected}
@@ -97,7 +97,7 @@ export default function RosterPickList({
         ) : null}
       </View>
 
-      <View className="rounded-card bg-white px-4">
+      <View className="rounded-card bg-surface px-4">
         {clients.length === 0 ? (
           <View className="py-4">
             <LIText

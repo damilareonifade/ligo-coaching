@@ -73,7 +73,7 @@ export default function CheckInCard({ entry, clientId }: CheckInCardProps) {
         <LIText size="caption" color="body" text={entry.note} className="font-geist" />
       ) : null}
 
-      <View className="flex-row items-center gap-2 border-t border-hairline pt-3">
+      <View className="flex-row items-center gap-2 border-t border-border pt-3">
         <LIBadge
           tone={entry.by === 'coach' ? 'violet' : 'neutral'}
           label={entry.by === 'coach' ? 'Coach' : 'You'}

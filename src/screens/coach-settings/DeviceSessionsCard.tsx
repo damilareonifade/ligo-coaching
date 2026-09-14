@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import type { ApiDeviceSession } from '@/api/types';
 import { LIButton, LICard, LIText } from '@/components/ui';
 import { relativeTime } from '@/lib/format';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface DeviceSessionsCardProps {
   readonly sessions: readonly ApiDeviceSession[];
@@ -26,6 +26,7 @@ export default function DeviceSessionsCard({
   onRevoke,
   revokingId,
 }: DeviceSessionsCardProps) {
+  const tokens = useThemeTokens();
   return (
     <View className="gap-2">
       <LIText size="caption" color="muted" text="DEVICES" className="px-1 font-geist-medium" />
@@ -47,7 +48,7 @@ export default function DeviceSessionsCard({
               className={
                 index === sessions.length - 1
                   ? 'flex-row items-center gap-3 px-3 py-3'
-                  : 'flex-row items-center gap-3 border-b border-hairline px-3 py-3'
+                  : 'flex-row items-center gap-3 border-b border-border px-3 py-3'
               }
             >
               <View className="h-9 w-9 items-center justify-center rounded-full bg-violet-weak">

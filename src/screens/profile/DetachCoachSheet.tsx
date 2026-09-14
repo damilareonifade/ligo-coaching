@@ -10,7 +10,7 @@ import {
   detachBody,
   detachTitle,
 } from '@/lib/detach';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens, type ThemeTokens } from '@/theme/tokens';
 
 interface DetachCoachSheetProps {
   readonly visible: boolean;
@@ -31,12 +31,14 @@ const ICON_SIZE = 18;
  * colouring them all red would turn a sheet that says "you keep everything"
  * into one that reads as a warning about losing it.
  */
-const ICONS: Record<DetachConsequence['id'], ReactNode> = {
-  access: <EyeOff color={tokens.danger} size={ICON_SIZE} />,
-  data: <ShieldCheck color={tokens.violet} size={ICON_SIZE} />,
-  programs: <FileText color={tokens.violet} size={ICON_SIZE} />,
-  thread: <MessageSquareOff color={tokens.muted} size={ICON_SIZE} />,
-};
+function iconsFor(tokens: ThemeTokens): Record<DetachConsequence['id'], ReactNode> {
+  return {
+    access: <EyeOff color={tokens.danger} size={ICON_SIZE} />,
+    data: <ShieldCheck color={tokens.violet} size={ICON_SIZE} />,
+    programs: <FileText color={tokens.violet} size={ICON_SIZE} />,
+    thread: <MessageSquareOff color={tokens['foreground-subtle']} size={ICON_SIZE} />,
+  };
+}
 
 /**
  * The client's side of every permission screen in the app, in one dialog.
@@ -55,16 +57,16 @@ export default function DetachCoachSheet({
   onConfirm,
   loading,
 }: DetachCoachSheetProps) {
-  const consequences = useMemo<readonly LeaveConsequence[]>(
-    () =>
-      DETACH_CONSEQUENCES.map((consequence) => ({
-        id: consequence.id,
-        icon: ICONS[consequence.id],
-        title: consequence.title,
-        body: consequence.body,
-      })),
-    [],
-  );
+  const tokens = useThemeTokens();
+  const consequences = useMemo<readonly LeaveConsequence[]>(() => {
+    const icons = iconsFor(tokens);
+    return DETACH_CONSEQUENCES.map((consequence) => ({
+      id: consequence.id,
+      icon: icons[consequence.id],
+      title: consequence.title,
+      body: consequence.body,
+    }));
+  }, [tokens]);
 
   return (
     <LeaveSheet

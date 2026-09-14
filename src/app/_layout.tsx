@@ -12,16 +12,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { createQueryClient } from '@/api/queryClient';
 import { LIToastHost } from '@/components/ui';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettingsSync } from '@/hooks/useSettingsSync';
 import { useAuthStore } from '@/store/authStore';
 import { hasFeature } from '@/lib/features';
-import { tokens } from '@/theme/tokens';
+import { useIsDark, useThemeTokens } from '@/theme/tokens';
 
 void SplashScreen.preventAutoHideAsync();
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
 export default function RootLayout() {
+  const tokens = useThemeTokens();
+  const isDark = useIsDark();
   // One client for the app's lifetime — recreating it would drop the cache.
   const [queryClient] = useState(createQueryClient);
   const status = useAuthStore((state) => state.status);
@@ -43,6 +46,10 @@ export default function RootLayout() {
   // Preferences follow the account between devices — see public.cache.
   useSettingsSync();
 
+  // Applies the chosen theme to NativeWind. Here and nowhere else — two
+  // callers would race to set the same global.
+  useAppTheme();
+
   useEffect(() => {
     if (status !== 'restoring' && fontsLoaded) {
       void SplashScreen.hideAsync();
@@ -60,11 +67,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <BottomSheetModalProvider>
-            <StatusBar style="dark" />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
             <Stack
               screenOptions={{
                 headerShown: false,
-                contentStyle: { backgroundColor: tokens.canvas },
+                contentStyle: { backgroundColor: tokens.background },
               }}
             >
               <Stack.Protected guard={signedIn}>
@@ -128,6 +135,7 @@ export default function RootLayout() {
                   <Stack.Screen name="profile/integrations" />
                 </Stack.Protected>
                 <Stack.Screen name="profile/data" />
+                <Stack.Screen name="profile/theme" />
                 <Stack.Screen name="profile/units" />
                 <Stack.Screen name="profile/permissions" />
                 <Stack.Screen name="profile/health" />

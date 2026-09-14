@@ -15,7 +15,7 @@ interface InboxNoResultsProps {
  */
 export default function InboxNoResults({ query, onClear }: InboxNoResultsProps) {
   return (
-    <View className="mt-2 items-center gap-3 rounded-card border border-dashed border-hairline-strong px-6 py-8">
+    <View className="mt-2 items-center gap-3 rounded-card border border-dashed border-border-strong px-6 py-8">
       <LIText
         size="p"
         color="primary"

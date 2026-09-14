@@ -6,13 +6,14 @@ import type { ApiImportSource } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/uiStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface DataImportCardProps {
   readonly sources: readonly ApiImportSource[];
 }
 
 export default function DataImportCard({ sources }: DataImportCardProps) {
+  const tokens = useThemeTokens();
   const showToast = useUiStore((state) => state.showToast);
   const stub = useCallback(() => showToast('Not connected yet', 'success'), [showToast]);
 
@@ -42,7 +43,7 @@ export default function DataImportCard({ sources }: DataImportCardProps) {
             accessibilityLabel={`Import from ${source.name}. ${source.meta}`}
             className={cn(
               'flex-row items-center gap-3 py-3 active:opacity-70',
-              index > 0 && 'border-t border-hairline',
+              index > 0 && 'border-t border-border',
             )}
             testID={`import-source-${source.id}`}
           >
@@ -58,7 +59,7 @@ export default function DataImportCard({ sources }: DataImportCardProps) {
               <LIText size="p" color="primary" text={source.name} className="font-geist-medium" />
               <LIText size="caption" color="muted" text={source.meta} className="font-geist" />
             </View>
-            <ChevronRight color={tokens.muted} size={18} />
+            <ChevronRight color={tokens['foreground-subtle']} size={18} />
           </Pressable>
         ))}
       </View>

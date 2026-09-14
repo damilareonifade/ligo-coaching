@@ -15,7 +15,7 @@ interface PickerNoticeProps {
  */
 export default function PickerNotice({ text }: PickerNoticeProps) {
   return (
-    <View className="rounded-2xl bg-field px-4 py-3">
+    <View className="rounded-2xl bg-surface-sunken px-4 py-3">
       <LIText
         size="caption"
         color="body"

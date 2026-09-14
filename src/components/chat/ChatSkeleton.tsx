@@ -17,7 +17,7 @@ const BUBBLES = [
 export default function ChatSkeleton() {
   return (
     <View className="flex-1">
-      <View className="flex-row items-center gap-3 rounded-card bg-white p-4 mx-4 mt-2">
+      <View className="flex-row items-center gap-3 rounded-card bg-surface p-4 mx-4 mt-2">
         <LISkeleton className="h-12 w-12 rounded-pill" />
         <View className="flex-1 gap-2">
           <LISkeleton className="h-4 w-32" />
@@ -35,7 +35,7 @@ export default function ChatSkeleton() {
         ))}
       </View>
 
-      <View className="flex-row items-center gap-2 border-t border-hairline px-4 py-3">
+      <View className="flex-row items-center gap-2 border-t border-border px-4 py-3">
         <LISkeleton className="h-12 flex-1 rounded-pill" />
         <LISkeleton className="h-12 w-12 rounded-pill" />
       </View>

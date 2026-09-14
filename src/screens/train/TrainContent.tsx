@@ -1,7 +1,7 @@
 import { RefreshControl, ScrollView } from 'react-native';
 
 import type { ApiClientSession, ApiTrainOverview } from '@/api/types';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import TrainResumeBanner from './TrainResumeBanner';
 import TrainRoutines from './TrainRoutines';
@@ -33,6 +33,7 @@ export default function TrainContent({
   pendingPlanId,
   busy,
 }: TrainContentProps) {
+  const tokens = useThemeTokens();
   return (
     <ScrollView
       className="flex-1"

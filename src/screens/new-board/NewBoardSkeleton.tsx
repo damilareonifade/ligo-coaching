@@ -19,13 +19,13 @@ export default function NewBoardSkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-28" />
-        <View className="rounded-card bg-white px-4">
+        <View className="rounded-card bg-surface px-4">
           {Array.from({ length: METRICS }, (_, index) => (
             <View
               key={index}
               className={cn(
                 'flex-row items-center gap-3 py-3',
-                index > 0 && 'border-t border-hairline',
+                index > 0 && 'border-t border-border',
               )}
             >
               <LISkeleton className="h-5 w-5 rounded-pill" />
@@ -49,13 +49,13 @@ export default function NewBoardSkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-36" />
-        <View className="rounded-card bg-white px-4">
+        <View className="rounded-card bg-surface px-4">
           {Array.from({ length: ROWS }, (_, index) => (
             <View
               key={index}
               className={cn(
                 'flex-row items-center gap-3 py-3',
-                index > 0 && 'border-t border-hairline',
+                index > 0 && 'border-t border-border',
               )}
             >
               <LISkeleton className="h-6 w-6 rounded-md" />

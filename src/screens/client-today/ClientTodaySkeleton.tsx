@@ -15,7 +15,7 @@ export default function ClientTodaySkeleton() {
 
       <View className="flex-row gap-3">
         {[0, 1].map((card) => (
-          <View key={card} className="flex-1 gap-2 rounded-card bg-white p-4">
+          <View key={card} className="flex-1 gap-2 rounded-card bg-surface p-4">
             <LISkeleton className="h-3 w-16" />
             <LISkeleton className="h-7 w-24" />
             <LISkeleton className="h-2 w-full" />
@@ -23,7 +23,7 @@ export default function ClientTodaySkeleton() {
         ))}
       </View>
 
-      <View className="gap-3 rounded-card bg-white p-4">
+      <View className="gap-3 rounded-card bg-surface p-4">
         <LISkeleton className="h-3 w-16" />
         <View className="flex-row items-center gap-3">
           <LISkeleton className="h-12 w-12 rounded-pill" />
@@ -36,7 +36,7 @@ export default function ClientTodaySkeleton() {
 
       <View className="gap-2">
         <LISkeleton className="h-3 w-20" />
-        <View className="gap-3 rounded-card bg-white p-4">
+        <View className="gap-3 rounded-card bg-surface p-4">
           {[0, 1, 2, 3, 4].map((row) => (
             <View key={row} className="flex-row items-center gap-3">
               <LISkeleton className="h-3 w-10" />

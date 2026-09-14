@@ -8,7 +8,7 @@ export default function RosterSkeleton() {
     <View className="gap-3 px-4 pt-1">
       <View className="flex-row gap-3">
         {[0, 1, 2].map((tile) => (
-          <View key={tile} className="flex-1 gap-2 rounded-card bg-white px-3 py-3">
+          <View key={tile} className="flex-1 gap-2 rounded-card bg-surface px-3 py-3">
             <LISkeleton className="h-6 w-10" />
             <LISkeleton className="h-3 w-16" />
           </View>
@@ -37,7 +37,7 @@ export default function RosterSkeleton() {
 
       <View className="gap-2 pt-2">
         <LISkeleton className="h-3 w-16" />
-        <View className="rounded-card bg-white">
+        <View className="rounded-card bg-surface">
           {[0, 1, 2, 3, 4].map((row) => (
             <View key={row} className="flex-row items-center gap-3 px-4 py-3">
               <LISkeleton className="h-9 w-9 rounded-pill" />

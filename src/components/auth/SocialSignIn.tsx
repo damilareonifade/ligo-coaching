@@ -2,7 +2,7 @@ import { KeyRound } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIButton, LIGoogleIcon, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface SocialSignInProps {
   readonly onGoogle: () => void;
@@ -18,6 +18,7 @@ export default function SocialSignIn({
   busy = false,
   label = 'Or continue with',
 }: SocialSignInProps) {
+  const tokens = useThemeTokens();
   return (
     <View className="gap-3">
       <LIText size="caption" color="muted" text={label} className="text-center" />

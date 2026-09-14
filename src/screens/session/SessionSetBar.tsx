@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { LIButton, LIInput, LIText } from '@/components/ui';
 import { useUnits } from '@/hooks/useUnits';
 import { parseSetInput, stepSetValue, type SetField } from '@/lib/session';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export interface SetEditTarget {
   readonly exerciseId: string;
@@ -23,12 +23,13 @@ interface StepButtonProps {
 }
 
 function StepButton({ direction, onPress, accessibilityLabel, testID }: StepButtonProps) {
+  const tokens = useThemeTokens();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      className="h-14 w-14 items-center justify-center rounded-xl border border-hairline-strong active:opacity-70"
+      className="h-14 w-14 items-center justify-center rounded-xl border border-border-strong active:opacity-70"
       testID={testID}
     >
       {direction === 1 ? (
@@ -101,7 +102,7 @@ function SetBarBody({ target, onChange, onDone }: SetBarBodyProps) {
 
   return (
     <View
-      className="gap-3 border-t border-hairline bg-white px-4 pb-6 pt-3"
+      className="gap-3 border-t border-border bg-surface px-4 pb-6 pt-3"
       testID="session-set-bar"
     >
       <View className="flex-row items-center justify-between">
@@ -137,7 +138,7 @@ function SetBarBody({ target, onChange, onDone }: SetBarBodyProps) {
           accessibilityLabel={`${isReps ? 'Reps' : 'Load'} for set ${target.setN}`}
           containerClassName="flex-1"
           fieldClassName="justify-center gap-1.5"
-          inputClassName="w-24 flex-none text-center text-h3 font-geist-semibold text-ink"
+          inputClassName="w-24 flex-none text-center text-h3 font-geist-semibold text-foreground"
           trailing={<LIText size="p" color="muted" text={unit} className="font-geist" />}
           testID="set-bar-value"
         />

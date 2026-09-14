@@ -50,8 +50,8 @@ export function LISelect({
         accessibilityRole="button"
         accessibilityLabel={label ?? placeholder}
         className={cn(
-          'h-12 flex-row items-center justify-between rounded-2xl border bg-white px-4',
-          error ? 'border-danger' : 'border-hairline',
+          'h-12 flex-row items-center justify-between rounded-2xl border bg-surface px-4',
+          error ? 'border-danger' : 'border-border',
         )}
       >
         <LIText

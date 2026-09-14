@@ -2,13 +2,14 @@ import { Lock } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 /** Said above the list, before anyone connects anything. */
 export default function IntegrationsPrivacyNotice() {
+  const tokens = useThemeTokens();
   return (
-    <View className="flex-row items-start gap-3 rounded-card bg-field p-4">
-      <Lock color={tokens.muted} size={16} />
+    <View className="flex-row items-start gap-3 rounded-card bg-surface-sunken p-4">
+      <Lock color={tokens['foreground-subtle']} size={16} />
       <LIText
         size="caption"
         color="muted"

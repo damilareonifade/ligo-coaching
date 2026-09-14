@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import type { ApiQuickFood } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface QuickAddRowProps {
   readonly food: ApiQuickFood;
@@ -13,6 +13,7 @@ interface QuickAddRowProps {
 }
 
 const QuickAddRow = memo(function QuickAddRow({ food, onAdd, disabled }: QuickAddRowProps) {
+  const tokens = useThemeTokens();
   return (
     <Pressable
       onPress={() => onAdd(food)}

@@ -37,7 +37,7 @@ export default function CoachProfileStep() {
           size="h1"
           color="primary"
           text="Your coaching profile"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -50,7 +50,7 @@ export default function CoachProfileStep() {
       <View className="gap-4">
         <LIInput
           label="Display name"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           value={name}
           onChangeText={(text) => setDetails({ name: text, email })}
           autoCapitalize="words"
@@ -58,7 +58,7 @@ export default function CoachProfileStep() {
         />
         <LIInput
           label="Gym or studio"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           value={coachGym}
           onChangeText={(text) => setCoachProfile({ bio: coachBio, gym: text })}
           placeholder="Ironworks Lagos"
@@ -67,7 +67,7 @@ export default function CoachProfileStep() {
         />
         <LIInput
           label="Short bio"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           value={coachBio}
           onChangeText={(text) => setCoachProfile({ bio: text, gym: coachGym })}
           placeholder="A line or two about your coaching style"
@@ -82,7 +82,7 @@ export default function CoachProfileStep() {
           size="h5"
           color="primary"
           text="Specialties"
-          className="font-geist-medium text-ink"
+          className="font-geist-medium text-foreground"
         />
         <View className="flex-row flex-wrap gap-2">
           {COACH_SPECIALTIES.map((specialty) => (

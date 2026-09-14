@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { LIText } from '@/components/ui';
 import { groupVisibilityNotice } from '@/lib/community';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface GroupVisibilityNoticeProps {
   readonly memberCount: number;
@@ -19,6 +19,7 @@ interface GroupVisibilityNoticeProps {
  * because "everyone" is the word people underestimate.
  */
 export default function GroupVisibilityNotice({ memberCount }: GroupVisibilityNoticeProps) {
+  const tokens = useThemeTokens();
   return (
     <View className="flex-row items-start gap-2.5 rounded-card border border-violet-line bg-violet-weak/40 p-3">
       <View className="mt-0.5">

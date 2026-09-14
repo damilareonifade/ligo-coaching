@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 /**
  * Onboarding runs *after* signup, so the user is already signed in by the time
@@ -9,9 +9,10 @@ import { tokens } from '@/theme/tokens';
  * every `/onboarding/...` path is unchanged by the move.
  */
 export default function OnboardingLayout() {
+  const tokens = useThemeTokens();
   return (
     <Stack
-      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tokens.canvas } }}
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: tokens.background } }}
     />
   );
 }

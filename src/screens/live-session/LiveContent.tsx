@@ -6,7 +6,7 @@ import { useAdjustLiveSetMutation } from '@/api/coachClient';
 import type { ApiLiveSession } from '@/api/types';
 import { useUiStore } from '@/store/uiStore';
 import { useElapsedMs } from '@/hooks/useElapsedMs';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import LiveActions from './LiveActions';
 import LiveExerciseCard from './LiveExerciseCard';
@@ -27,6 +27,7 @@ interface LiveContentProps {
  * so a coach without it sees exactly what this screen always showed.
  */
 export default function LiveContent({ session, refreshing, onRefresh }: LiveContentProps) {
+  const tokens = useThemeTokens();
   const elapsedMs = useElapsedMs(Date.parse(session.startedAt));
   const showToast = useUiStore((state) => state.showToast);
   const adjust = useAdjustLiveSetMutation();

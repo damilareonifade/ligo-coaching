@@ -25,7 +25,7 @@ export default function DataDangerCard() {
   }, [showToast]);
 
   return (
-    <View className="gap-3 rounded-card border border-danger bg-white p-4">
+    <View className="gap-3 rounded-card border border-danger bg-surface p-4">
       <LIText size="p" color="danger" text="Delete account" className="font-geist-semibold" />
       <LIText size="caption" color="muted" text={WARNING} className="font-geist" />
       <LIButton

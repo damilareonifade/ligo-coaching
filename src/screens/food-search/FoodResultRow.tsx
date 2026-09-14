@@ -18,7 +18,7 @@ function FoodResultRowBase({ result, onPress, disabled }: FoodResultRowProps) {
       accessibilityRole="button"
       accessibilityLabel={`Log ${result.name}, ${result.kcal} calories`}
       accessibilityState={{ disabled }}
-      className="flex-row items-center gap-3 rounded-card bg-white p-4 active:opacity-70"
+      className="flex-row items-center gap-3 rounded-card bg-surface p-4 active:opacity-70"
       testID={`food-result-${result.id}`}
     >
       <View className="flex-1 gap-0.5">

@@ -22,7 +22,7 @@ export function LIProgressBar({ value, tone = 'accent', className, label }: LIPr
 
   return (
     <View
-      className={cn('h-2 w-full overflow-hidden rounded-pill bg-field', className)}
+      className={cn('h-2 w-full overflow-hidden rounded-pill bg-surface-sunken', className)}
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped * 100) }}

@@ -44,10 +44,10 @@ export default function HealthEntryForm({
   }, [label, onSave, status, value]);
 
   return (
-    <View className="gap-3 rounded-card bg-white p-4" testID={`health-form-${section}`}>
+    <View className="gap-3 rounded-card bg-surface p-4" testID={`health-form-${section}`}>
       <LIInput
         label="What"
-        labelClassName="text-ink"
+        labelClassName="text-foreground"
         value={label}
         onChangeText={setLabel}
         placeholder={copy.labelHint}
@@ -56,7 +56,7 @@ export default function HealthEntryForm({
       />
       <LIInput
         label="Detail"
-        labelClassName="text-ink"
+        labelClassName="text-foreground"
         value={value}
         onChangeText={setValue}
         placeholder={copy.valueHint}
@@ -92,7 +92,7 @@ export default function HealthEntryForm({
           onPress={onCancel}
           variant="ghost"
           className="flex-1"
-          labelClassName="text-dark-gray"
+          labelClassName="text-foreground-muted"
         />
         <LIButton
           title="Save"

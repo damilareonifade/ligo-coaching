@@ -79,14 +79,14 @@ export default function CoachPermissionsStep() {
     <View className="flex-1 gap-6 px-6 pt-2">
       <OnboardingBackButton onPress={() => router.back()} />
 
-      <LICard className="flex-row items-center gap-3 bg-white">
+      <LICard className="flex-row items-center gap-3 bg-surface">
         <LIAvatar name={lookedUpCoach.name} className="bg-violet-weak" labelClassName="text-violet" />
         <View className="flex-1 gap-0.5">
           <LIText
             size="h5"
             color="primary"
             text={lookedUpCoach.name}
-            className="font-geist-medium text-ink"
+            className="font-geist-medium text-foreground"
           />
           <LIText size="caption" color="muted" text={lookedUpCoach.headline} className="font-geist" />
         </View>
@@ -97,7 +97,7 @@ export default function CoachPermissionsStep() {
           size="h1"
           color="primary"
           text={`Choose what ${firstName} can see`}
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -115,7 +115,7 @@ export default function CoachPermissionsStep() {
                 size="h5"
                 color="primary"
                 text={row.title}
-                className="font-geist-medium text-ink"
+                className="font-geist-medium text-foreground"
               />
               <LIText size="caption" color="muted" text={row.body} className="font-geist" />
             </View>
@@ -127,13 +127,13 @@ export default function CoachPermissionsStep() {
           </View>
         ))}
 
-        <View className="flex-row items-center justify-between gap-3 rounded-card bg-field p-3">
+        <View className="flex-row items-center justify-between gap-3 rounded-card bg-surface-sunken p-3">
           <View className="flex-1 gap-0.5">
             <LIText
               size="h5"
               color="primary"
               text={`${firstName} can log for me`}
-              className="font-geist-medium text-ink"
+              className="font-geist-medium text-foreground"
             />
             <LIText
               size="caption"
@@ -146,12 +146,12 @@ export default function CoachPermissionsStep() {
         </View>
       </View>
 
-      <LICard className="gap-1 bg-white">
+      <LICard className="gap-1 bg-surface">
         <LIText
           size="h5"
           color="primary"
           text={`${firstName} will see`}
-          className="font-geist-medium text-ink"
+          className="font-geist-medium text-foreground"
         />
         <LIText size="p" color="body" text={summaryText} className="font-geist" />
       </LICard>

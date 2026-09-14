@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { LIInput } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface InboxSearchBarProps {
   readonly query: string;
@@ -16,6 +16,7 @@ interface InboxSearchBarProps {
  * it does. The placeholder promises both, so the filter has to honour both.
  */
 export default function InboxSearchBar({ query, onQueryChange }: InboxSearchBarProps) {
+  const tokens = useThemeTokens();
   const [focused, setFocused] = useState(false);
 
   return (
@@ -32,7 +33,7 @@ export default function InboxSearchBar({ query, onQueryChange }: InboxSearchBarP
         returnKeyType="search"
         accessibilityLabel="Search your conversations"
         fieldClassName={focused ? 'border-violet' : undefined}
-        leading={<Search color={tokens.muted} size={18} />}
+        leading={<Search color={tokens['foreground-subtle']} size={18} />}
         trailing={
           query.length > 0 ? (
             <Pressable
@@ -42,7 +43,7 @@ export default function InboxSearchBar({ query, onQueryChange }: InboxSearchBarP
               accessibilityLabel="Clear search"
               testID="inbox-search-clear"
             >
-              <X color={tokens.muted} size={18} />
+              <X color={tokens['foreground-subtle']} size={18} />
             </Pressable>
           ) : null
         }

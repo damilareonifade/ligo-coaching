@@ -90,7 +90,7 @@ export default function ResetPasswordForm({ code }: ResetPasswordFormProps) {
           size="h1"
           color="primary"
           text="Checking your link"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText size="p" color="body" text="One moment." className="font-geist" />
       </View>
@@ -105,7 +105,7 @@ export default function ResetPasswordForm({ code }: ResetPasswordFormProps) {
             size="h1"
             color="primary"
             text="That link has expired"
-            className="font-geist-semibold text-ink"
+            className="font-geist-semibold text-foreground"
           />
           <LIText size="p" color="body" text={stage.message} className="font-geist" />
         </View>
@@ -129,7 +129,7 @@ export default function ResetPasswordForm({ code }: ResetPasswordFormProps) {
           size="h1"
           color="primary"
           text="Choose a new password"
-          className="font-geist-semibold text-ink"
+          className="font-geist-semibold text-foreground"
         />
         <LIText
           size="p"
@@ -143,7 +143,7 @@ export default function ResetPasswordForm({ code }: ResetPasswordFormProps) {
         <LIFormInput<Values>
           name="password"
           label="New password"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           placeholder="At least 8 characters"
           secureTextEntry
           autoCapitalize="none"
@@ -151,7 +151,7 @@ export default function ResetPasswordForm({ code }: ResetPasswordFormProps) {
         <LIFormInput<Values>
           name="confirm"
           label="Confirm password"
-          labelClassName="text-ink"
+          labelClassName="text-foreground"
           placeholder="Type it again"
           secureTextEntry
           autoCapitalize="none"

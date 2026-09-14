@@ -6,12 +6,13 @@ import { View } from 'react-native';
 import { LIButton, LICard, LIText } from '@/components/ui';
 import { setsLabel } from '@/lib/programs';
 import { selectDraftRoutine, useProgramDraftStore } from '@/store/programDraftStore';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 import BuilderBlockRow from './BuilderBlockRow';
 
 /** The exercises in the selected routine, and the way to add another. */
 export default function BuilderBlockList() {
+  const tokens = useThemeTokens();
   const router = useRouter();
   const kind = useProgramDraftStore((state) => state.kind);
   const routine = useProgramDraftStore(selectDraftRoutine);

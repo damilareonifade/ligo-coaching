@@ -69,7 +69,7 @@ export default function InviteContent({ invite, onAnswered }: InviteContentProps
 
       <View className="gap-3 rounded-card border border-violet-line bg-violet-weak/40 p-4">
         <View className="flex-row items-center gap-3">
-          <LIAvatar name={invite.coachName} size="md" className="bg-white" />
+          <LIAvatar name={invite.coachName} size="md" className="bg-surface" />
           <View className="flex-1 gap-0.5">
             <LIText size="h4" color="primary" text={invite.name} className="font-geist-semibold" />
             <LIText

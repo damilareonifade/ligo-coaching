@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import type { NotificationKind } from '@/api/types';
 import { isAccessLoss } from '@/lib/notifications';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 interface NotificationAccessGlyphProps {
   readonly kind: NotificationKind;
@@ -20,13 +20,14 @@ interface NotificationAccessGlyphProps {
  * news and must both stand out, but they are not the same news.
  */
 export default function NotificationAccessGlyph({ kind }: NotificationAccessGlyphProps) {
+  const tokens = useThemeTokens();
   const lost = isAccessLoss(kind);
   const Icon = lost ? ShieldOff : ShieldCheck;
 
   return (
     <View
       className={cn(
-        'absolute -bottom-0.5 -right-0.5 h-5 w-5 items-center justify-center rounded-pill border-2 border-white',
+        'absolute -bottom-0.5 -right-0.5 h-5 w-5 items-center justify-center rounded-pill border-2 border-surface',
         lost ? 'bg-danger/10' : 'bg-violet-weak',
       )}
     >

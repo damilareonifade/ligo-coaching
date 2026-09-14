@@ -1,8 +1,9 @@
 import { LIText } from '@/components/ui';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 /** Pinned to the bottom of the screen: the route out to registration. */
 export default function LoginFooter() {
+  const tokens = useThemeTokens();
   return (
     <LIText
       size="caption"

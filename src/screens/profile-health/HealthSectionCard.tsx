@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 import type { ApiHealthSection } from '@/api/types';
 import { LIBadge, LICard, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 /**
  * The label column is a fixed 108px (`w-[108px]` below) so values line up down
@@ -26,6 +26,7 @@ export default function HealthSectionCard({
   onRemove,
   removingId,
 }: HealthSectionCardProps) {
+  const tokens = useThemeTokens();
   return (
     <View className="gap-2">
       <LIText
@@ -41,7 +42,7 @@ export default function HealthSectionCard({
             key={row.id}
             className={cn(
               'flex-row items-center gap-3 py-3',
-              index > 0 && 'border-t border-hairline',
+              index > 0 && 'border-t border-border',
             )}
           >
             <LIText
@@ -72,7 +73,7 @@ export default function HealthSectionCard({
               className="p-1 active:opacity-60"
               testID={`health-remove-${row.id}`}
             >
-              <X color={tokens.muted} size={16} />
+              <X color={tokens['foreground-subtle']} size={16} />
             </Pressable>
           </View>
         ))}

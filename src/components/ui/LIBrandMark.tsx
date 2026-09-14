@@ -2,7 +2,7 @@ import { Dumbbell } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { cn } from '@/lib/utils';
-import { tokens } from '@/theme/tokens';
+import { useThemeTokens } from '@/theme/tokens';
 
 export interface LIBrandMarkProps {
   readonly size?: 'md' | 'lg';
@@ -21,13 +21,14 @@ const glyph = {
 
 /** Ligo's mark: the app icon in-app, for auth screens and empty brand slots. */
 export function LIBrandMark({ size = 'md', className }: LIBrandMarkProps) {
+  const tokens = useThemeTokens();
   return (
     <View
       className={cn('items-center justify-center rounded-2xl bg-violet', box[size], className)}
       accessibilityRole="image"
       accessibilityLabel="Ligo"
     >
-      <Dumbbell color={tokens.white} size={glyph[size]} />
+      <Dumbbell color={tokens.inverse} size={glyph[size]} />
     </View>
   );
 }

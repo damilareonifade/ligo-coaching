@@ -20,7 +20,12 @@ beforeEach(() => {
   });
 });
 
-const KEY = 'sb-tblujcawpwvedllowuuy-auth-token';
+/**
+ * The shape supabase-js uses, not a real project — the adapter chunks by key
+ * and never reads the ref, so pinning this to whichever project is linked
+ * today would only make the test look project-specific when it is not.
+ */
+const KEY = 'sb-example-auth-token';
 
 describe('secureSessionStorage', () => {
   it('round-trips a session larger than the SecureStore limit', async () => {

@@ -2,7 +2,7 @@ import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } fr
 
 import { ApiError } from './client';
 import { queryKeys } from './queryKeys';
-import { supabase } from './supabase';
+import { currentUserId, supabase } from './supabase';
 import type { ApiProfile, ApiSessionUser, UserRole } from './types';
 
 type UserRow = {
@@ -48,11 +48,25 @@ export function sessionUserFromProfile(profile: ApiProfile): ApiSessionUser {
  * RLS scopes this to the caller, so no user id is passed — asking for someone
  * else's row would return nothing rather than an error.
  */
+/**
+ * The signed-in person's own row.
+ *
+ * The id is named explicitly, and that is the whole point of this function.
+ * It used to be `select(COLUMNS).limit(1)`, leaning on RLS to mean "mine" —
+ * but `users_select_linked` makes a client's coach visible to them and every
+ * client visible to their coach, and with no ORDER BY `limit(1)` returns
+ * whichever row Postgres reaches first.
+ *
+ * So a client attached to a coach could be handed the *coach's* row as their
+ * own profile: their name, their email, `role: 'coach'` — and the app would
+ * render the coaching side as that person. RLS decides what you may see; it
+ * has never decided which of those rows is you.
+ */
 export async function fetchOwnProfile(): Promise<ApiProfile> {
   const { data, error, status } = await supabase
     .from('users')
     .select(COLUMNS)
-    .limit(1)
+    .eq('id', await currentUserId())
     .maybeSingle();
 
   if (error) throw new ApiError(error.message, status);

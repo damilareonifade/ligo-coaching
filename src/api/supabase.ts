@@ -78,6 +78,22 @@ export const secureSessionStorage = {
 };
 
 /**
+ * Where the session is kept. Exported so `signOut` can guarantee its removal
+ * without depending on auth-js having managed it.
+ */
+export const SESSION_STORAGE_KEY = 'ligo.supabase.auth';
+
+/**
+ * The key auth-js used before this one, derived from the project ref the way
+ * it derives it. Sessions written under it are unreachable now, and a
+ * credential nobody reads is one nobody notices leaking — so `restore` clears
+ * it on the way past.
+ */
+export const LEGACY_SESSION_STORAGE_KEY = `sb-${
+  new URL(env.supabaseUrl).hostname.split('.')[0]
+}-auth-token`;
+
+/**
  * The one Supabase client. Reads and writes go through the Data API
  * (PostgREST) straight from the device, so every table it touches must have
  * RLS enabled with explicit policies.
@@ -92,6 +108,12 @@ export const supabase: SupabaseClient<Database> = createClient<Database>(
   {
     auth: {
       storage: secureSessionStorage,
+      // Named explicitly rather than left to auth-js to derive from the URL,
+      // so `signOut` can clear the stored session itself when the server call
+      // to revoke it fails. Without a key we can address, a failed logout
+      // leaves the session in the keychain and the next launch signs the
+      // previous person back in.
+      storageKey: SESSION_STORAGE_KEY,
       persistSession: true,
       autoRefreshToken: true,
       // auth-js defaults to the implicit flow, which hands the tokens back in
@@ -137,4 +159,39 @@ export function unwrap<T>(result: {
     throw new ApiError('That record no longer exists.', result.status ?? null);
   }
   return result.data;
+}
+
+/**
+ * The signed-in user's id, for the queries that have to name it.
+ *
+ * Most do not: RLS already scopes a client's own rows, and re-stating that in
+ * a filter would be a second authority to keep in step. This is for the reads
+ * where the caller has to be named — a coach signed in on the client side of
+ * the app can see rows through a different policy, and a screen that means
+ * "mine" must say so.
+ *
+ * Reads the cached session rather than `getUser()`, which is a network round
+ * trip before every query.
+ */
+export async function currentUserId(): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const id = data.session?.user.id;
+  if (!id) throw new ApiError('You are not signed in.', 401);
+  return id;
+}
+
+/**
+ * The same, for a write that returns nothing.
+ *
+ * A delete or an insert without `.select()` comes back with `data: null` and
+ * no error, which `unwrap` would report as a missing record — so those go
+ * through this instead.
+ */
+export function assertOk(result: {
+  readonly error: PostgrestError | null;
+  readonly status?: number;
+}): void {
+  if (result.error) {
+    throw new ApiError(result.error.message, result.status ?? null);
+  }
 }

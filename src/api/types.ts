@@ -1,13 +1,3 @@
-export type StudentStatus = 'on-track' | 'at-risk' | 'inactive';
-export type SessionStatus = 'scheduled' | 'completed' | 'missed';
-
-export interface ApiCoach {
-  readonly id: string;
-  readonly name: string;
-  readonly email: string;
-  readonly gymName: string;
-  readonly avatarUrl: string | null;
-}
 
 export type UserRole = 'client' | 'coach';
 
@@ -27,39 +17,27 @@ export interface ApiCoachSummary {
   readonly headline: string;
 }
 
-export interface ApiStudent {
-  readonly id: string;
-  readonly name: string;
-  readonly avatarUrl: string | null;
-  readonly goal: string;
-  readonly programId: string | null;
-  readonly status: StudentStatus;
-  /** Share of assigned sessions completed, 0–100. */
-  readonly adherence: number;
-  readonly nextSessionAt: string | null;
-  readonly lastSessionAt: string | null;
-  readonly note: string | null;
-}
+/* ------------------------------------------------------------------ *
+ * What a client can choose to share, and the only vocabulary for it.
+ *
+ * The same five words appear on the client's switches, on the coach's
+ * request button, and as the keys of `coach_clients.permissions`. One
+ * vocabulary end to end means there is no table of synonyms to keep in
+ * step — and no domain a coach can ask for that the client has no
+ * screen to answer.
+ * ------------------------------------------------------------------ */
 
-export interface ApiExercise {
-  readonly id: string;
-  readonly name: string;
-  readonly sets: number;
-  readonly reps: number;
-  readonly targetWeightKg: number;
-  readonly restSeconds: number;
-  /** The one thing the coach wants the student to remember on this lift. */
-  readonly cue: string | null;
-}
+export type ShareDomain = 'workouts' | 'nutrition' | 'metrics' | 'health' | 'monthly';
 
-export interface ApiProgram {
-  readonly id: string;
-  readonly name: string;
-  readonly focus: string;
-  readonly weeks: number;
-  readonly exercises: readonly ApiExercise[];
-  readonly assignedStudentIds: readonly string[];
-}
+export type ApiSharePermissions = Readonly<Record<ShareDomain, boolean>>;
+
+export const SHARE_DOMAINS: readonly ShareDomain[] = [
+  'workouts',
+  'nutrition',
+  'metrics',
+  'health',
+  'monthly',
+];
 
 /* ------------------------------------------------------------------ *
  * Coach programs. Deliberately separate from `ApiProgram` above: that
@@ -70,7 +48,7 @@ export interface ApiProgram {
 
 export type ProgramStatus = 'published' | 'draft' | 'archived';
 
-/** A routine is a single day; a program has weeks and several days. */
+/** A routine is one session; a program is several routines and a length. */
 export type BuilderKind = 'routine' | 'program';
 
 export interface ApiProgramBlock {
@@ -80,14 +58,28 @@ export interface ApiProgramBlock {
   readonly scheme: string;
   /** e.g. "RPE 8" — empty when the coach left it unset. */
   readonly rpe: string;
+  /**
+   * Target working weight in kg, or `null` for none — a bodyweight movement,
+   * or a lift whose load is left to the day. Optional on the type so the many
+   * existing block literals stay valid; read it as `block.targetKg ?? null`.
+   *
+   * A session started from this block opens with its sets at this weight
+   * instead of zero, which is the whole point of setting one.
+   */
+  readonly targetKg?: number | null;
   /** The one cue the client should remember on this lift. */
   readonly note: string | null;
 }
 
-export interface ApiProgramDay {
+/**
+ * One session inside a program — Program → Routines → Exercises. What a coach
+ * names here is what the client sees on the routine they were handed, so
+ * "Routine 2" is only ever a starting point.
+ */
+export interface ApiProgramRoutine {
   readonly id: string;
-  /** "Day 1" | "Upper A" */
-  readonly label: string;
+  /** e.g. "Upper A". Defaults to "Routine 1" until the coach names it. */
+  readonly name: string;
   readonly blocks: readonly ApiProgramBlock[];
 }
 
@@ -106,8 +98,19 @@ export interface ApiProgramSummary {
 }
 
 export interface ApiProgramDetail extends ApiProgramSummary {
+  /**
+   * What the coach wants said about it as a whole — reaches the client as
+   * `ApiRoutine.note` on the Train tab. `null` when they left it blank.
+   */
+  readonly note: string | null;
   readonly weeks: number;
-  readonly days: readonly ApiProgramDay[];
+  /**
+   * How often the client should train, not which days. The program is a
+   * rotation the client works through at their own pace — this is the target
+   * they are measured against, and the only frequency the app knows.
+   */
+  readonly sessionsPerWeek: number;
+  readonly routines: readonly ApiProgramRoutine[];
   /** True while the coach's edits are ahead of what clients hold. */
   readonly hasDraftChanges: boolean;
 }
@@ -123,33 +126,22 @@ export interface ApiExerciseOption {
   readonly group: string;
 }
 
-export interface ApiSession {
-  readonly id: string;
-  readonly studentId: string;
-  readonly studentName: string;
-  readonly programId: string;
-  readonly programName: string;
-  readonly scheduledAt: string;
-  readonly status: SessionStatus;
-  readonly completedSets: number;
-  readonly totalSets: number;
-}
-
-export interface ApiVolumePoint {
-  readonly weekStart: string;
-  readonly volumeKg: number;
-}
-
-export interface ApiSetLog {
-  readonly exerciseId: string;
-  readonly setIndex: number;
-  readonly reps: number;
-  readonly weightKg: number;
-}
-
 export interface ApiAuthResult {
   readonly token: string;
   readonly user: ApiSessionUser;
+}
+
+/**
+ * Signing in, with the profile the session was checked against.
+ *
+ * The profile rides along because two gates are decided by it — whether a role
+ * still has to be chosen, and whether onboarding has been finished — and the
+ * sign-in already fetched it. Without it the caller would either re-fetch or,
+ * as it did, route straight into the app and skip both.
+ */
+export interface ApiLoginResult {
+  readonly session: ApiAuthResult;
+  readonly profile: ApiProfile;
 }
 
 /**
@@ -205,20 +197,16 @@ export interface ApiClientPlan {
   readonly id: string;
   /** e.g. "Upper A · Push focus" */
   readonly title: string;
-  /** e.g. "5 exercises · ~48 min · last done 4 days ago" */
+  /**
+   * e.g. "5 exercises · last done 4 days ago".
+   *
+   * No duration estimate: nothing in the schema knows how long a routine
+   * takes, and "~48 min" was a number the fixtures invented.
+   */
   readonly meta: string;
   /** Plan-source chip, e.g. "From Sam" or "Your plan". */
   readonly source: string;
   readonly exerciseCount: number;
-}
-
-export interface ApiClientDay {
-  /** e.g. "MON" */
-  readonly day: string;
-  readonly title: string;
-  readonly meta: string;
-  /** "Done" | "Today" | "Planned" | "Missed" | "Rest" */
-  readonly tag: string;
 }
 
 export interface ApiClientCoachSummary {
@@ -230,42 +218,152 @@ export interface ApiClientCoachSummary {
   readonly permissionLabel: string;
 }
 
-export interface ApiClientToday {
-  readonly plan: ApiClientPlan;
+/** Calories and protein for the day. `null` when food logging is off. */
+export interface ApiTodayNutrition {
   readonly calories: ApiMacroTarget;
   readonly protein: ApiMacroTarget;
+}
+
+export interface ApiClientToday {
+  /**
+   * What to suggest doing next, or `null` when there is nothing to suggest —
+   * which is every client until a coach assigns them a program or they build
+   * a routine of their own. Training alone with nothing planned is a state the
+   * app supports, not an error, so the card says so rather than the screen
+   * failing to load.
+   */
+  readonly plan: ApiClientPlan | null;
+  /**
+   * `null` when the `food` feature is off for this build. Absent rather than
+   * zeroed: "0 of 0 kcal" is a claim about someone's day, and an empty card is
+   * a different statement from a card that does not exist.
+   */
+  readonly nutrition: ApiTodayNutrition | null;
   /** `null` = self-training, no coach attached. */
   readonly coach: ApiClientCoachSummary | null;
-  readonly week: readonly ApiClientDay[];
+  readonly week: ApiWeeklyProgress;
 }
 
-export interface ApiRoutine {
-  readonly id: string;
-  readonly name: string;
-  readonly meta: string;
-  readonly chip: string;
-}
-
-export interface ApiProgramProgress {
-  readonly title: string;
-  /** e.g. "wk 6 / 12" */
-  readonly week: string;
-  readonly totalWeeks: number;
-  readonly currentWeek: number;
-  readonly note: string;
-}
-
-export interface ApiNextUpPreviewRow {
+export interface ApiRoutinePreviewRow {
   readonly name: string;
   /** e.g. "4 × 8" */
   readonly scheme: string;
 }
 
+export interface ApiRoutine {
+  readonly id: string;
+  readonly name: string;
+  /**
+   * Whatever the author wants said about it — a coach's instruction, or the
+   * client's own reminder. Replaced a composed "4 days · 8 weeks" line, which
+   * meant one thing on a coach's entry and something else on a client's.
+   */
+  readonly note: string | null;
+  /**
+   * The plan the coach currently has this client on. Drawn as a ring on the
+   * card and nothing else — it deliberately carries no label, because "Active"
+   * beside a resume banner reads as "running right now", which is a different
+   * thing entirely.
+   */
+  readonly isCurrent: boolean;
+  /**
+   * Who made it. A coach's routine is read-only to the client — they can run
+   * it, not rewrite it — and only a client's own routine opens in the builder.
+   */
+  readonly owner: 'coach' | 'you';
+  /** Where it came from, e.g. "From Sam" | "Yours". */
+  readonly sourceLabel: string;
+  /** True once this copy has been changed away from the template it came from. */
+  readonly diverged: boolean;
+  /** When it was last finished, for the "last done" line. */
+  readonly lastCompletedAt: string | null;
+  /**
+   * A change the coach has published, waiting on this client's answer. The
+   * copy does not move until they accept — nobody is updated silently.
+   */
+  readonly pendingUpdate: ApiRoutineUpdate | null;
+  /**
+   * The first few lifts, so a routine can be chosen without opening it. The
+   * card is the only view of a routine a client sees before starting one.
+   */
+  readonly preview: readonly ApiRoutinePreviewRow[];
+}
+
+/* ------------------------------------------------------------------ *
+ * Routine instances. Assigning a coach's routine COPIES it: each
+ * client holds their own, which both sides may edit. That is what
+ * makes "change it for one client only" expressible, and what lets a
+ * client's edit reach their coach without touching anyone else's.
+ *
+ * A routine the client built themselves is an instance too, with no
+ * template behind it — one model, so one editor and one set of
+ * endpoints serve both. See the Copy on Assign plan.
+ * ------------------------------------------------------------------ */
+
+/** A change the coach has proposed to everyone holding a routine. */
+export interface ApiRoutineUpdate {
+  readonly templateVersion: number;
+  readonly proposedAt: string;
+  /** What changed, in words — "Cable fly → Cable lateral raise, 3 × 15". */
+  readonly summary: string;
+  readonly blocks: readonly ApiProgramBlock[];
+}
+
+export interface ApiRoutineInstance {
+  readonly id: string;
+  /** The coach template this was copied from; `null` for the client's own. */
+  readonly templateId: string | null;
+  readonly clientId: string;
+  readonly name: string;
+  readonly note: string | null;
+  readonly blocks: readonly ApiProgramBlock[];
+  /**
+   * The template revision copied. Without it neither `diverged` nor "behind
+   * the template" can be computed — only guessed. `null` for a client's own.
+   */
+  /**
+   * Place in the program's rotation. Ordering only — it never means "do this
+   * on Tuesday", because nothing here is scheduled to a day.
+   */
+  readonly orderIndex: number;
+  /**
+   * When this routine was last finished, or `null` if never. Whichever the
+   * client has gone longest without doing is the one suggested next, which is
+   * what makes the rotation self-correcting: do them out of order and it still
+   * points at what has been neglected.
+   */
+  readonly lastCompletedAt: string | null;
+  readonly baseVersion: number | null;
+  /**
+   * True once either side edited after assignment. It does **not** decide
+   * whether a publish asks — everyone is asked — it tells the coach who has
+   * work of their own at stake.
+   */
+  readonly diverged: boolean;
+  /**
+   * A coach's proposed update, awaiting this client's decision. Nothing is
+   * ever applied silently, so the copy stays as it is until they accept.
+   * Always `null` until the publish-as-proposal work lands.
+   */
+  readonly pendingUpdate: ApiRoutineUpdate | null;
+}
+
+
+/**
+ * The Train tab. No "next up": every routine carries the same card and the
+ * client picks one, rather than the app promoting one of them and burying the
+ * rest in a list. The coach's assignment still leads — see the ordering in
+ * `mockTrainOverview` and the `Active` chip.
+ */
+/** Training done against the target, for the week so far. Never a schedule. */
+export interface ApiWeeklyProgress {
+  readonly done: number;
+  readonly target: number;
+}
+
 export interface ApiTrainOverview {
-  readonly nextUp: ApiClientPlan;
-  readonly nextUpPreview: readonly ApiNextUpPreviewRow[];
   readonly routines: readonly ApiRoutine[];
-  readonly program: ApiProgramProgress | null;
+  readonly week: ApiWeeklyProgress;
 }
 
 export interface ApiSessionSet {
@@ -273,14 +371,21 @@ export interface ApiSessionSet {
   readonly weightKg: number;
   readonly reps: number;
   readonly completed: boolean;
-  readonly isPr: boolean;
 }
 
 export interface ApiSessionExercise {
   readonly id: string;
   readonly name: string;
-  /** Cue / scheme line, e.g. "4 × 8 · 2 min rest". */
-  readonly note: string;
+  /**
+   * The coach's cue on this lift. Read-only to the client: it is an
+   * instruction from the person coaching them, not a field on their form.
+   */
+  readonly coachNote: string | null;
+  /**
+   * The client's own reminder. Theirs to write, edit and clear, and kept
+   * apart from `coachNote` so writing one never overwrites the other.
+   */
+  readonly ownNote: string | null;
   readonly sets: readonly ApiSessionSet[];
 }
 
@@ -412,6 +517,21 @@ export interface ApiSettingsGroup {
   readonly rows: readonly ApiSettingsRow[];
 }
 
+/**
+ * The six switches, as the client's Permissions screen needs them.
+ *
+ * Read off the live link rather than out of `ApiClientProfile`, which carries
+ * a rendered "3 of 5" and the rows of a settings list — presentation, with no
+ * way back to the booleans it was built from.
+ */
+export interface ApiSharePermissionsDetail {
+  /** `null` with no coach attached, which is also when the screen has nothing to say. */
+  readonly coachName: string | null;
+  readonly permissions: ApiSharePermissions;
+  /** Whether the coach may write in the client's name. The sixth permission. */
+  readonly logFor: boolean;
+}
+
 export interface ApiClientProfile {
   readonly name: string;
   readonly email: string;
@@ -424,22 +544,22 @@ export interface ApiClientProfile {
   readonly version: string;
 }
 
-export interface ApiNotificationToggle {
+export interface ApiNotificationSettingsRow {
   readonly id: string;
   readonly label: string;
   readonly desc: string;
   readonly enabled: boolean;
 }
 
-export interface ApiNotificationGroup {
+export interface ApiNotificationSettingsGroup {
   readonly id: string;
   readonly title: string;
   readonly note: string;
-  readonly rows: readonly ApiNotificationToggle[];
+  readonly rows: readonly ApiNotificationSettingsRow[];
 }
 
 export interface ApiNotificationSettings {
-  readonly groups: readonly ApiNotificationGroup[];
+  readonly groups: readonly ApiNotificationSettingsGroup[];
   /** Display range, e.g. "22:00 – 07:00". */
   readonly quietHours: string;
 }
@@ -612,54 +732,97 @@ export interface ApiRosterClient {
   readonly labelId: string | null;
 }
 
-export interface ApiRosterStat {
-  readonly id: string;
-  readonly label: string;
-  readonly value: string;
-}
-
 export interface ApiRoster {
-  readonly stats: readonly ApiRosterStat[];
   readonly clients: readonly ApiRosterClient[];
   readonly labels: readonly ApiRosterLabel[];
-  readonly inviteCode: string;
 }
 
 /* ------------------------------------------------------------------ *
- * Coach activity. Everything that happened across the roster, newest
- * first. Four of the eight kinds are access changes — a client giving
- * or taking back what the coach can see — and the feed is where that
- * gets announced, so they are never quietly folded in with a session.
+ * Notifications — one feed, both sides of the app.
+ *
+ * An activity update *is* a notification: a coach seeing "Maya
+ * finished Upper A" and a client seeing "Sam assigned you Upper A"
+ * are the same kind of event read from opposite ends. They were two
+ * screens with two shapes and two names, which is how a bell ended up
+ * opening a settings form.
+ *
+ * Distinct from `ApiNotificationSettings`, which is the switches that
+ * decide which of these also reach the phone.
  * ------------------------------------------------------------------ */
 
-export type ActivityKind =
+export type NotificationKind =
+  // Training. No 'session-missed': nothing in Ligo is scheduled to a day, so
+  // nothing can be missed — the coach's home derives "needs a look" from
+  // silence instead, which is a state and not an event.
   | 'session-done'
-  | 'session-missed'
+  | 'routine-assigned'
+  | 'routine-updated'
+  // Check-ins
+  | 'check-in'
+  | 'check-in-reply'
+  // Talking
   | 'message'
-  | 'permission-granted'
-  | 'permission-revoked'
+  // Access — the five that change what somebody can see
+  | 'access-requested'
+  | 'access-granted'
+  | 'access-revoked'
+  /** Asked, and told no. Nothing was taken away, because nothing was given. */
+  | 'access-declined'
   | 'attached'
-  | 'detached'
-  | 'check-in';
+  | 'detached';
 
-export interface ApiActivityItem {
+/**
+ * Where tapping a notification goes.
+ *
+ * A union rather than a string, because "open this" has three genuinely
+ * different meanings and the device has to know which it is being handed: a
+ * screen is pushed, a web page opens inside Ligo, an external link leaves for
+ * the browser or another app. A bare string could only ever be one of them,
+ * and the row would have to guess from its shape.
+ *
+ * It is also what a push notification taps into once push exists, so the
+ * banner and the row reach the same place through the same code.
+ */
+export type ApiNotificationDestination =
+  | { readonly kind: 'screen'; readonly route: string }
+  /** Opened in-app, via `expo-web-browser`. For a help page or a receipt. */
+  | { readonly kind: 'web'; readonly url: string }
+  /** Handed to the OS — a calendar invite, a video call, a gym's booking app. */
+  | { readonly kind: 'external'; readonly url: string };
+
+/** Who a notification is about: a client for a coach, their coach for a client. */
+export interface ApiNotificationPerson {
   readonly id: string;
-  readonly kind: ActivityKind;
-  readonly clientId: string;
-  readonly clientName: string;
+  readonly name: string;
   readonly initials: string;
+}
+
+export interface ApiNotification {
+  readonly id: string;
+  readonly kind: NotificationKind;
   readonly title: string;
   readonly body: string;
   /** Pre-composed stamp: "2h" | "1d" | "1w". */
   readonly when: string;
   readonly unread: boolean;
+  /**
+   * The person it concerns, drawn as an avatar. `null` for a notification
+   * about nobody — a row with a blank circle in it reads as a bug.
+   */
+  readonly person: ApiNotificationPerson | null;
+  /**
+   * Where tapping it goes. `null` for something that happened rather than
+   * something to do, and also what a destination the device could not vouch
+   * for becomes — see `parseDestination`.
+   */
+  readonly destination: ApiNotificationDestination | null;
 }
 
-export interface ApiActivityGroup {
+export interface ApiNotificationGroup {
   readonly id: string;
   /** Already uppercase — "TODAY" | "EARLIER THIS WEEK". */
   readonly title: string;
-  readonly items: readonly ApiActivityItem[];
+  readonly items: readonly ApiNotification[];
 }
 
 /* ------------------------------------------------------------------ *
@@ -864,13 +1027,39 @@ export interface ApiBoardMetricOption {
 
 export type DomainAccess = 'granted' | 'not-granted' | 'requested';
 
+/* ------------------------------------------------------------------ *
+ * A coach asking to see something.
+ *
+ * A question and nothing else — the only row that decides what a coach
+ * can see is their permissions on the link, and the only person who
+ * can move it is the client. See `request_access` in the migrations.
+ * ------------------------------------------------------------------ */
+
+export interface ApiAccessRequest {
+  readonly id: string;
+  readonly coachName: string;
+  readonly domain: ShareDomain;
+  /** "Nutrition" | "Health profile" — what the client sees on the card. */
+  readonly title: string;
+  /** What granting it would actually show them. */
+  readonly body: string;
+  /** Pre-composed stamp: "just now" | "2h" | "3d". */
+  readonly when: string;
+}
+
 export interface ApiReviewDomainRow {
   readonly label: string;
   readonly value: string;
 }
 
 export interface ApiReviewDomain {
-  readonly id: 'nutrition' | 'metrics' | 'health' | 'monthly';
+  /**
+   * Everything shareable except `workouts`, which the review screen shows as
+   * the sessions list and adherence bars rather than as a card of its own.
+   * Derived from `ShareDomain` so a new domain cannot be added to one screen
+   * and forgotten on the other.
+   */
+  readonly id: Exclude<ShareDomain, 'workouts'>;
   readonly title: string;
   readonly access: DomainAccess;
   /** Empty unless `access` is `granted`. Never a placeholder. */
@@ -902,6 +1091,12 @@ export interface ApiClientReview {
   readonly sessions: readonly ApiReviewSession[];
   /** Drives the live entry point, and nothing else. */
   readonly isTraining: boolean;
+  /**
+   * Whether this client allowed the coach to write on their behalf — the
+   * `log_for` switch. Read-only access is per domain; writing is this one
+   * answer, so it sits on the review rather than on each card.
+   */
+  readonly canLogFor: boolean;
 }
 
 /* ------------------------------------------------------------------ *
@@ -912,10 +1107,14 @@ export interface ApiClientReview {
  * ------------------------------------------------------------------ */
 
 export interface ApiLiveSet {
+  /** Needed now that a coach can change one — they have to name which. */
+  readonly id: string;
   readonly n: number;
   readonly weightKg: number;
   readonly reps: number;
   readonly completed: boolean;
+  /** True when the coach changed this one, so the client can see whose number it is. */
+  readonly changedByCoach: boolean;
 }
 
 export interface ApiLiveExercise {
@@ -935,8 +1134,38 @@ export interface ApiLiveSession {
   readonly title: string;
   readonly startedAt: string;
   readonly exercises: readonly ApiLiveExercise[];
-  /** Said on the screen itself, so watching can never be mistaken for editing. */
+  /**
+   * Whether this coach may change the load and reps on sets still to come —
+   * the client's `log_for` switch. Known before anything is tapped, so the
+   * screen shows what it can do rather than discovering a refusal.
+   */
+  readonly canEdit: boolean;
+  /** Said on the screen itself, so what watching means is never a guess. */
   readonly notice: string;
+}
+
+/**
+ * The coach's home screen: the gym floor, not a schedule.
+ *
+ * `needsALook` is deliberately only the exceptions — someone who finished
+ * recently or has gone quiet. The full register is the roster, and a home
+ * screen that listed everybody would be a second copy of it.
+ */
+export interface ApiCoachHome {
+  readonly training: readonly ApiLiveClient[];
+  readonly needsALook: readonly ApiRosterClient[];
+  readonly rosterCount: number;
+}
+
+/** One client mid-workout, for the coach's home screen. */
+export interface ApiLiveClient {
+  readonly clientId: string;
+  readonly name: string;
+  readonly initials: string;
+  /** e.g. "Upper A · 18 min in" */
+  readonly meta: string;
+  /** e.g. "6 of 14 sets" */
+  readonly progress: string;
 }
 
 /* ------------------------------------------------------------------ *
@@ -959,10 +1188,23 @@ export interface ApiCoachNotification {
 
 export interface ApiCoachProfile {
   readonly name: string;
-  readonly initials: string;
   /** Derived from the roster, never authored — e.g. "Strength coach · Berlin · 17 clients". */
   readonly headline: string;
   readonly inviteCode: string;
   readonly notifications: readonly ApiCoachNotification[];
   readonly groups: readonly ApiSettingsGroup[];
+}
+
+/**
+ * The same profile as the coach edits it.
+ *
+ * `ApiCoachProfile` above is what the settings screen renders — a headline
+ * already written, rows already composed — and none of it can be edited back
+ * into the fields it came from. These are those fields.
+ */
+export interface ApiCoachProfileForm {
+  readonly name: string;
+  readonly gym: string;
+  readonly bio: string;
+  readonly specialties: readonly string[];
 }

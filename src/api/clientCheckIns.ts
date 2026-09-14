@@ -6,23 +6,91 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 
+import {
+  checkInFromRow,
+  checkInShareNote,
+  checkInStats,
+  dayLabel,
+  formatDelta,
+  measurementCell,
+  monthLabel,
+} from '@/lib/checkIns';
 import { env } from '@/lib/env';
+import { readUnits } from '@/lib/unitPreference';
+import { displayLength } from '@/lib/units';
 
-import { client } from './client';
 import { mockCheckIns, mockDelay, mockSaveCheckIn, mockToggleCoachEdit } from './mocks';
 import { queryKeys } from './queryKeys';
-import type { ApiCheckIn, ApiMonthlyCheckIns } from './types';
+import { assertOk, currentUserId, supabase, unwrap } from './supabase';
+import type { ApiCheckIn, ApiMonthlyCheckIns, ApiSharePermissions } from './types';
 
-async function fetchCheckIns(): Promise<ApiMonthlyCheckIns> {
+/** "" and "  " are a field left blank, not a zero. */
+function numberOrNull(value: string): number | null {
+  const parsed = Number(value.trim().replace(',', '.'));
+  return value.trim().length > 0 && Number.isFinite(parsed) ? parsed : null;
+}
+
+/** A year of months is what the list shows before anybody scrolls for more. */
+const CHECK_IN_MONTHS = 12;
+
+/**
+ * Whose check-ins. `undefined` means the caller's own, which is the client
+ * reading their own screen; a coach passes the client's id.
+ *
+ * It is a parameter rather than an assumption because a coach has no check-ins
+ * of their own — no Progress tab, no check-in screen — so "the current user"
+ * was never the right answer on their side of the app. What they may actually
+ * do with it is decided by RLS: `monthly` to read, `log_for` to write.
+ */
+async function fetchCheckIns(forClientId?: string): Promise<ApiMonthlyCheckIns> {
+  const units = readUnits();
   if (env.useMocks) {
     return mockDelay(mockCheckIns());
   }
-  const { data } = await client.get<ApiMonthlyCheckIns>('/client/check-ins');
-  return data;
+
+  const clientId = forClientId ?? (await currentUserId());
+
+  const [rows, links] = await Promise.all([
+    supabase
+      .rpc('monthly_check_ins', { p_client_id: clientId, p_months: CHECK_IN_MONTHS })
+      .then(unwrap),
+    supabase
+      .from('coach_clients')
+      .select('permissions, log_for, coach:users!coach_clients_coach_id_fkey(full_name)')
+      .eq('client_id', clientId)
+      .eq('status', 'active')
+      .limit(1)
+      .then(unwrap),
+  ]);
+
+  const link = links[0];
+  const coachName = link?.coach?.full_name ?? '';
+  const permissions = (link?.permissions ?? {}) as ApiSharePermissions;
+
+  // Newest first, which is how the rows already arrive and how the deltas are
+  // read — each month against the one below it.
+  const entries = rows.map((row, index) =>
+    checkInFromRow(row, rows[index + 1] ?? null, units),
+  );
+
+  return {
+    stats: checkInStats(entries, units),
+    entries,
+    // The `monthly` permission — one switch per domain, the same one the
+    // coach's review card and the permissions screen read.
+    coachCanEdit: Boolean(permissions.monthly),
+    coachName: coachName.split(' ')[0] ?? '',
+    note: checkInShareNote(coachName || null, Boolean(permissions.monthly), Boolean(link?.log_for)),
+  };
 }
 
-export function useCheckInsQuery(): UseQueryResult<ApiMonthlyCheckIns, Error> {
-  return useQuery({ queryKey: queryKeys.clientCheckIns, queryFn: fetchCheckIns });
+export function useCheckInsQuery(
+  forClientId?: string,
+): UseQueryResult<ApiMonthlyCheckIns, Error> {
+  return useQuery({
+    queryKey: queryKeys.clientCheckIns(forClientId),
+    queryFn: () => fetchCheckIns(forClientId),
+  });
 }
 
 /* ------------------------------------------------------------------ *
@@ -33,6 +101,8 @@ export function useCheckInsQuery(): UseQueryResult<ApiMonthlyCheckIns, Error> {
 export interface SaveCheckInInput {
   /** Present for an edit, absent for a new month. */
   readonly id?: string;
+  /** Whose. Absent means the caller's own — see `fetchCheckIns`. */
+  readonly clientId?: string;
   readonly weightKg: string;
   readonly waist: string;
   readonly chest: string;
@@ -41,57 +111,6 @@ export interface SaveCheckInInput {
   readonly note: string;
 }
 
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-] as const;
-
-const MONTHS_SHORT = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-] as const;
-
-function cell(label: string, value: string, unit: string) {
-  const trimmed = value.trim();
-  return { label, value: trimmed.length === 0 ? '—' : `${trimmed}${unit}` };
-}
-
-/**
- * A drop is the signed change against the month below it, using U+2212 to match
- * the rest of the app — a hyphen reads as punctuation next to a number.
- */
-function formatDelta(weightKg: number, previousKg: number | null): string {
-  if (previousKg === null || !Number.isFinite(previousKg)) return '—';
-  const change = Math.round((weightKg - previousKg) * 10) / 10;
-  if (change === 0) return '0.0';
-  return change < 0 ? `−${Math.abs(change).toFixed(1)}` : `+${change.toFixed(1)}`;
-}
-
-/**
- * The label, delta and byLine are the server's work for real. Composing them in
- * one place here means the row that appears optimistically is the same row the
- * refetch hands back, rather than one that visibly rewrites itself a beat later.
- */
 export function composeCheckIn(
   input: SaveCheckInInput,
   entries: readonly ApiCheckIn[],
@@ -102,24 +121,34 @@ export function composeCheckIn(
   const previous = index >= 0 ? entries[index + 1] : entries[0];
   const weightKg = Number(input.weightKg.trim());
   const now = new Date();
+  const units = readUnits();
+  const shown = (raw: string): string => {
+    const value = Number(raw.trim());
+    return raw.trim() === '' || !Number.isFinite(value)
+      ? raw
+      : String(Number(displayLength(value, units.length).toFixed(1)));
+  };
 
   return {
     id: existing?.id ?? `chk-${Date.now()}`,
-    label: existing?.label ?? `${MONTHS[now.getMonth()]} ${now.getFullYear()}`,
+    label: existing?.label ?? monthLabel(now.toISOString()),
     weightKg: input.weightKg.trim(),
-    delta: formatDelta(weightKg, previous ? Number(previous.weightKg) : null),
+    delta: formatDelta(
+      Number.isFinite(weightKg) ? weightKg : null,
+      previous ? Number(previous.weightKg) : null,
+    ),
     cells: [
-      cell('Waist', input.waist, ' cm'),
-      cell('Chest', input.chest, ' cm'),
-      cell('Hips', input.hips, ' cm'),
-      cell('Body fat', input.bodyFat, '%'),
+      // `input` arrives in stored centimetres — the form converts on the way
+      // out — so the optimistic row converts back to draw it.
+      measurementCell('Waist', shown(input.waist), ` ${units.length}`),
+      measurementCell('Chest', shown(input.chest), ` ${units.length}`),
+      measurementCell('Hips', shown(input.hips), ` ${units.length}`),
+      measurementCell('Body fat', input.bodyFat, '%'),
     ],
     note: input.note.trim(),
     // An edit keeps its original author; the client is always the author of a new one.
     by: existing?.by ?? 'you',
-    byLine:
-      existing?.byLine ??
-      `Logged by you · ${now.getDate()} ${MONTHS_SHORT[now.getMonth()]}`,
+    byLine: existing?.byLine ?? `Logged by you · ${dayLabel(now)}`,
     photos: existing?.photos ?? 0,
   };
 }
@@ -146,11 +175,20 @@ async function saveCheckIn(input: SaveCheckInInput): Promise<void> {
     return;
   }
   // A new month is a create; an existing one is addressed by its own id.
-  if (input.id) {
-    await client.put(`/client/check-ins/${input.id}`, input);
-    return;
-  }
-  await client.post('/client/check-ins', input);
+  const clientId = input.clientId ?? (await currentUserId());
+
+  unwrap(
+    await supabase.rpc('save_check_in', {
+      p_client_id: clientId,
+      p_check_in_id: input.id ?? null,
+      p_weight_kg: numberOrNull(input.weightKg),
+      p_waist_cm: numberOrNull(input.waist),
+      p_chest_cm: numberOrNull(input.chest),
+      p_hips_cm: numberOrNull(input.hips),
+      p_body_fat_pct: numberOrNull(input.bodyFat),
+      p_note: input.note,
+    }),
+  );
 }
 
 /**
@@ -163,7 +201,7 @@ export function useSaveCheckInMutation(): UseMutationResult<void, Error, SaveChe
   return useMutation({
     mutationFn: saveCheckIn,
     onMutate: async (input) => {
-      const key = queryKeys.clientCheckIns;
+      const key = queryKeys.clientCheckIns(input.clientId);
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<ApiMonthlyCheckIns>(key);
 
@@ -178,8 +216,16 @@ export function useSaveCheckInMutation(): UseMutationResult<void, Error, SaveChe
         queryClient.setQueryData(context.key, context.previous);
       }
     },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.clientCheckIns });
+    onSettled: (_data, _error, input) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientCheckIns(input.clientId) });
+      // The coach's review card summarises these, and the client's Progress
+      // card does too — both go stale the moment one is written.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientProgress });
+      if (input.clientId) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.coachClient.review(input.clientId),
+        });
+      }
     },
   });
 }
@@ -194,7 +240,11 @@ async function postCoachEdit(enabled: boolean): Promise<void> {
     await mockDelay(undefined, 150);
     return;
   }
-  await client.post('/client/check-ins/coach-edit', { enabled });
+  // The `monthly` permission, not a switch of its own. A second flag for the
+  // same question is a second thing to disagree with the coach's review card.
+  assertOk(
+    await supabase.rpc('set_coach_permission', { p_domain: 'monthly', p_shared: enabled }),
+  );
 }
 
 /**
@@ -207,7 +257,9 @@ export function useToggleCoachEditMutation(): UseMutationResult<void, Error, boo
   return useMutation({
     mutationFn: postCoachEdit,
     onMutate: async (enabled) => {
-      const key = queryKeys.clientCheckIns;
+      // Always the caller's own: this is the client's switch, and a coach has
+      // no version of it.
+      const key = queryKeys.clientCheckIns();
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<ApiMonthlyCheckIns>(key);
 
@@ -223,7 +275,7 @@ export function useToggleCoachEditMutation(): UseMutationResult<void, Error, boo
       }
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.clientCheckIns });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientCheckIns() });
     },
   });
 }

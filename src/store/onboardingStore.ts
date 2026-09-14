@@ -1,14 +1,12 @@
 import { create } from 'zustand';
 
-import type { ApiCoachSummary, UserRole } from '@/api/types';
-
-interface OnboardingPermissions {
-  readonly workouts: boolean;
-  readonly nutrition: boolean;
-  readonly metrics: boolean;
-}
-
-type PermissionKey = keyof OnboardingPermissions;
+import { onboardingUnitFor } from '@/lib/onboarding';
+import type {
+  ApiCoachSummary,
+  ApiSharePermissions,
+  ShareDomain,
+  UserRole,
+} from '@/api/types';
 
 interface OnboardingState {
   readonly role: UserRole | null;
@@ -20,7 +18,7 @@ interface OnboardingState {
   readonly sessionsPerWeek: number;
   readonly inviteCode: string;
   readonly lookedUpCoach: ApiCoachSummary | null;
-  readonly permissions: OnboardingPermissions;
+  readonly permissions: ApiSharePermissions;
   readonly logFor: boolean;
   readonly coachBio: string;
   readonly coachGym: string;
@@ -34,7 +32,7 @@ interface OnboardingState {
   readonly setSessionsPerWeek: (sessionsPerWeek: number) => void;
   readonly setInviteCode: (inviteCode: string) => void;
   readonly setLookedUpCoach: (coach: ApiCoachSummary | null) => void;
-  readonly togglePermission: (key: PermissionKey) => void;
+  readonly togglePermission: (key: ShareDomain) => void;
   readonly toggleLogFor: () => void;
   readonly setCoachProfile: (profile: { bio: string; gym: string }) => void;
   readonly toggleSpecialty: (label: string) => void;
@@ -51,11 +49,19 @@ const defaults = {
   email: '',
   goals: ['Strength', 'Muscle'] as readonly string[],
   experience: '1–3 yrs',
-  units: 'kg · cm',
+  units: onboardingUnitFor('kg') as string,
   sessionsPerWeek: 4,
   inviteCode: '',
   lookedUpCoach: null as ApiCoachSummary | null,
-  permissions: { workouts: false, nutrition: false, metrics: false } as OnboardingPermissions,
+  // Everything off until the client turns it on, which is what the screen
+  // promises in those words.
+  permissions: {
+    workouts: false,
+    nutrition: false,
+    metrics: false,
+    health: false,
+    monthly: false,
+  } as ApiSharePermissions,
   logFor: false,
   coachBio: '',
   coachGym: '',

@@ -7,9 +7,9 @@ import {
 } from '@tanstack/react-query';
 
 import { env } from '@/lib/env';
-import { deriveRosterStats, withLabelCounts } from '@/lib/roster';
+import { relativeTime } from '@/lib/format';
+import { deriveAccess, deriveAttention, rosterMeta, withLabelCounts } from '@/lib/roster';
 
-import { client } from './client';
 import {
   mockCreateLabel,
   mockDelay,
@@ -18,14 +18,89 @@ import {
   mockRoster,
 } from './mocks';
 import { queryKeys } from './queryKeys';
-import type { ApiRoster, ApiRosterClient, ApiRosterLabel } from './types';
+import { assertOk, currentUserId, supabase, unwrap } from './supabase';
+import type {
+  ApiRoster,
+  ApiRosterClient,
+  ApiRosterLabel,
+  ApiSharePermissions,
+} from './types';
+
+/** "MA" from "Maya Andersson" — the avatar when there is no photo. */
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
+/** Whole days since a timestamp, for the roster's recency sort. */
+function daysSince(iso: string | null, now: Date): number {
+  if (!iso) return Number.MAX_SAFE_INTEGER;
+  const then = Date.parse(iso);
+  if (!Number.isFinite(then)) return Number.MAX_SAFE_INTEGER;
+  return Math.max(0, Math.floor((now.getTime() - then) / 86_400_000));
+}
 
 async function fetchRoster(): Promise<ApiRoster> {
   if (env.useMocks) {
     return mockDelay(mockRoster());
   }
-  const { data } = await client.get<ApiRoster>('/coach/roster');
-  return data;
+
+  const coachId = await currentUserId();
+
+  const [rows, labelRows] = await Promise.all([
+    supabase
+      .from('roster_clients')
+      .select('*')
+      .eq('coach_id', coachId)
+      .then(unwrap),
+    supabase
+      .from('roster_labels')
+      .select('id, name, color')
+      .eq('coach_id', coachId)
+      .order('name')
+      .then(unwrap),
+  ]);
+
+  const now = new Date();
+
+  const clients: readonly ApiRosterClient[] = rows.map((row) => {
+    const permissions = (row.permissions ?? {}) as ApiSharePermissions;
+    const name = row.full_name ?? '';
+
+    return {
+      id: row.client_id ?? '',
+      name,
+      initials: initialsOf(name),
+      // Both from the last finished workout, and both blank for a client who
+      // has not shared workouts — the view returns NULL rather than hiding
+      // them, because the coach is still coaching someone they cannot watch.
+      daysAgo: daysSince(row.last_workout_at, now),
+      when: row.is_training ? 'now' : row.last_workout_at ? relativeTime(row.last_workout_at, now) : '—',
+      meta: rosterMeta(row.program_name, permissions),
+      attention: deriveAttention(
+        {
+          isTraining: row.is_training ?? false,
+          lastWorkoutAt: row.last_workout_at,
+          acceptedAt: row.accepted_at,
+        },
+        now,
+      ),
+      access: deriveAccess(permissions),
+      labelId: row.label_id,
+    };
+  });
+
+  const labels: readonly ApiRosterLabel[] = labelRows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    // Recomputed below from the clients — a stored count goes stale the
+    // moment a label is deleted.
+    count: 0,
+  }));
+
+  return { clients, labels: withLabelCounts(labels, clients) };
 }
 
 export function useRosterQuery(): UseQueryResult<ApiRoster, Error> {
@@ -48,12 +123,7 @@ function compose(
   clients: readonly ApiRosterClient[],
   labels: readonly ApiRosterLabel[],
 ): ApiRoster {
-  return {
-    ...current,
-    stats: deriveRosterStats(clients),
-    clients,
-    labels: withLabelCounts(labels, clients),
-  };
+  return { ...current, clients, labels: withLabelCounts(labels, clients) };
 }
 
 /** Shared plumbing: every label write is a local recompose, then a refetch. */
@@ -103,7 +173,13 @@ async function postLabel(input: CreateLabelInput): Promise<void> {
     await mockDelay(undefined, 200);
     return;
   }
-  await client.post('/coach/roster/labels', input);
+  assertOk(
+    await supabase.from('roster_labels').insert({
+      coach_id: await currentUserId(),
+      name: input.name.trim(),
+      color: input.color,
+    }),
+  );
 }
 
 export function useCreateLabelMutation(): UseMutationResult<void, Error, CreateLabelInput> {
@@ -123,7 +199,10 @@ async function patchLabel({ id, name }: RenameLabelInput): Promise<void> {
     await mockDelay(undefined, 200);
     return;
   }
-  await client.patch(`/coach/roster/labels/${id}`, { name: name.trim() });
+  // The name only, never the filing — renaming a label moves nobody.
+  assertOk(
+    await supabase.from('roster_labels').update({ name: name.trim() }).eq('id', id),
+  );
 }
 
 export function useRenameLabelMutation(): UseMutationResult<void, Error, RenameLabelInput> {
@@ -142,7 +221,9 @@ async function deleteLabel(id: string): Promise<void> {
     await mockDelay(undefined, 200);
     return;
   }
-  await client.delete(`/coach/roster/labels/${id}`);
+  // `coach_clients.label_id` is `on delete set null`, so this unfiles whoever
+  // carried it and does nothing else — which is what the screen promises.
+  assertOk(await supabase.from('roster_labels').delete().eq('id', id));
 }
 
 /**

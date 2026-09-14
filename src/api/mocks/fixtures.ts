@@ -1,5 +1,7 @@
 import type {
-  ApiActivityGroup,
+  ApiAccessRequest,
+  ApiCoachHome,
+  ApiNotificationGroup,
   ApiChatMessage,
   ApiCheckIn,
   ApiClientChat,
@@ -21,6 +23,7 @@ import type {
   ApiClientReview,
   ApiCoachNotification,
   ApiCoachProfile,
+  ApiCoachProfileForm,
   ApiLiveExercise,
   ApiLiveSession,
   ApiReviewDomain,
@@ -30,29 +33,29 @@ import type {
   ApiClientProgress,
   ApiClientSession,
   ApiClientToday,
-  ApiCoach,
   ApiExerciseOption,
   ApiFoodDay,
   ApiFoodResult,
   ApiIntegration,
   ApiMonthlyCheckIns,
   ApiNotificationSettings,
-  ApiProgram,
+  ApiProgramBlock,
   ApiProgramDetail,
   ApiProgramSummary,
   ApiRoster,
   ApiRosterClient,
   ApiRosterLabel,
-  ApiSession,
+  ApiRoutineInstance,
+  ApiWeeklyProgress,
   ApiSettingsGroup,
+  ApiSharePermissionsDetail,
+  ApiSessionExercise,
   ApiSessionSet,
-  ApiStudent,
   ApiTrainOverview,
-  ApiVolumePoint,
   RosterAttention,
-  StudentStatus,
+  ShareDomain,
 } from '@/api/types';
-import { markActivityRead } from '@/lib/activity';
+import { markNotificationRead } from '@/lib/notifications';
 import { coachHeadline, toggleNotification } from '@/lib/coachProfile';
 import {
   communityRowValue,
@@ -63,242 +66,13 @@ import {
 } from '@/lib/community';
 import { initials } from '@/lib/format';
 import { appendOwnMessage, filterInbox, withLatestPreview } from '@/lib/messages';
-import { assignedLabel, filterExerciseOptions } from '@/lib/programs';
-import { accessLabel, deriveRosterStats, withLabelCounts } from '@/lib/roster';
+import { assignedLabel, filterExerciseOptions, parseScheme } from '@/lib/programs';
+import { hasFeature } from '@/lib/features';
+import { countThisWeek, summariseRoutines } from '@/lib/rotation';
+import { accessRequestBody, accessRequestTitle } from '@/lib/sharing';
+import { accessLabel, withLabelCounts } from '@/lib/roster';
 import { useAuthStore } from '@/store/authStore';
 
-/** Dates are generated relative to now so the demo always reads as "today". */
-const now = new Date();
-
-function at(dayOffset: number, hour: number, minute = 0): string {
-  const d = new Date(now);
-  d.setDate(d.getDate() + dayOffset);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
-}
-
-export const mockCoach: ApiCoach = {
-  id: 'coach-1',
-  name: 'Damilare A.',
-  email: 'damilare@ligo.app',
-  gymName: 'Ironworks Lagos',
-  avatarUrl: null,
-};
-
-export const mockPrograms: readonly ApiProgram[] = [
-  {
-    id: 'prog-1',
-    name: 'Base Strength',
-    focus: 'Compound strength, 3x/week',
-    weeks: 8,
-    assignedStudentIds: ['stu-1', 'stu-4'],
-    exercises: [
-      {
-        id: 'ex-1',
-        name: 'Back Squat',
-        sets: 5,
-        reps: 5,
-        targetWeightKg: 80,
-        restSeconds: 180,
-        cue: 'Knees track over mid-foot — no collapse on the way up.',
-      },
-      {
-        id: 'ex-2',
-        name: 'Bench Press',
-        sets: 4,
-        reps: 6,
-        targetWeightKg: 60,
-        restSeconds: 150,
-        cue: 'Shoulder blades pinned to the bench before the bar moves.',
-      },
-      {
-        id: 'ex-3',
-        name: 'Romanian Deadlift',
-        sets: 3,
-        reps: 8,
-        targetWeightKg: 70,
-        restSeconds: 120,
-        cue: 'Hinge from the hips, ribs down.',
-      },
-    ],
-  },
-  {
-    id: 'prog-2',
-    name: 'Conditioning Block',
-    focus: 'Work capacity, 4x/week',
-    weeks: 6,
-    assignedStudentIds: ['stu-2', 'stu-5'],
-    exercises: [
-      {
-        id: 'ex-4',
-        name: 'Kettlebell Swing',
-        sets: 5,
-        reps: 15,
-        targetWeightKg: 24,
-        restSeconds: 60,
-        cue: 'Snap the hips — the arms are just rope.',
-      },
-      {
-        id: 'ex-5',
-        name: 'Rower Intervals',
-        sets: 6,
-        reps: 250,
-        targetWeightKg: 0,
-        restSeconds: 90,
-        cue: 'Legs, then back, then arms. Reverse on the return.',
-      },
-    ],
-  },
-  {
-    id: 'prog-3',
-    name: 'Return to Lifting',
-    focus: 'Post-injury rebuild, 2x/week',
-    weeks: 10,
-    assignedStudentIds: ['stu-3'],
-    exercises: [
-      {
-        id: 'ex-6',
-        name: 'Goblet Squat',
-        sets: 3,
-        reps: 10,
-        targetWeightKg: 16,
-        restSeconds: 90,
-        cue: 'Stop the set the moment depth changes.',
-      },
-      {
-        id: 'ex-7',
-        name: 'Split Squat',
-        sets: 3,
-        reps: 8,
-        targetWeightKg: 12,
-        restSeconds: 90,
-        cue: 'Front shin vertical, weight through the whole foot.',
-      },
-    ],
-  },
-];
-
-export const mockStudents: readonly ApiStudent[] = [
-  {
-    id: 'stu-1',
-    name: 'Ada Bello',
-    avatarUrl: null,
-    goal: 'First bodyweight squat',
-    programId: 'prog-1',
-    status: 'on-track',
-    adherence: 92,
-    nextSessionAt: at(0, 7, 30),
-    lastSessionAt: at(-2, 7, 30),
-    note: 'Squat depth improved — hold the load for another week.',
-  },
-  {
-    id: 'stu-2',
-    name: 'Tunde Okafor',
-    avatarUrl: null,
-    goal: 'Drop 6kg before December',
-    programId: 'prog-2',
-    status: 'on-track',
-    adherence: 84,
-    nextSessionAt: at(0, 9, 0),
-    lastSessionAt: at(-1, 9, 0),
-    note: null,
-  },
-  {
-    id: 'stu-3',
-    name: 'Ngozi Eze',
-    avatarUrl: null,
-    goal: 'Rebuild after knee surgery',
-    programId: 'prog-3',
-    status: 'at-risk',
-    adherence: 48,
-    nextSessionAt: at(0, 17, 0),
-    lastSessionAt: at(-9, 17, 0),
-    note: 'Missed two sessions. Check in before loading the split squat.',
-  },
-  {
-    id: 'stu-4',
-    name: 'Samuel Idris',
-    avatarUrl: null,
-    goal: '120kg deadlift',
-    programId: 'prog-1',
-    status: 'on-track',
-    adherence: 96,
-    nextSessionAt: at(1, 6, 30),
-    lastSessionAt: at(0, 6, 30),
-    note: null,
-  },
-  {
-    id: 'stu-5',
-    name: 'Chiamaka Nwosu',
-    avatarUrl: null,
-    goal: 'Run 10k under 55 minutes',
-    programId: 'prog-2',
-    status: 'at-risk',
-    adherence: 61,
-    nextSessionAt: at(2, 18, 0),
-    lastSessionAt: at(-6, 18, 0),
-    note: 'Travelling for work — move sessions to mornings.',
-  },
-  {
-    id: 'stu-6',
-    name: 'Kelechi Obi',
-    avatarUrl: null,
-    goal: 'General fitness',
-    programId: null,
-    status: 'inactive',
-    adherence: 12,
-    nextSessionAt: null,
-    lastSessionAt: at(-34, 8, 0),
-    note: 'Membership lapsed. Needs a new program before returning.',
-  },
-];
-
-export const mockSessions: readonly ApiSession[] = [
-  {
-    id: 'ses-1',
-    studentId: 'stu-1',
-    studentName: 'Ada Bello',
-    programId: 'prog-1',
-    programName: 'Base Strength',
-    scheduledAt: at(0, 7, 30),
-    status: 'completed',
-    completedSets: 12,
-    totalSets: 12,
-  },
-  {
-    id: 'ses-2',
-    studentId: 'stu-2',
-    studentName: 'Tunde Okafor',
-    programId: 'prog-2',
-    programName: 'Conditioning Block',
-    scheduledAt: at(0, 9, 0),
-    status: 'scheduled',
-    completedSets: 4,
-    totalSets: 11,
-  },
-  {
-    id: 'ses-3',
-    studentId: 'stu-3',
-    studentName: 'Ngozi Eze',
-    programId: 'prog-3',
-    programName: 'Return to Lifting',
-    scheduledAt: at(0, 17, 0),
-    status: 'scheduled',
-    completedSets: 0,
-    totalSets: 6,
-  },
-  {
-    id: 'ses-4',
-    studentId: 'stu-4',
-    studentName: 'Samuel Idris',
-    programId: 'prog-1',
-    programName: 'Base Strength',
-    scheduledAt: at(1, 6, 30),
-    status: 'scheduled',
-    completedSets: 0,
-    totalSets: 12,
-  },
-];
 
 /* ------------------------------------------------------------------ *
  * Client-side training fixtures. Copy is verbatim from the "Ligo
@@ -309,12 +83,16 @@ const clientTodayBase: ApiClientToday = {
   plan: {
     id: 'plan-upper-a',
     title: 'Upper A · Push focus',
-    meta: '5 exercises · ~48 min · last done 4 days ago',
+    meta: '5 exercises · last done 4 days ago',
     source: 'From Sam',
     exerciseCount: 5,
   },
-  calories: { consumed: 1840, target: 2600, unit: 'kcal' },
-  protein: { consumed: 126, target: 185, unit: 'g' },
+  // Present in the fixture and gated at the read below, so the offline build
+  // exercises both shapes: the card with food on, and no card with it off.
+  nutrition: {
+    calories: { consumed: 1840, target: 2600, unit: 'kcal' },
+    protein: { consumed: 126, target: 185, unit: 'g' },
+  },
   coach: {
     id: 'coach-sam',
     name: 'Sam Okafor',
@@ -323,13 +101,7 @@ const clientTodayBase: ApiClientToday = {
     line2: 'Sees workouts and nutrition',
     permissionLabel: 'Partial access',
   },
-  week: [
-    { day: 'MON', title: 'Upper A', meta: '5 exercises · 48 min', tag: 'Done' },
-    { day: 'TUE', title: 'Lower A', meta: '6 exercises · 52 min', tag: 'Done' },
-    { day: 'WED', title: 'Rest', meta: '—', tag: 'Rest' },
-    { day: 'THU', title: 'Upper B', meta: '5 exercises · 46 min', tag: 'Today' },
-    { day: 'FRI', title: 'Lower B', meta: '6 exercises · 50 min', tag: 'Planned' },
-  ],
+  week: { done: 0, target: 4 },
 };
 
 /**
@@ -342,30 +114,361 @@ const clientTodayBase: ApiClientToday = {
 let clientTodayState: ApiClientToday = clientTodayBase;
 
 export function mockClientToday(): ApiClientToday {
-  return clientTodayState;
+  return {
+    ...clientTodayState,
+    // The week is counted, not stored: it has to agree with the Train tab and
+    // with what the coach sees, and three copies of a count will not.
+    week: mockWeeklyProgress(MOCK_CLIENT_ID),
+    // The offline build honours the flag too, so a screenshot taken with food
+    // off is the screen a person with food off actually gets.
+    nutrition: hasFeature('food') ? clientTodayState.nutrition : null,
+  };
 }
 
-export const mockTrainOverview: ApiTrainOverview = {
-  nextUp: clientTodayBase.plan,
-  nextUpPreview: [
-    { name: 'Bench press', scheme: '4 × 8' },
-    { name: 'Incline DB press', scheme: '3 × 10' },
-    { name: 'Cable fly', scheme: '3 × 12' },
+/**
+ * The routines list, mutable because the client can now add to it. A coach's
+ * routine sits in the same list as one the client built — the `owner` field is
+ * what separates "run this" from "run or rewrite this".
+ */
+/**
+ * Instances the coach has assigned to this client. Seeded rather than derived
+ * so the Train tab reads exactly as it did before instances existed — the
+ * store is the new thing, not the data on screen.
+ *
+ * `templateId` points at a real program in `initialProgramDetails`, so a
+ * publish has something to propose against once that work lands.
+ */
+/** The signed-in client in the mocks — instances are held per person. */
+const MOCK_CLIENT_ID = 'client-maya';
+
+/** Whose name appears on a routine the fixtures say came from a coach. */
+const MOCK_COACH_NAME = 'Sam';
+
+const routineInstanceStore = new Map<string, ApiRoutineInstance>([
+  [
+    'rou-1',
+    {
+      id: 'rou-1',
+      templateId: 'pg-upper-lower',
+      clientId: MOCK_CLIENT_ID,
+      orderIndex: 0,
+      lastCompletedAt: null,
+      name: 'Upper/Lower 4×',
+      note: 'Four days a week. Week 6 of 12 — two more at this volume, then a deload.',
+      baseVersion: 1,
+      diverged: false,
+      pendingUpdate: null,
+      blocks: [
+        { id: 'blk-ul-a1', name: 'Bench press', scheme: '4 × 8', rpe: 'RPE 8', targetKg: 82.5, note: 'pause 1s on chest' },
+        { id: 'blk-ul-a2', name: 'Incline DB press', scheme: '3 × 10', rpe: '', targetKg: 30, note: null },
+        { id: 'blk-ul-a3', name: 'Cable fly', scheme: '3 × 12', rpe: '', targetKg: 12.5, note: null },
+      ],
+    },
   ],
-  routines: [
-    { id: 'rou-1', name: 'Upper/Lower 4×', meta: '4 days · 8 weeks', chip: 'Active' },
-    { id: 'rou-2', name: 'Push Pull Legs', meta: '6 days · ongoing', chip: 'Saved' },
-    { id: 'rou-3', name: 'Full body 3×', meta: '3 days · 6 weeks', chip: 'Saved' },
-    { id: 'rou-4', name: 'Deload week', meta: '4 days · 1 week', chip: 'Saved' },
+  [
+    'rou-4',
+    {
+      id: 'rou-4',
+      templateId: 'pg-return',
+      clientId: MOCK_CLIENT_ID,
+      orderIndex: 1,
+      lastCompletedAt: null,
+      name: 'Deload week',
+      note: 'One easy week. Keep the bar moving, leave three reps in the tank.',
+      baseVersion: 1,
+      diverged: false,
+      pendingUpdate: null,
+      blocks: [
+        { id: 'blk-dl-1', name: 'Back squat', scheme: '3 × 5', rpe: '', targetKg: 60, note: null },
+        { id: 'blk-dl-2', name: 'Bench press', scheme: '3 × 5', rpe: '', targetKg: 60, note: null },
+      ],
+    },
   ],
-  program: {
-    title: 'Upper/Lower 4×',
-    week: 'wk 6 / 12',
-    currentWeek: 6,
-    totalWeeks: 12,
-    note: 'Two more weeks at this volume, then a deload.',
+]);
+
+export function mockRoutineInstances(): readonly ApiRoutineInstance[] {
+  // Stamped from the log on the way out: stored and derived copies of "when
+  // was this last done" would eventually disagree.
+  return [...routineInstanceStore.values()].map((instance) => ({
+    ...instance,
+    lastCompletedAt: lastCompletedFor(instance.id),
+  }));
+}
+
+export function mockRoutineInstance(instanceId: string): ApiRoutineInstance | null {
+  const instance = routineInstanceStore.get(instanceId);
+  return instance ? { ...instance, lastCompletedAt: lastCompletedFor(instance.id) } : null;
+}
+
+/**
+ * The copies one client holds, for the coach's view of them.
+ *
+ * Everything in the mocks belongs to the one seeded client, so an unknown id
+ * would return nothing and read as a bug rather than an empty roster — this
+ * falls back to that client instead.
+ */
+export function mockRoutinesForClient(clientId: string): readonly ApiRoutineInstance[] {
+  const wanted = routineInstanceStore.size > 0 ? clientId : '';
+  const held = [...routineInstanceStore.values()].filter(
+    (instance) => instance.clientId === wanted,
+  );
+  return held.length > 0
+    ? held
+    : [...routineInstanceStore.values()].filter(
+        (instance) => instance.clientId === MOCK_CLIENT_ID,
+      );
+}
+
+/**
+ * Mirrors POST /coach/programs/:id/assign — one instance per client per day.
+ *
+ * The copy is the whole point: nothing here points back at the template
+ * except `templateId`, so a later edit on either side moves only this row.
+ * A multi-day program yields one instance per day, because an instance is a
+ * single session — the same rule `BuilderKind` already states.
+ */
+export function mockAssignProgram(
+  programId: string,
+  clientIds: readonly string[],
+): readonly ApiRoutineInstance[] {
+  const template = mockProgramDetail(programId);
+  if (!template) return [];
+
+  const created: ApiRoutineInstance[] = [];
+
+  for (const clientId of clientIds) {
+    for (const routine of template.routines) {
+      const id = `rou-${programId}-${routine.id}-${clientId}`;
+      const instance: ApiRoutineInstance = {
+        id,
+        templateId: template.id,
+        clientId,
+        // Position in the cycle — ordering only, never a day of the week.
+        orderIndex: template.routines.indexOf(routine),
+        lastCompletedAt: null,
+        name: template.routines.length > 1 ? `${template.name} · ${routine.name}` : template.name,
+        note: template.note,
+        // Copied, not shared: editing one must never reach another.
+        blocks: routine.blocks.map((block) => ({ ...block })),
+        baseVersion: 1,
+        diverged: false,
+        pendingUpdate: null,
+      };
+      routineInstanceStore.set(id, instance);
+      created.push(instance);
+    }
+  }
+
+  return created;
+}
+
+/**
+ * The client's own routines — instances with nothing behind them. They live in
+ * the same store as the copies of a coach's, because that is what they are:
+ * one model, so one editor and one set of endpoints serve both.
+ */
+const ownRoutineSeeds: readonly ApiRoutineInstance[] = [
+  {
+    id: 'rou-2',
+    templateId: null,
+    clientId: MOCK_CLIENT_ID,
+    orderIndex: 0,
+    lastCompletedAt: null,
+    name: 'Push Pull Legs',
+    note: 'Push day. Start light if the shoulder is talking.',
+    baseVersion: null,
+    diverged: false,
+    pendingUpdate: null,
+    blocks: [
+      { id: 'blk-ppl-1', name: 'Bench press', scheme: '4 × 8', rpe: 'RPE 8', targetKg: 62.5, note: null },
+      { id: 'blk-ppl-2', name: 'Overhead press', scheme: '3 × 10', rpe: '', targetKg: 40, note: null },
+      { id: 'blk-ppl-3', name: 'Triceps pushdown', scheme: '3 × 12', rpe: '', targetKg: null, note: null },
+    ],
   },
-};
+  {
+    id: 'rou-3',
+    templateId: null,
+    clientId: MOCK_CLIENT_ID,
+    orderIndex: 1,
+    lastCompletedAt: null,
+    name: 'Full body 3×',
+    note: null,
+    baseVersion: null,
+    diverged: false,
+    pendingUpdate: null,
+    blocks: [
+      { id: 'blk-fb-1', name: 'Back squat', scheme: '5 × 5', rpe: 'RPE 7', note: null },
+      { id: 'blk-fb-2', name: 'Bench press', scheme: '5 × 5', rpe: '', note: null },
+      { id: 'blk-fb-3', name: 'Barbell row', scheme: '5 × 5', rpe: '', note: null },
+    ],
+  },
+];
+
+for (const seed of ownRoutineSeeds) {
+  routineInstanceStore.set(seed.id, seed);
+}
+
+/** Mirrors POST/PATCH /client/routines — an id means an edit. */
+export function mockSaveRoutineInstance(instance: ApiRoutineInstance): void {
+  routineInstanceStore.set(instance.id, instance);
+}
+
+/**
+ * Mirrors DELETE /coach/programs/:id/assign — takes the copies back.
+ *
+ * Unlike a client removing their own, this destroys work they may have done
+ * on it, which is why the screen that calls it asks first.
+ */
+export function mockUnassignProgram(
+  programId: string,
+  clientIds: readonly string[],
+): number {
+  let removed = 0;
+
+  for (const [id, instance] of routineInstanceStore) {
+    if (instance.templateId !== programId) continue;
+    if (!clientIds.includes(instance.clientId)) continue;
+    routineInstanceStore.delete(id);
+    removed += 1;
+  }
+
+  return removed;
+}
+
+/** The clients currently holding a copy of this template. */
+export function mockProgramHolders(programId: string): readonly string[] {
+  return [
+    ...new Set(
+      [...routineInstanceStore.values()]
+        .filter((instance) => instance.templateId === programId)
+        .map((instance) => instance.clientId),
+    ),
+  ];
+}
+
+/** Who holds a template, and how many of them have changed their copy. */
+export interface MockPublishImpact {
+  readonly holders: number;
+  readonly changed: number;
+}
+
+export function mockPublishImpact(templateId: string): MockPublishImpact {
+  const held = [...routineInstanceStore.values()].filter(
+    (instance) => instance.templateId === templateId,
+  );
+
+  return { holders: held.length, changed: held.filter((instance) => instance.diverged).length };
+}
+
+/** "Bench press, Cable fly" — the lifts whose prescription moved. */
+function changeSummary(
+  before: readonly ApiProgramBlock[],
+  after: readonly ApiProgramBlock[],
+): string {
+  const names = after
+    .filter((block) => {
+      const old = before.find((candidate) => candidate.name === block.name);
+      return !old || old.scheme !== block.scheme || (old.targetKg ?? null) !== (block.targetKg ?? null);
+    })
+    .map((block) => block.name);
+
+  const added = after.length - before.length;
+  if (names.length === 0) return added > 0 ? `${added} exercise(s) added` : 'Small changes';
+  return names.slice(0, 3).join(', ');
+}
+
+/**
+ * Mirrors POST /coach/programs/:id/publish.
+ *
+ * A publish proposes; it never overwrites. Every holder gets a pending update
+ * on their own copy and decides for themselves — including holders who have
+ * changed nothing, because a copy that still matches is still theirs.
+ */
+export function mockProposeUpdate(templateId: string): number {
+  const template = mockProgramDetail(templateId);
+  if (!template) return 0;
+
+  const proposedAt = new Date().toISOString();
+  let proposed = 0;
+
+  for (const [id, instance] of routineInstanceStore) {
+    if (instance.templateId !== templateId) continue;
+
+    // A multi-day program gives each instance its own day; match on the day
+    // whose blocks this copy came from, falling back to the first.
+    const routine =
+      template.routines.find((candidate) => instance.id.includes(candidate.id)) ??
+      template.routines[0];
+    if (!routine) continue;
+
+    routineInstanceStore.set(id, {
+      ...instance,
+      pendingUpdate: {
+        templateVersion: (instance.baseVersion ?? 0) + 1,
+        proposedAt,
+        summary: changeSummary(instance.blocks, routine.blocks),
+        blocks: routine.blocks.map((block) => ({ ...block })),
+      },
+    });
+    proposed += 1;
+  }
+
+  return proposed;
+}
+
+/** The client took it: the copy becomes the proposal, and matches again. */
+export function mockAcceptUpdate(instanceId: string): void {
+  const instance = routineInstanceStore.get(instanceId);
+  if (!instance?.pendingUpdate) return;
+
+  routineInstanceStore.set(instanceId, {
+    ...instance,
+    blocks: instance.pendingUpdate.blocks,
+    baseVersion: instance.pendingUpdate.templateVersion,
+    diverged: false,
+    pendingUpdate: null,
+  });
+}
+
+/**
+ * The client kept theirs. The copy is untouched and stays behind the template
+ * — declining is a decision, not a deferral, so nothing lingers.
+ */
+export function mockDeclineUpdate(instanceId: string): void {
+  const instance = routineInstanceStore.get(instanceId);
+  if (!instance?.pendingUpdate) return;
+
+  routineInstanceStore.set(instanceId, { ...instance, pendingUpdate: null, diverged: true });
+}
+
+export function mockDeleteRoutineInstance(instanceId: string): void {
+  routineInstanceStore.delete(instanceId);
+}
+
+/**
+ * Mirrors DELETE /client/routines. The client's own only — a copy of the
+ * coach's is still the coach's routine, and removing it is a different act
+ * with different consequences.
+ */
+export function mockDeleteOwnRoutines(): void {
+  for (const [id, instance] of routineInstanceStore) {
+    if (instance.templateId === null) routineInstanceStore.delete(id);
+  }
+}
+
+/**
+ * A function rather than a constant now: the routines list changes while the
+ * app runs, and a frozen object would hand back yesterday's list after a save.
+ */
+export function mockTrainOverview(): ApiTrainOverview {
+  const held = mockRoutineInstances().filter(
+    (instance) => instance.clientId === MOCK_CLIENT_ID,
+  );
+  return {
+    routines: summariseRoutines(held, () => MOCK_COACH_NAME),
+    week: mockWeeklyProgress(MOCK_CLIENT_ID),
+  };
+}
 
 /**
  * The mock "server" keeps its sessions, so a logged set survives the
@@ -374,41 +477,109 @@ export const mockTrainOverview: ApiTrainOverview = {
  */
 const mockSessionStore = new Map<string, ApiClientSession>();
 
-function buildClientSession(sessionId: string): ApiClientSession {
+/**
+ * An empty workout is a session with no plan behind it. The emptiness rides in
+ * the id because this store is in-memory: after a reload the session is rebuilt
+ * from its id alone, and a quick workout must not come back as someone's push
+ * day. The real endpoint carries `planId: null` instead and needs no such trick.
+ */
+const EMPTY_SESSION_PREFIX = 'ses-empty';
+
+/** `ses-rou-3-1757…` — the routine a session came from, kept for the same reason. */
+const ROUTINE_SESSION_RE = /^ses-(rou-[A-Za-z0-9]+)-\d+$/;
+
+/**
+ * What a workout was started from, encoded in its id. The real endpoint takes
+ * `planId` in the request body and needs none of this.
+ */
+export function mockStartSessionId(planId: string | null): string {
+  if (planId === null) return `${EMPTY_SESSION_PREFIX}-${Date.now()}`;
+  return `ses-${planId}-${Date.now()}`;
+}
+
+/**
+ * Sets from a routine block: "4 × 8" becomes four sets of eight, loaded at the
+ * block's target weight. A block with no target opens at zero for the lifter
+ * to fill in — which is also the right answer for a bodyweight movement.
+ */
+function setsFromBlock(block: ApiProgramBlock): readonly ApiSessionSet[] {
+  const { sets, reps } = parseScheme(block.scheme);
+
+  return Array.from({ length: sets }, (_unused, index) => ({
+    n: index + 1,
+    weightKg: block.targetKg ?? 0,
+    reps,
+    completed: false,
+  }));
+}
+
+function buildRoutineSession(
+  sessionId: string,
+  routine: ApiRoutineInstance,
+): ApiClientSession {
   return {
     id: sessionId,
-    title: 'Upper A · Push focus',
+    title: routine.name,
+    startedAt: new Date().toISOString(),
+    exercises: routine.blocks.map((block) => ({
+      id: block.id,
+      name: block.name,
+      // A routine is the client's own, so any cue on it is theirs.
+      coachNote: null,
+      ownNote: block.note,
+      sets: setsFromBlock(block),
+    })),
+  };
+}
+
+function buildClientSession(sessionId: string): ApiClientSession {
+  if (sessionId.startsWith(EMPTY_SESSION_PREFIX)) {
+    return {
+      id: sessionId,
+      title: 'Quick workout',
+      startedAt: new Date().toISOString(),
+      exercises: [],
+    };
+  }
+
+  const routineId = ROUTINE_SESSION_RE.exec(sessionId)?.[1];
+  const routine = routineId ? routineInstanceStore.get(routineId) : undefined;
+  if (routine) return buildRoutineSession(sessionId, routine);
+
+  return {
+    id: sessionId,
+    title: 'Upper A',
     startedAt: new Date().toISOString(),
     exercises: [
       {
         id: 'cex-bench',
         name: 'Bench press',
-        note: '4 × 8 · 2 min rest',
+        coachNote: 'pause 1s on chest',
+        ownNote: null,
         sets: [
-          { n: 1, weightKg: 60, reps: 8, completed: true, isPr: false },
-          { n: 2, weightKg: 62.5, reps: 8, completed: true, isPr: true },
-          { n: 3, weightKg: 62.5, reps: 8, completed: false, isPr: false },
-          { n: 4, weightKg: 62.5, reps: 8, completed: false, isPr: false },
+          { n: 1, weightKg: 82.5, reps: 8, completed: true },
+          { n: 2, weightKg: 82.5, reps: 8, completed: true },
+          { n: 3, weightKg: 82.5, reps: 6, completed: false },
         ],
       },
       {
         id: 'cex-incline',
-        name: 'Incline DB press',
-        note: '3 × 10 · 90s rest',
+        name: 'Incline dumbbell press',
+        coachNote: null,
+        ownNote: 'elbows tucked',
         sets: [
-          { n: 1, weightKg: 24, reps: 10, completed: false, isPr: false },
-          { n: 2, weightKg: 24, reps: 10, completed: false, isPr: false },
-          { n: 3, weightKg: 24, reps: 10, completed: false, isPr: false },
+          { n: 1, weightKg: 30, reps: 10, completed: false },
+          { n: 2, weightKg: 30, reps: 10, completed: false },
         ],
       },
       {
         id: 'cex-fly',
-        name: 'Cable fly',
-        note: '3 × 12 · 60s rest',
+        name: 'Cable lateral raise',
+        coachNote: null,
+        ownNote: null,
         sets: [
-          { n: 1, weightKg: 15, reps: 12, completed: false, isPr: false },
-          { n: 2, weightKg: 15, reps: 12, completed: false, isPr: false },
-          { n: 3, weightKg: 15, reps: 12, completed: false, isPr: false },
+          { n: 1, weightKg: 12.5, reps: 15, completed: false },
+          { n: 2, weightKg: 12.5, reps: 15, completed: false },
         ],
       },
     ],
@@ -424,7 +595,10 @@ export function mockClientSession(sessionId: string): ApiClientSession {
   return created;
 }
 
-/** Mirrors POST /client/sessions/:id/sets against the in-memory session. */
+/**
+ * Mirrors POST /client/sessions/:id/sets against the in-memory session. An
+ * upsert, because writing set 3 and adding a set 4 are the same request.
+ */
 export function mockApplyClientSet(
   sessionId: string,
   exerciseId: string,
@@ -435,14 +609,95 @@ export function mockApplyClientSet(
     ...session,
     exercises: session.exercises.map((exercise) =>
       exercise.id === exerciseId
-        ? { ...exercise, sets: exercise.sets.map((s) => (s.n === set.n ? set : s)) }
+        ? {
+            ...exercise,
+            sets: exercise.sets.some((s) => s.n === set.n)
+              ? exercise.sets.map((s) => (s.n === set.n ? set : s))
+              : [...exercise.sets, set],
+          }
         : exercise,
     ),
   });
 }
 
+/** Mirrors PATCH /client/sessions/:id. */
+export function mockRenameClientSession(sessionId: string, title: string): void {
+  const session = mockClientSession(sessionId);
+  mockSessionStore.set(sessionId, { ...session, title });
+}
+
+/** Mirrors PATCH /client/sessions/:id/exercises/:exerciseId — own note only. */
+export function mockSetExerciseNote(
+  sessionId: string,
+  exerciseId: string,
+  note: string | null,
+): void {
+  const session = mockClientSession(sessionId);
+  mockSessionStore.set(sessionId, {
+    ...session,
+    exercises: session.exercises.map((exercise) =>
+      exercise.id === exerciseId ? { ...exercise, ownNote: note } : exercise,
+    ),
+  });
+}
+
+/** Mirrors POST /client/sessions/:id/exercises. */
+export function mockAddSessionExercise(
+  sessionId: string,
+  exercise: ApiSessionExercise,
+): void {
+  const session = mockClientSession(sessionId);
+  mockSessionStore.set(sessionId, {
+    ...session,
+    exercises: [...session.exercises, exercise],
+  });
+}
+
+/**
+ * Every finished workout, newest last. One source for both the rotation's
+ * ordering and the weekly count — two derived numbers that must never
+ * disagree about what happened.
+ */
+const completionLog: { instanceId: string; clientId: string; at: string }[] = [];
+
+/** How much this client has trained this week, against their program's target. */
+export function mockWeeklyProgress(clientId: string): ApiWeeklyProgress {
+  const held = mockRoutinesForClient(clientId);
+  const template = held.find((instance) => instance.templateId !== null)?.templateId ?? '';
+
+  return {
+    done: countThisWeek(mockCompletionsFor(clientId)),
+    target: mockProgramDetail(template)?.sessionsPerWeek ?? DEFAULT_WEEKLY_TARGET,
+  };
+}
+
+/** What a client with no assigned program is measured against. */
+const DEFAULT_WEEKLY_TARGET = 3;
+
+export function mockCompletionsFor(clientId: string): readonly string[] {
+  return completionLog.filter((entry) => entry.clientId === clientId).map((entry) => entry.at);
+}
+
+function lastCompletedFor(instanceId: string): string | null {
+  const entries = completionLog.filter((entry) => entry.instanceId === instanceId);
+  return entries.length > 0 ? entries[entries.length - 1].at : null;
+}
+
 /** Mirrors POST /client/sessions/:id/finish — the session is no longer live. */
 export function mockFinishClientSession(sessionId: string): void {
+  const routineId = ROUTINE_SESSION_RE.exec(sessionId)?.[1];
+  const instance = routineId ? routineInstanceStore.get(routineId) : undefined;
+
+  // The only thing that moves the rotation on. A workout nobody finished has
+  // not been done, so it does not count and does not advance anything.
+  if (instance) {
+    completionLog.push({
+      instanceId: instance.id,
+      clientId: instance.clientId,
+      at: new Date().toISOString(),
+    });
+  }
+
   mockSessionStore.delete(sessionId);
 }
 
@@ -456,18 +711,6 @@ function hashId(id: string): number {
   return hash;
 }
 
-export function mockVolume(studentId: string): readonly ApiVolumePoint[] {
-  // Deterministic per student so the chart is stable across reloads.
-  const seed = hashId(studentId);
-  return Array.from({ length: 8 }, (_, index) => {
-    const weekStart = new Date(now);
-    weekStart.setDate(weekStart.getDate() - (7 - index) * 7);
-    return {
-      weekStart: weekStart.toISOString(),
-      volumeKg: 2400 + ((seed * (index + 3)) % 9) * 220 + index * 130,
-    };
-  });
-}
 
 /* ------------------------------------------------------------------ *
  * Client nutrition
@@ -630,7 +873,7 @@ export function mockFoodSearch(query: string, filter: string): readonly ApiFoodR
  * Client progress
  * ------------------------------------------------------------------ */
 
-export const mockClientProgress: ApiClientProgress = {
+const clientProgressBase: ApiClientProgress = {
   weeklyVolumeKg: 42180,
   volumeChangePct: 8.4,
   volumeBars: [
@@ -692,7 +935,7 @@ const mockClientProfileBase: ApiClientProfile = {
       label: 'Permissions',
       desc: 'What Sam can see and log',
       value: '3 of 5',
-      route: '/onboarding/coach-permissions',
+      route: '/profile/permissions',
     },
     {
       id: 'check-ins',
@@ -714,16 +957,6 @@ const mockClientProfileBase: ApiClientProfile = {
       title: 'TRAINING',
       rows: [
         { id: 'units', label: 'Units', desc: 'Weight and measurements', value: 'kg · cm' },
-        { id: 'rest-timer', label: 'Rest timer', desc: 'Auto-start between sets', value: 'On' },
-        { id: 'plates', label: 'Plates', desc: 'Available in your gym', value: '20, 15, 10, 5, 2.5' },
-      ],
-    },
-    {
-      id: 'nutrition',
-      title: 'NUTRITION',
-      rows: [
-        { id: 'targets', label: 'Targets', desc: 'Calories and macros', value: '2,600 kcal' },
-        { id: 'meal-reminders', label: 'Meal reminders', desc: 'Nudges to log', value: 'Off' },
       ],
     },
     {
@@ -736,19 +969,30 @@ const mockClientProfileBase: ApiClientProfile = {
           desc: 'Injuries, conditions, medication',
           route: '/profile/health',
         },
-        {
-          id: 'notifications',
-          label: 'Notifications',
-          desc: 'What buzzes and when',
-          route: '/profile/notifications',
-        },
-        {
-          id: 'integrations',
-          label: 'Integrations',
-          desc: 'Connected apps and devices',
-          value: '3 connected',
-          route: '/profile/integrations',
-        },
+        // Notifications and Integrations sit behind their flags in
+        // `buildProfileGroups`; the fixture follows, so a mocked run shows the
+        // same profile a live one does.
+        ...(hasFeature('notifications')
+          ? [
+              {
+                id: 'notifications',
+                label: 'Notification settings',
+                desc: 'What buzzes and when',
+                route: '/profile/notifications',
+              },
+            ]
+          : []),
+        ...(hasFeature('integrations')
+          ? [
+              {
+                id: 'integrations',
+                label: 'Integrations',
+                desc: 'Connected apps and devices',
+                value: '3 connected',
+                route: '/profile/integrations',
+              },
+            ]
+          : []),
         {
           id: 'data',
           label: 'Data & privacy',
@@ -1054,6 +1298,40 @@ export function mockClientHealth(): ApiClientHealth {
   return healthState;
 }
 
+/** Mirrors an entry being added. Offline, the section list is the same. */
+export function mockAddHealthEntry(
+  section: string,
+  label: string,
+  value: string,
+  status: string | null,
+): void {
+  healthState = {
+    ...healthState,
+    sections: healthState.sections.map((entry) =>
+      entry.id === section
+        ? {
+            ...entry,
+            rows: [
+              ...entry.rows,
+              { id: `he-${Date.now()}`, label, value, chip: status ?? undefined },
+            ],
+          }
+        : entry,
+    ),
+  };
+}
+
+/** Removing one removes it — the health profile is not an archive. */
+export function mockRemoveHealthEntry(entryId: string): void {
+  healthState = {
+    ...healthState,
+    sections: healthState.sections.map((entry) => ({
+      ...entry,
+      rows: entry.rows.filter((row) => row.id !== entryId),
+    })),
+  };
+}
+
 /** Mirrors POST /client/health/share — visibility only; nothing is deleted. */
 export function mockToggleHealthShare(shared: boolean): void {
   healthState = { ...healthState, sharedWithCoach: shared };
@@ -1123,6 +1401,214 @@ export function mockSendMessage(text: string): void {
       { id: `msg-${Date.now()}`, from: 'me', text, when: 'now' },
     ],
   };
+}
+
+/* ------------------------------------------------------------------ *
+ * Access requests, offline.
+ *
+ * Two of them waiting, because one is a happy path and two is what the
+ * screen actually has to lay out. They are the domains Maya has not
+ * shared — asking for something already granted is refused server-side,
+ * so a fixture that did it would be teaching the wrong shape.
+ * ------------------------------------------------------------------ */
+
+let accessRequestState: readonly ApiAccessRequest[] = [
+  {
+    id: 'req-health',
+    coachName: 'Sam',
+    domain: 'health',
+    title: accessRequestTitle('Sam', 'health'),
+    body: accessRequestBody('health'),
+    when: '2h',
+  },
+  {
+    id: 'req-monthly',
+    coachName: 'Sam',
+    domain: 'monthly',
+    title: accessRequestTitle('Sam', 'monthly'),
+    body: accessRequestBody('monthly'),
+    when: '3d',
+  },
+];
+
+/**
+ * Mirrors regenerate_invite_code. The prefix survives a roll — it is the
+ * coach's name, not part of the secret — so the code still reads as theirs.
+ */
+export function mockRegenerateInviteCode(): string {
+  const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let suffix = '';
+  for (let index = 0; index < 4; index += 1) {
+    suffix += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `${INVITE_CODE.split('-')[0]}-${suffix}`;
+}
+
+/* ------------------------------------------------------------------ *
+ * Onboarding answers, offline. Kept in module state so a test or a
+ * mocked run can read back what the flow saved, which is the whole
+ * thing that was missing: the real flow discarded all of it.
+ * ------------------------------------------------------------------ */
+
+let coachProfileState: { gym: string; bio: string; specialties: readonly string[] } | null = null;
+let clientProfileState: {
+  goals: readonly string[];
+  experience: string;
+  sessionsPerWeek: number;
+} | null = null;
+
+export function mockSaveCoachProfile(input: {
+  gym: string;
+  bio: string;
+  specialties: readonly string[];
+}): void {
+  coachProfileState = { ...input };
+}
+
+/**
+ * What the editor opens on. Falls back to the fixture coach rather than an
+ * empty form, so a mocked run shows a filled profile the first time — the
+ * screen is about changing something that exists.
+ */
+export function mockCoachProfileForm(): ApiCoachProfileForm {
+  return {
+    name: 'Sam Okafor',
+    gym: coachProfileState?.gym ?? 'Ironworks Berlin',
+    bio: coachProfileState?.bio ?? 'Barbell strength, ten years on the floor.',
+    specialties: coachProfileState?.specialties ?? ['Strength', 'Hypertrophy'],
+  };
+}
+
+export function mockSaveClientProfile(input: {
+  goals: readonly string[];
+  experience: string;
+  sessionsPerWeek: number;
+}): void {
+  clientProfileState = { ...input };
+}
+
+export function mockCoachProfileAnswers(): typeof coachProfileState {
+  return coachProfileState;
+}
+
+export function mockClientProfileAnswers(): typeof clientProfileState {
+  return clientProfileState;
+}
+
+/**
+ * Progress, offline. The weight series is mutable so logging one from the card
+ * actually moves the chart — the whole point of adding that action was that
+ * the card could otherwise never have anything in it.
+ */
+let loggedWeights: readonly number[] = [];
+
+export function mockClientProgress(): ApiClientProgress {
+  if (loggedWeights.length === 0) return clientProgressBase;
+
+  const series = [
+    ...clientProgressBase.bodyWeightSeries,
+    ...loggedWeights.map((kg) => ({ label: '', kg })),
+  ];
+
+  return {
+    ...clientProgressBase,
+    bodyWeightKg: series[series.length - 1].kg,
+    bodyWeightSeries: series,
+  };
+}
+
+export function mockLogBodyWeight(kg: number): void {
+  loggedWeights = [...loggedWeights, kg];
+}
+
+/** Mirrors the coach changing a set the client has not reached yet. */
+export function mockAdjustLiveSet(setId: string, weightKg: number, reps: number): void {
+  liveAdjustments = { ...liveAdjustments, [setId]: { weightKg, reps } };
+}
+
+let liveAdjustments: Record<string, { weightKg: number; reps: number }> = {};
+
+/**
+ * The coach's home, offline. Built from the roster fixture so the two agree:
+ * whoever is `live` there is training here, and the exceptions are the same
+ * exceptions.
+ */
+export function mockCoachHome(): ApiCoachHome {
+  const clients = rosterState.clients;
+
+  return {
+    training: clients
+      .filter((client) => client.attention === 'live')
+      .map((client) => ({
+        clientId: client.id,
+        name: client.name,
+        initials: client.initials,
+        meta: 'Upper A · 24 min in',
+        progress: '6 of 14 sets',
+      })),
+    needsALook: clients.filter(
+      (client) => client.attention === 'review' || client.attention === 'quiet',
+    ),
+    rosterCount: clients.length,
+  };
+}
+
+export function mockAccessRequests(): readonly ApiAccessRequest[] {
+  return accessRequestState;
+}
+
+/** Either answer removes the card; granting is the only one that shares. */
+export function mockAnswerAccessRequest(requestId: string, grant: boolean): void {
+  const request = accessRequestState.find((entry) => entry.id === requestId);
+  accessRequestState = accessRequestState.filter((entry) => entry.id !== requestId);
+  if (request && grant) mockSetSharePermission(request.domain, true);
+}
+
+/**
+ * What the coach may see and do, offline. Held as real state rather than
+ * derived, because the Permissions screen is six switches reading it back —
+ * a mock that always answers the same thing would make every toggle look
+ * broken.
+ */
+let sharePermissionsState: ApiSharePermissionsDetail = {
+  coachName: 'Sam Okafor',
+  permissions: {
+    workouts: true,
+    nutrition: true,
+    metrics: false,
+    health: false,
+    monthly: true,
+  },
+  logFor: false,
+};
+
+export function mockSharePermissions(): ApiSharePermissionsDetail {
+  return sharePermissionsState;
+}
+
+export function mockSetLogFor(allowed: boolean): void {
+  sharePermissionsState = { ...sharePermissionsState, logFor: allowed };
+}
+
+/**
+ * Mirrors set_coach_permission: the switch, and the open question it answers.
+ * Turning something off closes the ask too — a coach left waiting on a
+ * question the client has already answered with the switch would ask again.
+ */
+export function mockSetSharePermission(domain: ShareDomain, shared: boolean): void {
+  accessRequestState = accessRequestState.filter((entry) => entry.domain !== domain);
+  sharePermissionsState = {
+    ...sharePermissionsState,
+    permissions: { ...sharePermissionsState.permissions, [domain]: shared },
+  };
+
+  const coach = clientTodayState.coach;
+  if (coach) {
+    clientTodayState = {
+      ...clientTodayState,
+      coach: { ...coach, permissionLabel: shared ? 'Shared' : coach.permissionLabel },
+    };
+  }
 }
 
 /**
@@ -1462,56 +1948,11 @@ function composeRoster(
   clients: readonly ApiRosterClient[],
   labels: readonly ApiRosterLabel[],
 ): ApiRoster {
-  return {
-    stats: deriveRosterStats(clients),
-    clients,
-    labels: withLabelCounts(labels, clients),
-    inviteCode: INVITE_CODE,
-  };
+  return { clients, labels: withLabelCounts(labels, clients) };
 }
 
 let rosterState: ApiRoster = composeRoster(rosterClients, initialLabels);
 
-/**
- * Student detail for a roster row. The roster and the older student fixtures
- * are two different casts, so without this every row on the roster opened a
- * "no longer on your roster" error. A real backend has one clients table; the
- * mock derives the detail from the roster entry so the name on the row is the
- * name on the screen.
- */
-export function mockStudentFromRoster(id: string): ApiStudent | null {
-  const client = rosterState.clients.find((candidate) => candidate.id === id);
-  if (!client) return null;
-
-  const status: StudentStatus =
-    client.attention === 'review' ? 'at-risk' : client.attention === 'quiet' ? 'inactive' : 'on-track';
-
-  // Adherence tracks how the client is doing, not how recently they opened the
-  // app — deriving it from `daysAgo` gave every client seen today the same 96%,
-  // and put a reassuring number next to someone flagged for review. Anchor it
-  // to `attention` and spread it deterministically so no two rows are twins.
-  const base: Record<RosterAttention, number> = {
-    live: 88,
-    ok: 86,
-    new: 72,
-    review: 61,
-    quiet: 48,
-  };
-  const adherence = Math.min(99, base[client.attention] + (hashId(client.id) % 9));
-
-  return {
-    id: client.id,
-    name: client.name,
-    avatarUrl: null,
-    goal: client.meta.split(' · ')[0] ?? 'No program',
-    programId: null,
-    status,
-    adherence,
-    nextSessionAt: null,
-    lastSessionAt: at(-client.daysAgo, 7, 30),
-    note: null,
-  };
-}
 
 export function mockRoster(): ApiRoster {
   return rosterState;
@@ -1830,6 +2271,9 @@ export function mockClientReview(clientId: string): ApiClientReview | null {
     sessions: reviewSessions(client),
     // Only one client trains at a time in the mock, and it is the one the
     // roster already flags `live`. Two sources would eventually disagree.
+    // The fixtures grant it, so the offline build exercises the path where a
+    // coach can open a client's check-ins rather than only the read-only one.
+    canLogFor: true,
     isTraining: client.attention === 'live',
   };
 }
@@ -1858,10 +2302,10 @@ const mayaLiveExercises: readonly ApiLiveExercise[] = [
     note: '4 × 8 · 2 min rest',
     progress: '2 of 4',
     sets: [
-      { n: 1, weightKg: 60, reps: 8, completed: true },
-      { n: 2, weightKg: 62.5, reps: 8, completed: true },
-      { n: 3, weightKg: 62.5, reps: 8, completed: false },
-      { n: 4, weightKg: 62.5, reps: 8, completed: false },
+      { id: 'ls-1-60', n: 1, weightKg: 60, reps: 8, completed: true, changedByCoach: false },
+      { id: 'ls-2-62.5', n: 2, weightKg: 62.5, reps: 8, completed: true, changedByCoach: false },
+      { id: 'ls-3-62.5', n: 3, weightKg: 62.5, reps: 8, completed: false, changedByCoach: false },
+      { id: 'ls-4-62.5', n: 4, weightKg: 62.5, reps: 8, completed: false, changedByCoach: false },
     ],
   },
   {
@@ -1870,9 +2314,9 @@ const mayaLiveExercises: readonly ApiLiveExercise[] = [
     note: '3 × 10 · 90 s rest',
     progress: '0 of 3',
     sets: [
-      { n: 1, weightKg: 22.5, reps: 10, completed: false },
-      { n: 2, weightKg: 22.5, reps: 10, completed: false },
-      { n: 3, weightKg: 22.5, reps: 10, completed: false },
+      { id: 'ls-1-22.5', n: 1, weightKg: 22.5, reps: 10, completed: false, changedByCoach: false },
+      { id: 'ls-2-22.5', n: 2, weightKg: 22.5, reps: 10, completed: false, changedByCoach: false },
+      { id: 'ls-3-22.5', n: 3, weightKg: 22.5, reps: 10, completed: false, changedByCoach: false },
     ],
   },
   {
@@ -1881,9 +2325,9 @@ const mayaLiveExercises: readonly ApiLiveExercise[] = [
     note: '3 × 12 · 60 s rest',
     progress: '0 of 3',
     sets: [
-      { n: 1, weightKg: 15, reps: 12, completed: false },
-      { n: 2, weightKg: 15, reps: 12, completed: false },
-      { n: 3, weightKg: 15, reps: 12, completed: false },
+      { id: 'ls-1-15', n: 1, weightKg: 15, reps: 12, completed: false, changedByCoach: false },
+      { id: 'ls-2-15', n: 2, weightKg: 15, reps: 12, completed: false, changedByCoach: false },
+      { id: 'ls-3-15', n: 3, weightKg: 15, reps: 12, completed: false, changedByCoach: false },
     ],
   },
 ];
@@ -1903,8 +2347,18 @@ export function mockLiveSession(clientId: string): ApiLiveSession | null {
     title: 'Upper A · Push focus',
     // Mid-session on every read, so the elapsed clock has something to count.
     startedAt: new Date(Date.now() - 24 * 60_000).toISOString(),
-    exercises: mayaLiveExercises,
-    notice: 'You are seeing sets as Maya logs them. You cannot edit her session.',
+    // Maya's fixture has log_for on, so the offline build exercises the
+    // editable path rather than only the read-only one.
+    canEdit: true,
+    notice:
+      'You can change the load and reps on sets Maya has not done yet. Ticking them off stays hers.',
+    exercises: mayaLiveExercises.map((exercise) => ({
+      ...exercise,
+      sets: exercise.sets.map((set) => {
+        const adjusted = liveAdjustments[set.id];
+        return adjusted ? { ...set, ...adjusted, changedByCoach: true } : set;
+      }),
+    })),
   };
 }
 
@@ -1984,8 +2438,12 @@ export function mockCoachProfile(): ApiCoachProfile {
       id: 'account',
       title: 'ACCOUNT',
       rows: [
-        { id: 'profile', label: 'Profile', desc: 'Name, bio, specialties' },
-        { id: 'billing', label: 'Billing', desc: 'Plan and seats' },
+        {
+          id: 'profile',
+          label: 'Profile',
+          desc: 'Gym, bio and specialties — what a client reads before attaching',
+          route: '/coach/profile',
+        },
       ],
     },
     {
@@ -2000,7 +2458,6 @@ export function mockCoachProfile(): ApiCoachProfile {
 
   return {
     name: 'Sam Okafor',
-    initials: 'SO',
     headline: coachHeadline('Strength coach · Berlin', rosterState.clients.length),
     inviteCode: INVITE_CODE,
     notifications: coachNotificationState,
@@ -2032,17 +2489,19 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
   {
     id: 'pg-upper-lower',
     name: 'Upper/Lower 4×',
+    note: 'Upper/Lower split. Four days a week, eight weeks.',
     meta: 'Upper/Lower · 12 weeks · 4 days',
     status: 'draft',
     statusLabel: 'Draft changes',
     assignedIds: ['rc-maya', 'rc-rafa', 'rc-ines', 'rc-kai'],
     assignedLabel: assignedLabel(4),
     weeks: 12,
+    sessionsPerWeek: 4,
     hasDraftChanges: true,
-    days: [
+    routines: [
       {
         id: 'day-upper-a',
-        label: 'Upper A',
+        name: 'Upper A',
         blocks: [
           {
             id: 'blk-ul-1',
@@ -2058,7 +2517,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-lower-a',
-        label: 'Lower A',
+        name: 'Lower A',
         blocks: [
           {
             id: 'blk-ul-5',
@@ -2074,7 +2533,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-upper-b',
-        label: 'Upper B',
+        name: 'Upper B',
         blocks: [
           { id: 'blk-ul-9', name: 'Overhead press', scheme: '4 × 6', rpe: 'RPE 8', note: null },
           { id: 'blk-ul-10', name: 'Weighted pull-up', scheme: '4 × 6', rpe: 'RPE 8', note: null },
@@ -2084,7 +2543,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-lower-b',
-        label: 'Lower B',
+        name: 'Lower B',
         blocks: [
           { id: 'blk-ul-13', name: 'Front squat', scheme: '4 × 5', rpe: 'RPE 8', note: null },
           {
@@ -2102,17 +2561,19 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
   {
     id: 'pg-ppl',
     name: 'Push Pull Legs',
+    note: null,
     meta: 'PPL · 8 weeks · 6 days',
     status: 'published',
     statusLabel: 'Published',
     assignedIds: ['rc-priya', 'rc-lena', 'rc-amir', 'rc-elif', 'rc-marek', 'rc-grace'],
     assignedLabel: assignedLabel(6),
     weeks: 8,
+    sessionsPerWeek: 4,
     hasDraftChanges: false,
-    days: [
+    routines: [
       {
         id: 'day-push-a',
-        label: 'Push A',
+        name: 'Push A',
         blocks: [
           { id: 'blk-ppl-1', name: 'Bench press', scheme: '4 × 6', rpe: 'RPE 8', note: null },
           { id: 'blk-ppl-2', name: 'Overhead press', scheme: '3 × 8', rpe: 'RPE 8', note: null },
@@ -2121,7 +2582,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-pull-a',
-        label: 'Pull A',
+        name: 'Pull A',
         blocks: [
           { id: 'blk-ppl-4', name: 'Weighted pull-up', scheme: '4 × 6', rpe: 'RPE 8', note: null },
           { id: 'blk-ppl-5', name: 'Barbell row', scheme: '4 × 8', rpe: 'RPE 8', note: null },
@@ -2130,7 +2591,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-legs-a',
-        label: 'Legs A',
+        name: 'Legs A',
         blocks: [
           { id: 'blk-ppl-7', name: 'Back squat', scheme: '4 × 6', rpe: 'RPE 8', note: null },
           { id: 'blk-ppl-8', name: 'Romanian deadlift', scheme: '3 × 8', rpe: 'RPE 7', note: null },
@@ -2139,7 +2600,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-push-b',
-        label: 'Push B',
+        name: 'Push B',
         blocks: [
           { id: 'blk-ppl-10', name: 'Incline DB press', scheme: '4 × 8', rpe: 'RPE 8', note: null },
           { id: 'blk-ppl-11', name: 'Dip', scheme: '3 × 10', rpe: 'RPE 8', note: null },
@@ -2148,7 +2609,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-pull-b',
-        label: 'Pull B',
+        name: 'Pull B',
         blocks: [
           { id: 'blk-ppl-13', name: 'Lat pulldown', scheme: '4 × 10', rpe: 'RPE 8', note: null },
           { id: 'blk-ppl-14', name: 'Seated cable row', scheme: '3 × 10', rpe: 'RPE 7', note: null },
@@ -2157,7 +2618,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-legs-b',
-        label: 'Legs B',
+        name: 'Legs B',
         blocks: [
           { id: 'blk-ppl-16', name: 'Front squat', scheme: '4 × 5', rpe: 'RPE 8', note: null },
           { id: 'blk-ppl-17', name: 'Hip thrust', scheme: '3 × 10', rpe: 'RPE 8', note: null },
@@ -2169,17 +2630,19 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
   {
     id: 'pg-strength-5x5',
     name: 'Strength 5×5',
+    note: null,
     meta: 'Full body · 10 weeks · 3 days',
     status: 'published',
     statusLabel: 'Published',
     assignedIds: ['rc-sofia', 'rc-tom', 'rc-tomas'],
     assignedLabel: assignedLabel(3),
     weeks: 10,
+    sessionsPerWeek: 4,
     hasDraftChanges: false,
-    days: [
+    routines: [
       {
         id: 'day-5x5-1',
-        label: 'Day 1',
+        name: 'Day 1',
         blocks: [
           { id: 'blk-5x5-1', name: 'Back squat', scheme: '5 × 5', rpe: 'RPE 8', note: null },
           { id: 'blk-5x5-2', name: 'Bench press', scheme: '5 × 5', rpe: 'RPE 8', note: null },
@@ -2188,7 +2651,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-5x5-2',
-        label: 'Day 2',
+        name: 'Day 2',
         blocks: [
           { id: 'blk-5x5-4', name: 'Back squat', scheme: '5 × 5', rpe: 'RPE 8', note: null },
           { id: 'blk-5x5-5', name: 'Overhead press', scheme: '5 × 5', rpe: 'RPE 8', note: null },
@@ -2203,7 +2666,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-5x5-3',
-        label: 'Day 3',
+        name: 'Day 3',
         blocks: [
           { id: 'blk-5x5-7', name: 'Back squat', scheme: '5 × 5', rpe: 'RPE 8', note: null },
           { id: 'blk-5x5-8', name: 'Bench press', scheme: '5 × 5', rpe: 'RPE 8', note: null },
@@ -2215,17 +2678,19 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
   {
     id: 'pg-return',
     name: 'Return to lifting',
+    note: null,
     meta: 'Rehab · 6 weeks · 3 days',
     status: 'archived',
     statusLabel: 'Archived',
     assignedIds: [],
     assignedLabel: assignedLabel(0),
     weeks: 6,
+    sessionsPerWeek: 4,
     hasDraftChanges: false,
-    days: [
+    routines: [
       {
         id: 'day-return-1',
-        label: 'Day 1',
+        name: 'Day 1',
         blocks: [
           {
             id: 'blk-rt-1',
@@ -2240,7 +2705,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-return-2',
-        label: 'Day 2',
+        name: 'Day 2',
         blocks: [
           { id: 'blk-rt-4', name: 'Split squat', scheme: '3 × 10', rpe: 'RPE 6', note: null },
           { id: 'blk-rt-5', name: 'Lat pulldown', scheme: '3 × 12', rpe: 'RPE 6', note: null },
@@ -2249,7 +2714,7 @@ const initialProgramDetails: readonly ApiProgramDetail[] = [
       },
       {
         id: 'day-return-3',
-        label: 'Day 3',
+        name: 'Day 3',
         blocks: [
           { id: 'blk-rt-7', name: 'Hip thrust', scheme: '3 × 12', rpe: 'RPE 6', note: null },
           { id: 'blk-rt-8', name: 'Seated cable row', scheme: '3 × 12', rpe: 'RPE 6', note: null },
@@ -2416,54 +2881,48 @@ export function mockCreateExercise(input: MockCreateExerciseInput): void {
  * sessions learns nothing about the boundary he is working inside.
  * ------------------------------------------------------------------ */
 
-const initialActivity: readonly ApiActivityGroup[] = [
+/* ------------------------------------------------------------------ *
+ * The feed, from both ends of the same week.
+ *
+ * The coach's rows and Maya's rows describe overlapping events on
+ * purpose: Sam assigns Upper A and Maya finishes it, Sam asks for
+ * check-ins and Priya grants them. One table, two readings.
+ * ------------------------------------------------------------------ */
+
+const coachNotifications: readonly ApiNotificationGroup[] = [
   {
     id: 'today',
     title: 'TODAY',
     items: [
       {
-        id: 'act-1',
+        id: 'n-c1',
         kind: 'session-done',
-        clientId: 'rc-maya',
-        clientName: 'Maya Andersson',
-        initials: 'MA',
+        person: { id: 'rc-maya', name: 'Maya Andersson', initials: 'MA' },
         title: 'Maya finished Upper A',
         body: '7 of 7 sets · 48 min · one PR on bench',
         when: '2h',
         unread: true,
+        destination: { kind: 'screen', route: '/student/rc-maya' },
       },
       {
-        id: 'act-2',
-        kind: 'permission-revoked',
-        clientId: 'rc-elif',
-        clientName: 'Elif Kaya',
-        initials: 'EK',
+        id: 'n-c2',
+        kind: 'access-revoked',
+        person: { id: 'rc-elif', name: 'Elif Kaya', initials: 'EK' },
         title: 'Elif hid her health profile',
         body: 'You can still see workouts and nutrition.',
         when: '4h',
         unread: true,
+        destination: { kind: 'screen', route: '/student/rc-elif' },
       },
       {
-        id: 'act-3',
-        kind: 'session-missed',
-        clientId: 'rc-amir',
-        clientName: 'Amir Haddad',
-        initials: 'AH',
-        title: 'Amir missed Push day',
-        body: 'Second planned day missed this week.',
-        when: '6h',
-        unread: false,
-      },
-      {
-        id: 'act-4',
+        id: 'n-c4',
         kind: 'check-in',
-        clientId: 'rc-lena',
-        clientName: 'Lena Chen',
-        initials: 'LC',
+        person: { id: 'rc-lena', name: 'Lena Chen', initials: 'LC' },
         title: 'Lena logged August check-in',
         body: '82.4 kg · waist down 0.7 cm · note attached',
         when: '8h',
         unread: false,
+        destination: { kind: 'screen', route: '/student/rc-lena' },
       },
     ],
   },
@@ -2472,62 +2931,150 @@ const initialActivity: readonly ApiActivityGroup[] = [
     title: 'EARLIER THIS WEEK',
     items: [
       {
-        id: 'act-5',
+        id: 'n-c5',
         kind: 'attached',
-        clientId: 'rc-hana',
-        clientName: 'Hana Watanabe',
-        initials: 'HW',
+        person: { id: 'rc-hana', name: 'Hana Watanabe', initials: 'HW' },
         title: 'Hana attached',
         body: 'She shared nutrition only.',
         when: '1d',
         unread: false,
+        destination: { kind: 'screen', route: '/student/rc-hana' },
       },
       {
-        id: 'act-6',
-        kind: 'permission-granted',
-        clientId: 'rc-priya',
-        clientName: 'Priya Bhatt',
-        initials: 'PB',
+        id: 'n-c6',
+        kind: 'access-granted',
+        person: { id: 'rc-priya', name: 'Priya Bhatt', initials: 'PB' },
         title: 'Priya granted monthly check-ins',
         body: 'Includes logging on her behalf.',
         when: '2d',
         unread: false,
+        destination: { kind: 'screen', route: '/student/rc-priya' },
       },
       {
-        id: 'act-7',
+        id: 'n-c7',
         kind: 'message',
-        clientId: 'rc-tomas',
-        clientName: 'Tomas Lindqvist',
-        initials: 'TL',
+        person: { id: 'rc-tomas', name: 'Tomas Lindqvist', initials: 'TL' },
         title: 'Tomas replied',
         body: '"Shoulder felt fine on the incline work."',
         when: '3d',
         unread: false,
+        destination: { kind: 'screen', route: '/messages/rc-tomas' },
       },
       {
-        id: 'act-8',
+        id: 'n-c8',
         kind: 'detached',
-        clientId: 'rc-ben',
-        clientName: 'Ben Jarvis',
-        initials: 'BJ',
+        person: { id: 'rc-ben', name: 'Ben Jarvis', initials: 'BJ' },
         title: 'Ben detached',
         body: 'His data went with him. The thread stays readable.',
         when: '4d',
         unread: false,
+        // Nowhere to go: the client is gone, so there is no page to open.
+        destination: null,
+      },
+      {
+        id: 'n-c9',
+        kind: 'message',
+        person: null,
+        title: 'What detaching does to your data',
+        body: 'A short guide, since Ben is the second this month.',
+        when: '4d',
+        unread: false,
+        // Opens inside Ligo — the reader is mid-triage and coming back.
+        destination: { kind: 'web', url: 'https://ligo.app/help/detaching' },
       },
     ],
   },
 ];
 
-let activityState: readonly ApiActivityGroup[] = initialActivity;
+const COACH_PERSON = { id: 'coach-sam', name: 'Sam Okafor', initials: 'SO' } as const;
 
-export function mockActivity(): readonly ApiActivityGroup[] {
-  return activityState;
+const clientNotifications: readonly ApiNotificationGroup[] = [
+  {
+    id: 'today',
+    title: 'TODAY',
+    items: [
+      {
+        id: 'n-m1',
+        kind: 'routine-assigned',
+        person: COACH_PERSON,
+        title: 'Sam assigned you Upper A',
+        body: 'Push focus · 5 exercises. It is on your Train tab now.',
+        when: '2h',
+        unread: true,
+        destination: { kind: 'screen', route: '/train' },
+      },
+      {
+        id: 'n-m2',
+        kind: 'access-requested',
+        person: COACH_PERSON,
+        title: 'Sam asked to see your check-ins',
+        body: 'Weight, measurements and the notes you write with them.',
+        when: '5h',
+        unread: true,
+        destination: { kind: 'screen', route: '/profile' },
+      },
+    ],
+  },
+  {
+    id: 'earlier',
+    title: 'EARLIER THIS WEEK',
+    items: [
+      {
+        id: 'n-m3',
+        kind: 'check-in-reply',
+        person: COACH_PERSON,
+        title: 'Sam replied to your June check-in',
+        body: '"Waist down 2cm and bench up — that is the plan working."',
+        when: '3d',
+        unread: false,
+        destination: { kind: 'screen', route: '/check-ins' },
+      },
+      {
+        id: 'n-m4',
+        kind: 'routine-updated',
+        person: COACH_PERSON,
+        title: 'Sam changed Lower B',
+        body: 'Your copy is untouched until you accept it.',
+        when: '5d',
+        unread: false,
+        destination: { kind: 'screen', route: '/train' },
+      },
+      {
+        id: 'n-m5',
+        kind: 'message',
+        person: COACH_PERSON,
+        title: 'Sam booked you in for Saturday',
+        body: 'Ironworks Lagos, 09:00. Opens in your calendar.',
+        when: '5d',
+        unread: false,
+        // Leaves Ligo on purpose: the calendar owns this, not us.
+        destination: { kind: 'external', url: 'https://cal.ligo.app/e/sat-0900' },
+      },
+    ],
+  },
+];
+
+let notificationFeeds: Record<'coach' | 'client', readonly ApiNotificationGroup[]> = {
+  coach: coachNotifications,
+  client: clientNotifications,
+};
+
+export function mockNotifications(
+  audience: 'coach' | 'client',
+): readonly ApiNotificationGroup[] {
+  return notificationFeeds[audience];
 }
 
-/** Mirrors POST /coach/activity/:id/read. Reading is per item, never per group. */
-export function mockMarkActivityRead(itemId: string): void {
-  activityState = markActivityRead(activityState, itemId);
+/**
+ * Reading is per item, never per group — and the id is looked for in both
+ * feeds rather than taking an audience, because the mutation that calls this
+ * knows an id and nothing else.
+ */
+export function mockMarkNotificationRead(id: string): void {
+  notificationFeeds = {
+    coach: markNotificationRead(notificationFeeds.coach, id),
+    client: markNotificationRead(notificationFeeds.client, id),
+  };
 }
 
 /* ------------------------------------------------------------------ *

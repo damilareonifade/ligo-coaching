@@ -16,6 +16,8 @@ interface ClientSessionState {
    * edits are left alone, so a refetch never overwrites what the lifter typed.
    */
   readonly hydrate: (sets: Record<string, readonly ApiSessionSet[]>) => void;
+  /** An extra set the lifter decided to do — see `nextSetFor`. */
+  readonly addSet: (exerciseId: string, set: ApiSessionSet) => void;
   readonly updateSet: (exerciseId: string, n: number, patch: Partial<ApiSessionSet>) => void;
   readonly toggleSet: (exerciseId: string, n: number) => void;
   readonly finish: () => void;
@@ -66,6 +68,14 @@ export const useClientSessionStore = create<ClientSessionState>()(
 
         if (changed) set({ sets: merged });
       },
+
+      addSet: (exerciseId, added) =>
+        set({
+          sets: {
+            ...get().sets,
+            [exerciseId]: [...(get().sets[exerciseId] ?? []), added],
+          },
+        }),
 
       updateSet: (exerciseId, n, patch) =>
         set({ sets: patchSets(get().sets, exerciseId, n, (existing) => ({ ...existing, ...patch })) }),

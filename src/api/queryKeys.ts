@@ -30,6 +30,8 @@ export const queryKeys = {
   coachPrograms: {
     library: ['coach', 'programs', 'library'] as const,
     detail: (id: string) => ['coach', 'programs', 'detail', id] as const,
+    /** Who a publish would reach — see `usePublishImpactQuery`. */
+    publishImpact: (id: string) => ['coach', 'programs', 'publish-impact', id] as const,
     /** Prefix for every search/filter combination at once. */
     exercisesAll: ['coach', 'exercises'] as const,
     exercises: (query: string, filter: string) =>
@@ -40,6 +42,13 @@ export const queryKeys = {
     train: ['client', 'train'] as const,
     session: (sessionId: string) => ['client', 'sessions', sessionId] as const,
   },
+  /**
+   * The client's own routines. The list itself lives on the Train overview —
+   * saving one invalidates `clientTraining.train`, not a key here.
+   */
+  clientRoutines: {
+    detail: (routineId: string) => ['client', 'routines', routineId] as const,
+  },
   clientNutrition: {
     day: ['client', 'food', 'today'] as const,
     search: (query: string, filter: string) =>
@@ -48,13 +57,22 @@ export const queryKeys = {
   clientProgress: ['client', 'progress'] as const,
   clientProfile: {
     profile: ['client', 'profile'] as const,
-    notifications: ['client', 'notifications'] as const,
+    /** The switches, not the feed — see `notifications` below. */
+    notificationSettings: ['client', 'notification-settings'] as const,
+    /** What the coach may see and do — the six switches, live off the link. */
+    sharePermissions: ['client', 'share-permissions'] as const,
     integrations: ['client', 'integrations'] as const,
     data: ['client', 'data'] as const,
     health: ['client', 'health'] as const,
+    /** What a coach has asked to see and the client has not answered. */
+    accessRequests: ['client', 'access-requests'] as const,
   },
-  /** The coach's feed — one payload, already grouped. See src/api/coachActivity.ts. */
-  coachActivity: ['coach', 'activity'] as const,
+  /**
+   * The notification feed — one payload, already grouped. Keyed by audience
+   * rather than shared: a coach who signs out and a client who signs in on the
+   * same phone must not be handed each other's feed out of the cache.
+   */
+  notifications: (audience: 'coach' | 'client') => ['notifications', audience] as const,
   /**
    * The coach's view of one client — see src/api/coachClient.ts. `live` is a
    * sibling of `review` rather than a child: watching a session refetches on
@@ -64,9 +82,22 @@ export const queryKeys = {
   coachClient: {
     review: (clientId: string) => ['coach', 'client', 'review', clientId] as const,
     live: (clientId: string) => ['coach', 'client', 'live', clientId] as const,
+    /** The copies this client holds — see `ApiRoutineInstance`. */
+    routines: (clientId: string) => ['coach', 'client', 'routines', clientId] as const,
   },
+  /** Who is on the gym floor, and who wants a look — see src/api/coachHome.ts. */
+  coachHome: ['coach', 'home'] as const,
+  /** The coach's shareable code — one source for all three screens showing it. */
+  coachInviteCode: ['coach', 'invite-code'] as const,
   /** The coach's own account and notification settings. */
   coachProfile: ['coach', 'profile'] as const,
+  /**
+   * The three fields behind that account — gym, bio, specialties — as the
+   * editor needs them. A sibling of `coachProfile` rather than a child:
+   * saving the form invalidates the settings screen, and nesting would make
+   * that invalidation cancel the form's own refetch mid-save.
+   */
+  coachProfileForm: ['coach', 'profile-form'] as const,
   /**
    * The coach's inbox and threads — see src/api/coachMessages.ts. `inboxAll` is
    * the prefix over every search variant, so invalidating it refreshes the list
@@ -80,7 +111,12 @@ export const queryKeys = {
     thread: (clientId: string) => ['coach', 'messages', 'thread', clientId] as const,
   },
   clientChat: ['client', 'chat'] as const,
-  clientCheckIns: ['client', 'check-ins'] as const,
+  /**
+   * Check-ins, keyed by whose. A coach reading a client's must not share a
+   * cache entry with their own — `undefined` is the caller's own.
+   */
+  clientCheckIns: (clientId?: string) =>
+    ['client', 'check-ins', clientId ?? 'me'] as const,
   /**
    * Community — see src/api/community.ts. `overview` is the client's index;
    * `group` and `board` are deliberately siblings of it, not children, for the

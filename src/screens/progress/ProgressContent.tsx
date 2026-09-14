@@ -1,6 +1,11 @@
+import { useCallback } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
+import { errorMessage } from '@/api/client';
+import { useLogBodyWeightMutation } from '@/api/clientProgress';
 import type { ApiClientProgress } from '@/api/types';
+import { hasFeature } from '@/lib/features';
+import { useUiStore } from '@/store/uiStore';
 import { tokens } from '@/theme/tokens';
 
 import ProgressBodyWeight from './ProgressBodyWeight';
@@ -20,6 +25,22 @@ export default function ProgressContent({
   refreshing,
   onRefresh,
 }: ProgressContentProps) {
+  const showToast = useUiStore((state) => state.showToast);
+  const logWeight = useLogBodyWeightMutation();
+
+  const handleLogWeight = useCallback(
+    (weightKg: number) => {
+      logWeight.mutate(
+        { weightKg },
+        {
+          onSuccess: () => showToast('Weight logged', 'success'),
+          onError: (error) => showToast(errorMessage(error), 'danger'),
+        },
+      );
+    },
+    [logWeight, showToast],
+  );
+
   return (
     <ScrollView
       className="flex-1"
@@ -37,12 +58,19 @@ export default function ProgressContent({
       <ProgressBodyWeight
         currentKg={progress.bodyWeightKg}
         series={progress.bodyWeightSeries}
+        onLog={handleLogWeight}
+        logging={logWeight.isPending}
       />
-      <ProgressMonthly
-        chip={progress.monthlyChip}
-        entries={progress.monthly}
-        note={progress.monthlyNote}
-      />
+      {/* Its own feature and its own permission — and the card taps through
+          to /check-ins, so showing it with the flag off would be a door to a
+          screen that is not there. */}
+      {hasFeature('checkIns') ? (
+        <ProgressMonthly
+          chip={progress.monthlyChip}
+          entries={progress.monthly}
+          note={progress.monthlyNote}
+        />
+      ) : null}
       <ProgressPrivacyNote />
     </ScrollView>
   );

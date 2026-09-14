@@ -1,13 +1,13 @@
 import { Check } from 'lucide-react-native';
-import { useCallback } from 'react';
 import { View } from 'react-native';
 
-import { LIButton, LIText } from '@/components/ui';
-import { useUiStore } from '@/store/uiStore';
+import { LIButton, LISkeleton, LIText } from '@/components/ui';
+import { useInviteCodeActions } from '@/hooks/useInviteCodeActions';
 import { tokens } from '@/theme/tokens';
 
 interface RosterEmptyStateProps {
-  readonly inviteCode: string;
+  /** `undefined` while it loads — this card is the first thing a coach sees. */
+  readonly inviteCode: string | undefined;
 }
 
 /**
@@ -22,10 +22,7 @@ const expectations = [
 ] as const;
 
 export default function RosterEmptyState({ inviteCode }: RosterEmptyStateProps) {
-  const showToast = useUiStore((state) => state.showToast);
-
-  // Stubbed: there is no clipboard write yet, and a silent "Copied" would be a lie.
-  const copy = useCallback(() => showToast('Not connected yet', 'success'), [showToast]);
+  const { copy } = useInviteCodeActions(inviteCode);
 
   return (
     <View className="gap-4 rounded-card bg-violet-weak p-5">
@@ -40,15 +37,20 @@ export default function RosterEmptyState({ inviteCode }: RosterEmptyStateProps) 
       </View>
 
       <View className="flex-row items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3">
-        <LIText
-          size="h4"
-          color="primary"
-          text={inviteCode}
-          className="font-geist-semibold tracking-wide"
-        />
+        {inviteCode ? (
+          <LIText
+            size="h4"
+            color="primary"
+            text={inviteCode}
+            className="font-geist-semibold tracking-wide"
+          />
+        ) : (
+          <LISkeleton className="h-6 w-32" />
+        )}
         <LIButton
           title="Copy"
           onPress={copy}
+          disabled={!inviteCode}
           variant="ghost"
           size="sm"
           className="px-3"

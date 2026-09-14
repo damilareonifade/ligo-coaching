@@ -21,11 +21,24 @@ export interface LISwitchProps {
    * which would still animate the knob under the thumb and read as accepted.
    */
   readonly disabled?: boolean;
+  /**
+   * What this switch is for. The knob carries no text of its own, so without
+   * one a screen reader announces "switch, on" and nothing else — and these
+   * rows come in fives and sixes. The visible label stays at the call site;
+   * this is the same words, said to the reader that cannot see them.
+   */
+  readonly accessibilityLabel?: string;
   readonly testID?: string;
 }
 
 /** On/off toggle knob only — the row/label wrapping happens at the call site. */
-export function LISwitch({ value, onValueChange, disabled = false, testID }: LISwitchProps) {
+export function LISwitch({
+  value,
+  onValueChange,
+  disabled = false,
+  accessibilityLabel,
+  testID,
+}: LISwitchProps) {
   const trackStyle = useAnimatedStyle(() => ({
     backgroundColor: withTiming(value ? tokens.violet : tokens.field, { duration: 150 }),
   }));
@@ -45,6 +58,7 @@ export function LISwitch({ value, onValueChange, disabled = false, testID }: LIS
       onPress={() => onValueChange(!value)}
       disabled={disabled}
       accessibilityRole="switch"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ checked: value, disabled }}
       testID={testID}
       hitSlop={8}

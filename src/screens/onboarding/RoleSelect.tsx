@@ -7,7 +7,7 @@ import type { UserRole } from '@/api/types';
 import { LIButton, LICard, LIText } from '@/components/ui';
 import { useGoogleSignUp } from '@/hooks/useGoogleSignUp';
 import { cn } from '@/lib/utils';
-import SocialSignIn from '@/screens/auth/SocialSignIn';
+import SocialSignIn from '@/components/auth/SocialSignIn';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { tokens } from '@/theme/tokens';
 

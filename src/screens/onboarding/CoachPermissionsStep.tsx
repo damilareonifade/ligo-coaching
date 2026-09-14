@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import { useAttachCoachMutation } from '@/api/auth';
 import { errorMessage } from '@/api/client';
+import type { ShareDomain } from '@/api/types';
 import { LIAvatar, LIButton, LICard, LISwitch, LIText } from '@/components/ui';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUiStore } from '@/store/uiStore';
@@ -11,15 +12,30 @@ import { useUiStore } from '@/store/uiStore';
 import { OnboardingBackButton } from './OnboardingBackButton';
 
 interface PermissionRowConfig {
-  readonly key: 'workouts' | 'nutrition' | 'metrics';
+  readonly key: ShareDomain;
   readonly title: string;
   readonly body: string;
 }
 
+/**
+ * One row per shareable domain, and the list is exhaustive on purpose: the
+ * coach's review screen can ask for any of these, and a question with no
+ * switch here is one the client has no way to answer.
+ */
 const PERMISSION_ROWS: readonly PermissionRowConfig[] = [
   { key: 'workouts', title: 'Workouts', body: 'Programs, sets, and completed sessions.' },
   { key: 'nutrition', title: 'Nutrition', body: 'Meals and macros you log.' },
   { key: 'metrics', title: 'Metrics', body: 'Weight, measurements, and progress photos.' },
+  {
+    key: 'health',
+    title: 'Health profile',
+    body: 'Injuries, conditions and medication.',
+  },
+  {
+    key: 'monthly',
+    title: 'Monthly check-ins',
+    body: 'Your check-in answers and the photos attached to them.',
+  },
 ];
 
 export default function CoachPermissionsStep() {

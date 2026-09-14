@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { useCommunityQuery } from '@/api/community';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import InviteContent from '@/screens/community-invite/InviteContent';
 import InviteSkeleton from '@/screens/community-invite/InviteSkeleton';
 
@@ -31,7 +32,12 @@ export default function InviteScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Invitation"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <InviteSkeleton />
       </LISafeArea>
     );
@@ -39,7 +45,12 @@ export default function InviteScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Invitation"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -49,7 +60,12 @@ export default function InviteScreen() {
 
   if (!invite) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Invitation"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         {answered ? null : (
           <LIErrorState
             message="This invitation is no longer open. Your coach can send another one."
@@ -61,7 +77,12 @@ export default function InviteScreen() {
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="Invitation"
+        eyebrow="Community"
+        backLabel="Community"
+      />
       <InviteContent invite={invite} onAnswered={markAnswered} />
     </LISafeArea>
   );

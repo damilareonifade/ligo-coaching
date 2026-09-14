@@ -20,6 +20,8 @@ import RosterNoResults from './RosterNoResults';
 
 interface RosterContentProps {
   readonly roster: ApiRoster;
+  /** `undefined` while the code is still loading — the card shows a skeleton. */
+  readonly inviteCode: string | undefined;
   readonly refreshing: boolean;
   readonly onRefresh: () => void;
 }
@@ -29,7 +31,12 @@ interface RosterContentProps {
  * from it. The label filter is the exception — the labels screen sets it and
  * pops back, so it lives in a store the two screens share.
  */
-export default function RosterContent({ roster, refreshing, onRefresh }: RosterContentProps) {
+export default function RosterContent({
+  roster,
+  inviteCode,
+  refreshing,
+  onRefresh,
+}: RosterContentProps) {
   const [query, setQuery] = useState('');
   const [attention, setAttention] = useState<RosterAttentionFilter>('all');
   const [sort, setSort] = useState<RosterSort>('recent');
@@ -60,7 +67,7 @@ export default function RosterContent({ roster, refreshing, onRefresh }: RosterC
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={tokens.violet} />
         }
       >
-        <RosterEmptyState inviteCode={roster.inviteCode} />
+        <RosterEmptyState inviteCode={inviteCode} />
       </ScrollView>
     );
   }
@@ -74,7 +81,7 @@ export default function RosterContent({ roster, refreshing, onRefresh }: RosterC
         onRefresh={onRefresh}
         header={
           <RosterHeader
-            stats={roster.stats}
+            clients={roster.clients}
             labels={roster.labels}
             query={query}
             onQueryChange={setQuery}

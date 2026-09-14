@@ -12,6 +12,12 @@ import CheckInStats from './CheckInStats';
 
 interface CheckInsContentProps {
   readonly checkIns: ApiMonthlyCheckIns;
+  /**
+   * Set when a coach is looking at a client's. Absent is the client reading
+   * their own, which is the only case where the sharing toggle below belongs
+   * on screen — it is the client's switch and a coach has no version of it.
+   */
+  readonly clientId?: string;
   readonly refreshing: boolean;
   readonly onRefresh: () => void;
 }
@@ -23,9 +29,11 @@ interface CheckInsContentProps {
  */
 export default function CheckInsContent({
   checkIns,
+  clientId,
   refreshing,
   onRefresh,
 }: CheckInsContentProps) {
+  const isOwn = clientId === undefined;
   return (
     <ScrollView
       className="flex-1"
@@ -35,7 +43,7 @@ export default function CheckInsContent({
       }
     >
       <CheckInStats stats={checkIns.stats} />
-      <CheckInAddButton />
+      <CheckInAddButton clientId={clientId} />
 
       {checkIns.entries.length === 0 ? (
         <LICard>
@@ -47,17 +55,19 @@ export default function CheckInsContent({
           />
         </LICard>
       ) : (
-        checkIns.entries.map((entry) => <CheckInCard key={entry.id} entry={entry} />)
+        checkIns.entries.map((entry) => (
+          <CheckInCard key={entry.id} entry={entry} clientId={clientId} />
+        ))
       )}
 
-      {checkIns.coachName.length > 0 ? (
+      {isOwn && checkIns.coachName.length > 0 ? (
         <CheckInCoachToggle
           coachName={checkIns.coachName}
           enabled={checkIns.coachCanEdit}
         />
       ) : null}
 
-      <CheckInPrivacyNote note={checkIns.note} />
+      {isOwn ? <CheckInPrivacyNote note={checkIns.note} /> : null}
     </ScrollView>
   );
 }

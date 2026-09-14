@@ -1,12 +1,18 @@
 import { LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import NewExerciseForm from '@/screens/new-exercise/NewExerciseForm';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — the header owns the top inset, so no safe-area edges here. */
+/** Composer only — ScreenHeader sits inside the safe area, which owns the inset. */
 export default function NewExerciseScreen() {
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="New exercise"
+        eyebrow="Custom exercise"
+        backLabel="Add exercise"
+      />
       <NewExerciseForm />
     </LISafeArea>
   );

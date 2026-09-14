@@ -7,7 +7,7 @@ import { useAcceptInviteMutation, useDeclineInviteMutation } from '@/api/communi
 import type { ApiCommunityInvite } from '@/api/types';
 import { LIAvatar, LIButton, LIText } from '@/components/ui';
 import { declineNote } from '@/lib/community';
-import CommunityEyebrow from '@/screens/community-shared/CommunityEyebrow';
+import CommunityEyebrow from '@/components/community/CommunityEyebrow';
 import { useUiStore } from '@/store/uiStore';
 
 import InviteVisibilityPanel from './InviteVisibilityPanel';

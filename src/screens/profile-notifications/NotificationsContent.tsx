@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
 import { useToggleNotificationMutation } from '@/api/clientProfile';
-import type { ApiNotificationGroup, ApiNotificationSettings, ApiNotificationToggle } from '@/api/types';
+import type { ApiNotificationSettingsGroup, ApiNotificationSettings, ApiNotificationSettingsRow } from '@/api/types';
 
 import NotificationGroupCard from './NotificationGroupCard';
 import QuietHoursCard from './QuietHoursCard';
@@ -15,7 +15,7 @@ export default function NotificationsContent({ settings }: NotificationsContentP
   const toggle = useToggleNotificationMutation();
 
   const handleToggle = useCallback(
-    (group: ApiNotificationGroup, row: ApiNotificationToggle) => {
+    (group: ApiNotificationSettingsGroup, row: ApiNotificationSettingsRow) => {
       toggle.mutate({ groupId: group.id, rowId: row.id, enabled: !row.enabled });
     },
     [toggle],

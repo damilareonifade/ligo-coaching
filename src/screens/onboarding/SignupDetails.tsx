@@ -10,7 +10,7 @@ import { errorMessage } from '@/api/client';
 import { LIForm, LIFormInput } from '@/components/LIForm';
 import { LIBadge, LIButton, LIText } from '@/components/ui';
 import { useGoogleSignUp } from '@/hooks/useGoogleSignUp';
-import SocialSignIn from '@/screens/auth/SocialSignIn';
+import SocialSignIn from '@/components/auth/SocialSignIn';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboardingStore } from '@/store/onboardingStore';
 import { useUiStore } from '@/store/uiStore';

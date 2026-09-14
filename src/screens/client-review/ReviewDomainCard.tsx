@@ -9,6 +9,12 @@ interface ReviewDomainCardProps {
   readonly domain: ApiReviewDomain;
   readonly onRequest: (domainId: ApiReviewDomain['id']) => void;
   readonly requesting: boolean;
+  /**
+   * Offered only where the coach can act on the domain rather than read it —
+   * today that is check-ins, and only when the client allowed logging on
+   * their behalf. `null` leaves the card as it was.
+   */
+  readonly action?: { readonly title: string; readonly onPress: () => void } | null;
 }
 
 /**
@@ -36,6 +42,7 @@ export default function ReviewDomainCard({
   domain,
   onRequest,
   requesting,
+  action: openAction = null,
 }: ReviewDomainCardProps) {
   const granted = isGranted(domain.access);
   const badge = domainBadge(domain.access);
@@ -82,6 +89,21 @@ export default function ReviewDomainCard({
         className="font-geist"
         testID={`review-note-${domain.id}`}
       />
+
+      {/* Only on a granted domain, and only where there is something to do
+          with it — asking for access and acting on it are different states
+          and never both. */}
+      {granted && openAction ? (
+        <LIButton
+          title={openAction.title}
+          variant="outline"
+          size="sm"
+          fullWidth
+          shape="rounded"
+          onPress={openAction.onPress}
+          testID={`review-open-${domain.id}`}
+        />
+      ) : null}
 
       {action ? (
         <LIButton

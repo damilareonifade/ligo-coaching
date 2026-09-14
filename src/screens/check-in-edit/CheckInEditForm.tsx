@@ -10,6 +10,7 @@ import { useSaveCheckInMutation } from '@/api/clientCheckIns';
 import type { ApiCheckIn, ApiMonthlyCheckIns } from '@/api/types';
 import { LIForm, LIFormField } from '@/components/LIForm';
 import { LIButton, LICard, LIInput, LIText } from '@/components/ui';
+import { useUnits } from '@/hooks/useUnits';
 import { useUiStore } from '@/store/uiStore';
 
 import CheckInEditHeader from './CheckInEditHeader';
@@ -51,10 +52,35 @@ interface CheckInEditFormProps {
   readonly checkIns: ApiMonthlyCheckIns;
   /** Present when editing an existing month; absent when logging a new one. */
   readonly id?: string;
+  /**
+   * Whose. Set when a coach is logging for a client — absent is the client's
+   * own. It rides into the save so the row lands on the right person, and the
+   * database stamps who wrote it either way.
+   */
+  readonly clientId?: string;
 }
 
-export default function CheckInEditForm({ checkIns, id }: CheckInEditFormProps) {
+/**
+ * A numeric field, between what is stored and what is shown.
+ *
+ * Empty stays empty — a blank measurement is "not taken", and running it
+ * through a conversion would turn it into a zero somebody never recorded.
+ */
+function convertField(raw: string, convert: (value: number) => number): string {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return '';
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed)) return raw;
+  return String(Number(convert(parsed).toFixed(1)));
+}
+
+export default function CheckInEditForm({
+  checkIns,
+  id,
+  clientId,
+}: CheckInEditFormProps) {
   const router = useRouter();
+  const units = useUnits();
   const showToast = useUiStore((state) => state.showToast);
   const { mutateAsync, isPending } = useSaveCheckInMutation();
 
@@ -64,11 +90,13 @@ export default function CheckInEditForm({ checkIns, id }: CheckInEditFormProps) 
 
   const form = useForm<CheckInValues>({
     resolver: zodResolver(checkInSchema),
+    // Stored in kilograms and centimetres; shown in whatever was chosen.
     defaultValues: {
-      weightKg: entry?.weightKg ?? '',
-      waist: rawValue(entry, 'Waist'),
-      chest: rawValue(entry, 'Chest'),
-      hips: rawValue(entry, 'Hips'),
+      weightKg: convertField(entry?.weightKg ?? '', units.displayWeight),
+      waist: convertField(rawValue(entry, 'Waist'), units.displayLength),
+      chest: convertField(rawValue(entry, 'Chest'), units.displayLength),
+      hips: convertField(rawValue(entry, 'Hips'), units.displayLength),
+      // A percentage is a percentage in every gym on earth.
       bodyFat: rawValue(entry, 'Body fat'),
       note: entry?.note ?? '',
     },
@@ -77,13 +105,24 @@ export default function CheckInEditForm({ checkIns, id }: CheckInEditFormProps) 
   const onSubmit = useCallback(
     async (values: CheckInValues) => {
       try {
-        await mutateAsync({ id: entryId, ...values });
+        // Back to kilograms and centimetres. Without this a client on pounds
+        // logging 185 would have 185 kg written down, and the constraint that
+        // catches a 10 cm waist would not catch it.
+        await mutateAsync({
+          id: entryId,
+          clientId,
+          ...values,
+          weightKg: convertField(values.weightKg, units.storedWeight),
+          waist: convertField(values.waist, units.storedLength),
+          chest: convertField(values.chest, units.storedLength),
+          hips: convertField(values.hips, units.storedLength),
+        });
         router.back();
       } catch (error) {
         showToast(errorMessage(error), 'danger');
       }
     },
-    [entryId, mutateAsync, router, showToast],
+    [clientId, entryId, mutateAsync, router, showToast, units],
   );
 
   const cancel = useCallback(() => router.back(), [router]);
@@ -102,10 +141,10 @@ export default function CheckInEditForm({ checkIns, id }: CheckInEditFormProps) 
 
         <LIForm form={form}>
           <LICard className="gap-3">
-            <CheckInFieldRow<CheckInValues> name="weightKg" label="Weight" unit="kg" />
-            <CheckInFieldRow<CheckInValues> name="waist" label="Waist" unit="cm" />
-            <CheckInFieldRow<CheckInValues> name="chest" label="Chest" unit="cm" />
-            <CheckInFieldRow<CheckInValues> name="hips" label="Hips" unit="cm" />
+            <CheckInFieldRow<CheckInValues> name="weightKg" label="Weight" unit={units.weight} />
+            <CheckInFieldRow<CheckInValues> name="waist" label="Waist" unit={units.length} />
+            <CheckInFieldRow<CheckInValues> name="chest" label="Chest" unit={units.length} />
+            <CheckInFieldRow<CheckInValues> name="hips" label="Hips" unit={units.length} />
             <CheckInFieldRow<CheckInValues> name="bodyFat" label="Body fat" unit="%" />
           </LICard>
 

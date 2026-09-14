@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import { useCommunityQuery } from '@/api/community';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import CommunityContent from '@/screens/community/CommunityContent';
 import CommunitySkeleton from '@/screens/community/CommunitySkeleton';
 
@@ -17,7 +18,12 @@ export default function CommunityScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Community"
+          eyebrow="Groups and boards"
+          backLabel="Back"
+        />
         <CommunitySkeleton />
       </LISafeArea>
     );
@@ -25,14 +31,24 @@ export default function CommunityScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Community"
+          eyebrow="Groups and boards"
+          backLabel="Back"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="Community"
+        eyebrow="Groups and boards"
+        backLabel="Back"
+      />
       <CommunityContent community={data} refreshing={isRefetching} onRefresh={refresh} />
     </LISafeArea>
   );

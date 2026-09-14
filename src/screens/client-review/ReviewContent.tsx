@@ -1,8 +1,13 @@
+import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
 import { errorMessage } from '@/api/client';
-import { useRequestAccessMutation, useSetClientLabelMutation } from '@/api/coachClient';
+import {
+  useClientRoutinesQuery,
+  useRequestAccessMutation,
+  useSetClientLabelMutation,
+} from '@/api/coachClient';
 import type { ApiClientReview, ApiReviewDomain, ApiRosterLabel } from '@/api/types';
 import { useUiStore } from '@/store/uiStore';
 import { tokens } from '@/theme/tokens';
@@ -11,6 +16,7 @@ import ReviewDomainCard from './ReviewDomainCard';
 import ReviewHeaderCard from './ReviewHeaderCard';
 import ReviewLabelCard from './ReviewLabelCard';
 import ReviewLiveBanner from './ReviewLiveBanner';
+import ReviewRoutinesCard from './ReviewRoutinesCard';
 import ReviewSessionsCard from './ReviewSessionsCard';
 import ReviewWorkoutsCard from './ReviewWorkoutsCard';
 
@@ -42,9 +48,11 @@ export default function ReviewContent({
   refreshing,
   onRefresh,
 }: ReviewContentProps) {
+  const router = useRouter();
   const showToast = useUiStore((state) => state.showToast);
   const setLabel = useSetClientLabelMutation();
   const requestAccess = useRequestAccessMutation();
+  const routinesQuery = useClientRoutinesQuery(review.clientId);
   const [pendingDomain, setPendingDomain] = useState<ApiReviewDomain['id'] | null>(null);
 
   const handleSelectLabel = useCallback(
@@ -55,6 +63,11 @@ export default function ReviewContent({
       );
     },
     [review.clientId, setLabel, showToast],
+  );
+
+  const openCheckIns = useCallback(
+    () => router.push({ pathname: '/check-ins', params: { clientId: review.clientId } }),
+    [review.clientId, router],
   );
 
   const handleRequest = useCallback(
@@ -95,6 +108,18 @@ export default function ReviewContent({
       />
 
       <ReviewWorkoutsCard adherence={review.adherence} bars={review.adherenceBars} />
+      <ReviewRoutinesCard
+        clientId={review.clientId}
+        routines={routinesQuery.data?.routines ?? []}
+        week={routinesQuery.data?.week ?? { done: 0, target: 0 }}
+        loading={routinesQuery.isPending}
+      />
+
+      {/* Straight after the routines, because the two are one thought: what
+          they are meant to be doing, then what they actually did. The domain
+          cards below are about access — a different question, and one a coach
+          asks less often than "how did last week go". */}
+      <ReviewSessionsCard sessions={review.sessions} />
 
       {review.domains.map((domain) => (
         <ReviewDomainCard
@@ -102,10 +127,16 @@ export default function ReviewContent({
           domain={domain}
           onRequest={handleRequest}
           requesting={pendingDomain === domain.id}
+          // Check-ins are the one domain a coach can write to, and only where
+          // the client turned on logging for them. Everything else here is a
+          // read, so nothing else gets a way in.
+          action={
+            domain.id === 'monthly' && review.canLogFor
+              ? { title: 'Open check-ins', onPress: openCheckIns }
+              : null
+          }
         />
       ))}
-
-      <ReviewSessionsCard sessions={review.sessions} />
     </ScrollView>
   );
 }

@@ -15,21 +15,25 @@ export default function BuilderSaveFooter() {
 
   const kind = useProgramDraftStore((state) => state.kind);
   const name = useProgramDraftStore((state) => state.name);
+  const note = useProgramDraftStore((state) => state.note);
   const weeks = useProgramDraftStore((state) => state.weeks);
-  const days = useProgramDraftStore((state) => state.days);
+  const sessionsPerWeek = useProgramDraftStore((state) => state.sessionsPerWeek);
+  const routines = useProgramDraftStore((state) => state.routines);
 
   const trimmed = name.trim();
 
   const save = useCallback(async () => {
     try {
-      await mutateAsync({ name: trimmed, kind, weeks, days });
-      // `replace`, not `back`: the library is where a saved program lives, and
-      // a builder left on the stack would be a second draft of the same thing.
-      router.replace('/programs');
+      const saved = await mutateAsync({ name: trimmed, note, kind, weeks, sessionsPerWeek, routines });
+      // Straight to the program itself, not the library: assigning it is the
+      // next thing a coach does, and that button lives on its screen.
+      // `replace`, not `back` — a builder left on the stack would be a second
+      // draft of the same thing.
+      router.replace({ pathname: '/programs/[id]', params: { id: saved.id } });
     } catch (error) {
       showToast(errorMessage(error), 'danger');
     }
-  }, [mutateAsync, trimmed, kind, weeks, days, router, showToast]);
+  }, [mutateAsync, trimmed, note, kind, weeks, sessionsPerWeek, routines, router, showToast]);
 
   return (
     <View className="gap-2">

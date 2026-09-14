@@ -1,8 +1,10 @@
-import { View } from 'react-native';
+import { X } from 'lucide-react-native';
+import { Pressable, View } from 'react-native';
 
 import type { ApiHealthSection } from '@/api/types';
 import { LIBadge, LICard, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { tokens } from '@/theme/tokens';
 
 /**
  * The label column is a fixed 108px (`w-[108px]` below) so values line up down
@@ -15,9 +17,15 @@ function chipTone(chip: string): 'warning' | 'violet' {
 
 interface HealthSectionCardProps {
   readonly section: ApiHealthSection;
+  readonly onRemove: (entryId: string) => void;
+  readonly removingId: string | null;
 }
 
-export default function HealthSectionCard({ section }: HealthSectionCardProps) {
+export default function HealthSectionCard({
+  section,
+  onRemove,
+  removingId,
+}: HealthSectionCardProps) {
   return (
     <View className="gap-2">
       <LIText
@@ -55,8 +63,32 @@ export default function HealthSectionCard({ section }: HealthSectionCardProps) {
                 labelClassName="font-geist-medium"
               />
             ) : null}
+            <Pressable
+              onPress={() => onRemove(row.id)}
+              disabled={removingId === row.id}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove ${row.label}`}
+              className="p-1 active:opacity-60"
+              testID={`health-remove-${row.id}`}
+            >
+              <X color={tokens.muted} size={16} />
+            </Pressable>
           </View>
         ))}
+
+        {section.rows.length === 0 ? (
+          <View className="py-3">
+            {/* Said, not left blank: "nothing recorded" is information a coach
+                reading this profile needs, and empty space is not. */}
+            <LIText
+              size="p"
+              color="muted"
+              text="Nothing recorded."
+              className="font-geist"
+            />
+          </View>
+        ) : null}
       </LICard>
 
       <LIText size="caption" color="muted" text={section.note} className="px-1 font-geist" />

@@ -2,7 +2,7 @@ import { View } from 'react-native';
 
 import { LISkeleton } from '@/components/ui';
 
-/** Header card, day chips, four block rows, the add slot and the publish button. */
+/** Header card, routine chips, four exercise rows, the add slot and publish. */
 export default function ProgramDetailSkeleton() {
   return (
     <View className="gap-4 px-4 pt-2">

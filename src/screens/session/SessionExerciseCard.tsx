@@ -1,126 +1,82 @@
-import { Check } from 'lucide-react-native';
-import { memo, useCallback, useState } from 'react';
+import { Plus } from 'lucide-react-native';
+import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 
 import type { ApiSessionExercise, ApiSessionSet } from '@/api/types';
-import { LIBadge, LICard, LIText } from '@/components/ui';
-import { formatSetWeight } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { LICard, LIText } from '@/components/ui';
+import { setProgressLabel, type SetField } from '@/lib/session';
 import { tokens } from '@/theme/tokens';
 
-import SessionSetEditor from './SessionSetEditor';
-
-interface ValueChipProps {
-  readonly label: string;
-  readonly accessibilityLabel: string;
-  readonly onPress: () => void;
-  readonly testID?: string;
-}
-
-function ValueChip({ label, accessibilityLabel, onPress, testID }: ValueChipProps) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      className="rounded-pill bg-field px-3 py-1 active:opacity-70"
-      testID={testID}
-    >
-      <LIText size="caption" color="body" text={label} className="font-geist-medium" />
-    </Pressable>
-  );
-}
+import SessionExerciseNote from './SessionExerciseNote';
+import SessionSetRow from './SessionSetRow';
 
 interface SessionExerciseCardProps {
   readonly exercise: ApiSessionExercise;
   /** Resolved sets — draft edits already merged over the server session. */
   readonly sets: readonly ApiSessionSet[];
+  /** The set and field the editor is pointed at, when it is in this exercise. */
+  readonly activeSetN: number | null;
+  readonly activeField: SetField | null;
+  readonly onEditSet: (exerciseId: string, set: ApiSessionSet, field: SetField) => void;
   readonly onToggleSet: (exerciseId: string, set: ApiSessionSet) => void;
-  readonly onEditSet: (exerciseId: string, n: number, weightKg: number, reps: number) => void;
+  readonly onAddSet: (exerciseId: string) => void;
+  readonly onSaveNote: (exerciseId: string, note: string | null) => void;
 }
 
-function SessionExerciseCard({
+function SessionExerciseCardBase({
   exercise,
   sets,
-  onToggleSet,
+  activeSetN,
+  activeField,
   onEditSet,
+  onToggleSet,
+  onAddSet,
+  onSaveNote,
 }: SessionExerciseCardProps) {
-  const [editing, setEditing] = useState<ApiSessionSet | null>(null);
-  const completed = sets.filter((set) => set.completed).length;
-
-  const handleSave = useCallback(
-    (weightKg: number, reps: number) => {
-      if (editing) onEditSet(exercise.id, editing.n, weightKg, reps);
-      setEditing(null);
-    },
-    [editing, exercise.id, onEditSet],
-  );
-
   return (
-    <LICard className="gap-3">
-      <View className="flex-row items-start gap-3">
+    // No padding on the card itself: a completed set tints its whole row, and
+    // that tint has to run to both edges to read as a row rather than a patch.
+    <LICard className="gap-0 overflow-hidden p-0">
+      <View className="flex-row items-start gap-3 px-4 pb-3 pt-4">
         <View className="flex-1 gap-0.5">
           <LIText size="h5" color="primary" text={exercise.name} className="font-geist-semibold" />
-          <LIText size="caption" color="muted" text={exercise.note} className="font-geist" />
+          <SessionExerciseNote exercise={exercise} onSaveNote={onSaveNote} />
         </View>
         <LIText
           size="caption"
           color="muted"
-          text={`${completed}/${sets.length}`}
+          text={setProgressLabel(sets)}
           className="font-geist-medium"
         />
       </View>
 
-      {sets.map((set) => (
-        <View key={set.n} className="flex-row items-center gap-2">
-          <LIText
-            size="caption"
-            color="muted"
-            text={String(set.n)}
-            className="w-4 font-geist-medium"
+      <View className="border-t border-hairline">
+        {sets.map((set) => (
+          <SessionSetRow
+            key={set.n}
+            exerciseId={exercise.id}
+            exerciseName={exercise.name}
+            set={set}
+            activeField={activeSetN === set.n ? activeField : null}
+            onEdit={(edited, field) => onEditSet(exercise.id, edited, field)}
+            onToggle={(toggled) => onToggleSet(exercise.id, toggled)}
           />
+        ))}
 
-          <ValueChip
-            label={`${formatSetWeight(set.weightKg)} kg`}
-            accessibilityLabel={`Set ${set.n} weight, ${formatSetWeight(set.weightKg)} kilograms`}
-            onPress={() => setEditing(set)}
-            testID={`set-${exercise.id}-${set.n}-weight`}
-          />
-          <ValueChip
-            label={`${set.reps} reps`}
-            accessibilityLabel={`Set ${set.n} reps, ${set.reps}`}
-            onPress={() => setEditing(set)}
-            testID={`set-${exercise.id}-${set.n}-reps`}
-          />
-
-          {set.isPr ? <LIBadge tone="violet" label="PR" labelClassName="font-geist-medium" /> : null}
-
-          <View className="flex-1" />
-
-          <Pressable
-            onPress={() => onToggleSet(exercise.id, set)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: set.completed }}
-            accessibilityLabel={`Set ${set.n} of ${exercise.name}`}
-            className={cn(
-              'h-9 w-9 items-center justify-center rounded-pill active:opacity-70',
-              set.completed ? 'bg-violet' : 'border border-hairline bg-field',
-            )}
-            testID={`set-${exercise.id}-${set.n}-toggle`}
-          >
-            {set.completed ? <Check color={tokens.white} size={18} /> : null}
-          </Pressable>
-        </View>
-      ))}
-
-      <SessionSetEditor
-        exerciseName={exercise.name}
-        set={editing}
-        onClose={() => setEditing(null)}
-        onSave={handleSave}
-      />
+        {/* A set the plan did not ask for is still a set that happened. */}
+        <Pressable
+          onPress={() => onAddSet(exercise.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Add a set to ${exercise.name}`}
+          className="flex-row items-center gap-1.5 border-t border-hairline px-4 py-3 active:opacity-70"
+          testID={`add-set-${exercise.id}`}
+        >
+          <Plus color={tokens.violet} size={16} />
+          <LIText size="caption" color="accent" text="Add set" className="font-geist-medium" />
+        </Pressable>
+      </View>
     </LICard>
   );
 }
 
-export default memo(SessionExerciseCard);
+export default memo(SessionExerciseCardBase);

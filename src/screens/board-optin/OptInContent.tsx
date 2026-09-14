@@ -14,7 +14,7 @@ import {
   isIdentityReady,
   resolveDisplayName,
 } from '@/lib/community';
-import CommunityEyebrow from '@/screens/community-shared/CommunityEyebrow';
+import CommunityEyebrow from '@/components/community/CommunityEyebrow';
 import { useUiStore } from '@/store/uiStore';
 
 import BoardFactsGrid from './BoardFactsGrid';

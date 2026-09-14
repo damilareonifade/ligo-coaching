@@ -1,12 +1,12 @@
 import { Pressable, View } from 'react-native';
 
-import type { ApiNotificationGroup, ApiNotificationToggle } from '@/api/types';
+import type { ApiNotificationSettingsGroup, ApiNotificationSettingsRow } from '@/api/types';
 import { LICard, LISwitch, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface NotificationGroupCardProps {
-  readonly group: ApiNotificationGroup;
-  readonly onToggle: (row: ApiNotificationToggle) => void;
+  readonly group: ApiNotificationSettingsGroup;
+  readonly onToggle: (row: ApiNotificationSettingsRow) => void;
 }
 
 /**

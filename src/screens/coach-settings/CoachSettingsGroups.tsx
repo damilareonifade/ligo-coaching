@@ -3,8 +3,8 @@ import { View } from 'react-native';
 
 import type { ApiSettingsGroup, ApiSettingsRow } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
-import ProfileRow from '@/screens/profile/ProfileRow';
-import { useRowAction } from '@/screens/profile/useRowAction';
+import ProfileRow from '@/components/profile/ProfileRow';
+import { useRowAction } from '@/components/profile/useRowAction';
 
 interface CoachSettingsGroupsProps {
   readonly groups: readonly ApiSettingsGroup[];
@@ -27,8 +27,8 @@ const INVITE_CODE_ROW_ID = 'invite-code';
  * Two rows are not navigation and so are intercepted here rather than pushed
  * through `useRowAction`: Sign out ends the session, and the invite code
  * duplicates the hero card's copy action for the coach who looks for it in the
- * list. Everything else either has a `route` or falls through to the shared
- * "not connected yet" toast — which is what Profile and Billing do today.
+ * list. Everything else has a `route`; Help centre is the last row that falls
+ * through to the shared "not connected yet" toast.
  */
 export default function CoachSettingsGroups({
   groups,

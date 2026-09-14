@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import type { ApiVolumeBar } from '@/api/types';
 import { LIChart } from '@/components/LIChart';
 import { LICard, LIText } from '@/components/ui';
-import { formatVolumeKg } from '@/lib/format';
+import { useUnits } from '@/hooks/useUnits';
 
 interface ProgressVolumeCardProps {
   readonly weeklyVolumeKg: number;
@@ -16,6 +16,7 @@ export default function ProgressVolumeCard({
   changePct,
   bars,
 }: ProgressVolumeCardProps) {
+  const units = useUnits();
   const rising = changePct >= 0;
   const data = bars.map((bar) => ({ label: bar.label, value: bar.volumeKg }));
 
@@ -32,7 +33,7 @@ export default function ProgressVolumeCard({
           <LIText
             size="h2"
             color="primary"
-            text={formatVolumeKg(weeklyVolumeKg)}
+            text={units.formatVolume(weeklyVolumeKg)}
             className="font-geist-semibold"
           />
         </View>

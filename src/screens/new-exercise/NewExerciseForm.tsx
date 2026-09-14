@@ -30,8 +30,8 @@ type NewExerciseValues = z.infer<typeof newExerciseSchema>;
  */
 export default function NewExerciseForm() {
   const router = useRouter();
-  const { programId, dayId } = useLocalSearchParams<{ programId?: string; dayId?: string }>();
-  const { addExercise } = useAddExerciseToTarget({ programId, dayId });
+  const { programId, routineId } = useLocalSearchParams<{ programId?: string; routineId?: string }>();
+  const { addExercise } = useAddExerciseToTarget({ programId, routineId });
   const showToast = useUiStore((state) => state.showToast);
   const { mutateAsync, isPending } = useCreateExerciseMutation();
 

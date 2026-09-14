@@ -3,12 +3,13 @@ import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
 import type { BuilderKind } from '@/api/types';
 import { LISegmented, type LISegmentedOption } from '@/components/ui';
-import { useProgramDraftStore } from '@/store/programDraftStore';
+import BuilderRoutineName from '@/components/builder/BuilderRoutineName';
+import { selectDraftRoutine, useProgramDraftStore } from '@/store/programDraftStore';
 
-import BuilderBlockList from './BuilderBlockList';
-import BuilderDayTabs from './BuilderDayTabs';
+import BuilderBlockList from '@/components/builder/BuilderBlockList';
+import BuilderRoutineTabs from './BuilderRoutineTabs';
 import BuilderSaveFooter from './BuilderSaveFooter';
-import BuilderSetupCard from './BuilderSetupCard';
+import BuilderSetupCard from '@/components/builder/BuilderSetupCard';
 
 const kindOptions: readonly LISegmentedOption[] = [
   { label: 'Routine', value: 'routine' },
@@ -24,6 +25,9 @@ export default function BuilderContent() {
   const kind = useProgramDraftStore((state) => state.kind);
   const setKind = useProgramDraftStore((state) => state.setKind);
   const reset = useProgramDraftStore((state) => state.reset);
+  const routines = useProgramDraftStore((state) => state.routines);
+  const selectedRoutine = useProgramDraftStore(selectDraftRoutine);
+  const renameRoutine = useProgramDraftStore((state) => state.renameRoutine);
 
   // A new builder is a blank page. The draft survives the trip to the picker
   // because the store outlives this screen — but not the trip back here later.
@@ -51,7 +55,19 @@ export default function BuilderContent() {
         />
 
         <BuilderSetupCard />
-        {showDayTabs ? <BuilderDayTabs /> : null}
+        {showDayTabs ? (
+          <>
+            <BuilderRoutineTabs />
+            {selectedRoutine ? (
+              <BuilderRoutineName
+                key={selectedRoutine.id}
+                label={selectedRoutine.name}
+                fallback={`Day ${routines.indexOf(selectedRoutine) + 1}`}
+                onRename={(label) => renameRoutine(selectedRoutine.id, label)}
+              />
+            ) : null}
+          </>
+        ) : null}
         <BuilderBlockList />
         <BuilderSaveFooter />
       </ScrollView>

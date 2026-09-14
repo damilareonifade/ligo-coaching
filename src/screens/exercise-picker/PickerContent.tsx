@@ -7,7 +7,7 @@ import type { ApiExerciseOption } from '@/api/types';
 import { LIErrorState, LIList, LIText } from '@/components/ui';
 import { useAddExerciseToTarget } from '@/hooks/useAddExerciseToTarget';
 import { groupExerciseOptions, type ExerciseFilter } from '@/lib/programs';
-import { selectDraftDay, useProgramDraftStore } from '@/store/programDraftStore';
+import { selectDraftRoutine, useProgramDraftStore } from '@/store/programDraftStore';
 
 import PickerCreateCard from './PickerCreateCard';
 import PickerFilters from './PickerFilters';
@@ -28,9 +28,10 @@ type PickerRow =
  */
 export default function PickerContent() {
   const router = useRouter();
-  const { programId, dayId } = useLocalSearchParams<{
+  const { programId, routineId, sessionId } = useLocalSearchParams<{
     programId?: string;
-    dayId?: string;
+    routineId?: string;
+    sessionId?: string;
   }>();
 
   const [query, setQuery] = useState('');
@@ -38,17 +39,17 @@ export default function PickerContent() {
 
   const optionsQuery = useExerciseOptionsQuery(query, filter);
   // One path for both destinations — a saved program or the builder's draft.
-  const { addExercise, adding: saving } = useAddExerciseToTarget({ programId, dayId });
+  const { addExercise, adding: saving } = useAddExerciseToTarget({ programId, routineId, sessionId });
   const programQuery = useProgramDetailQuery(programId ?? '');
 
-  const draftDay = useProgramDraftStore(selectDraftDay);
+  const draftRoutine = useProgramDraftStore(selectDraftRoutine);
   const draftName = useProgramDraftStore((state) => state.name);
 
   const program = programQuery.data ?? null;
-  const targetDay = useMemo(() => {
+  const targetRoutine = useMemo(() => {
     if (!program) return null;
-    return program.days.find((day) => day.id === dayId) ?? program.days[0] ?? null;
-  }, [program, dayId]);
+    return program.routines.find((day) => day.id === routineId) ?? program.routines[0] ?? null;
+  }, [program, routineId]);
 
   const options = useMemo(() => optionsQuery.data ?? [], [optionsQuery.data]);
 
@@ -94,19 +95,26 @@ export default function PickerContent() {
     [add, saving],
   );
 
-  const noticeDayLabel = programId ? (targetDay?.label ?? '') : (draftDay?.label ?? 'Exercises');
-  const noticeProgramName = programId
-    ? (program?.name ?? '')
-    : draftName.trim().length > 0
-      ? draftName.trim()
-      : 'New program';
+  // Empty means there is nothing honest to say yet — the program is still
+  // loading — so the notice stays off rather than naming the wrong day.
+  const noticeText = useMemo(() => {
+    if (sessionId) return 'Adding to this workout';
+
+    const routineName = programId ? (targetRoutine?.name ?? '') : (draftRoutine?.name ?? 'Exercises');
+    const programName = programId
+      ? (program?.name ?? '')
+      : draftName.trim().length > 0
+        ? draftName.trim()
+        : 'New program';
+
+    if (routineName.length === 0 || programName.length === 0) return '';
+    return `Adding to ${routineName} · ${programName}`;
+  }, [sessionId, programId, targetRoutine, program, draftRoutine, draftName]);
 
   return (
     <View className="flex-1 gap-3 pt-2">
       <View className="gap-3 px-4">
-        {noticeProgramName.length > 0 && noticeDayLabel.length > 0 ? (
-          <PickerNotice dayLabel={noticeDayLabel} programName={noticeProgramName} />
-        ) : null}
+        {noticeText.length > 0 ? <PickerNotice text={noticeText} /> : null}
         <PickerSearchField value={query} onChange={setQuery} resultCount={options.length} />
         <PickerFilters value={filter} onChange={setFilter} />
       </View>

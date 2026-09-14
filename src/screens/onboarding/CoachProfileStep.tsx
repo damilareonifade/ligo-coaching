@@ -2,14 +2,17 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { LIButton, LIChip, LIInput, LIText } from '@/components/ui';
+import { COACH_SPECIALTIES } from '@/lib/coachSettings';
 import { useOnboardingStore } from '@/store/onboardingStore';
 
 import { OnboardingBackButton } from './OnboardingBackButton';
 
-const SPECIALTY_OPTIONS = ['Strength', 'Hypertrophy', 'Weight loss', 'Mobility'] as const;
-
 export default function CoachProfileStep() {
   const router = useRouter();
+  // The first coach step is always arrived at by `replace` — from signup, from
+  // the Google role picker, or from the onboarding gate — so there is nothing
+  // behind it to pop. A back button that does nothing is worse than none.
+  const canGoBack = router.canGoBack();
   const name = useOnboardingStore((state) => state.name);
   const email = useOnboardingStore((state) => state.email);
   const setDetails = useOnboardingStore((state) => state.setDetails);
@@ -21,7 +24,7 @@ export default function CoachProfileStep() {
 
   return (
     <View className="flex-1 gap-6 px-6 pt-2">
-      <OnboardingBackButton onPress={() => router.back()} />
+      {canGoBack ? <OnboardingBackButton onPress={() => router.back()} /> : null}
 
       <View className="gap-2">
         <LIText
@@ -82,7 +85,7 @@ export default function CoachProfileStep() {
           className="font-geist-medium text-ink"
         />
         <View className="flex-row flex-wrap gap-2">
-          {SPECIALTY_OPTIONS.map((specialty) => (
+          {COACH_SPECIALTIES.map((specialty) => (
             <LIChip
               key={specialty}
               label={specialty}

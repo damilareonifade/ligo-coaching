@@ -6,6 +6,7 @@ export { LICard, type LICardProps } from './LICard';
 export { LICheckbox, type LICheckboxProps } from './LICheckbox';
 export { LIChip, type LIChipProps } from './LIChip';
 export { LIChipGroup, type LIChipGroupProps, type LIChipOption } from './LIChipGroup';
+export { LIDialog, type LIDialogProps } from './LIDialog';
 export { LIDivider } from './LIDivider';
 export { LIEmptyState, type LIEmptyStateProps } from './LIEmptyState';
 export { LIErrorState, type LIErrorStateProps } from './LIErrorState';

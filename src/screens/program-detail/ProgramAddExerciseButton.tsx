@@ -7,19 +7,19 @@ import { tokens } from '@/theme/tokens';
 
 interface ProgramAddExerciseButtonProps {
   readonly programId: string;
-  readonly dayId: string;
+  readonly routineId: string;
 }
 
-/** Carries the day it was tapped from, so the picker can say where it lands. */
+/** Carries the routine it was tapped from, so the picker can say where it lands. */
 export default function ProgramAddExerciseButton({
   programId,
-  dayId,
+  routineId,
 }: ProgramAddExerciseButtonProps) {
   const router = useRouter();
 
   const openPicker = useCallback(
-    () => router.push({ pathname: '/programs/picker', params: { programId, dayId } }),
-    [router, programId, dayId],
+    () => router.push({ pathname: '/programs/picker', params: { programId, routineId } }),
+    [router, programId, routineId],
   );
 
   return (

@@ -3,9 +3,6 @@ import { RefreshControl, ScrollView } from 'react-native';
 import type { ApiClientSession, ApiTrainOverview } from '@/api/types';
 import { tokens } from '@/theme/tokens';
 
-import TrainNextUpCard from './TrainNextUpCard';
-import TrainProgramCard from './TrainProgramCard';
-import TrainQuickActions from './TrainQuickActions';
 import TrainResumeBanner from './TrainResumeBanner';
 import TrainRoutines from './TrainRoutines';
 
@@ -14,8 +11,13 @@ interface TrainContentProps {
   readonly activeSession: ApiClientSession | null;
   readonly refreshing: boolean;
   readonly onRefresh: () => void;
-  readonly onStart: (planId: string) => void;
-  readonly starting: boolean;
+  readonly onStart: (routineId: string) => void;
+  readonly onDelete: (routineId: string) => void;
+  readonly onDeleteAll: () => void;
+  readonly onDecideUpdate: (routineId: string, accept: boolean) => void;
+  readonly decidingId: string | null;
+  readonly pendingPlanId: string | null;
+  readonly busy: boolean;
 }
 
 export default function TrainContent({
@@ -24,7 +26,12 @@ export default function TrainContent({
   refreshing,
   onRefresh,
   onStart,
-  starting,
+  onDelete,
+  onDeleteAll,
+  onDecideUpdate,
+  decidingId,
+  pendingPlanId,
+  busy,
 }: TrainContentProps) {
   return (
     <ScrollView
@@ -35,15 +42,17 @@ export default function TrainContent({
       }
     >
       <TrainResumeBanner session={activeSession} />
-      <TrainNextUpCard
-        plan={overview.nextUp}
-        preview={overview.nextUpPreview}
+      <TrainRoutines
+        routines={overview.routines}
+        week={overview.week}
         onStart={onStart}
-        starting={starting}
+        onDelete={onDelete}
+        onDeleteAll={onDeleteAll}
+        onDecideUpdate={onDecideUpdate}
+        decidingId={decidingId}
+        startingId={pendingPlanId}
+        disabled={busy}
       />
-      <TrainQuickActions />
-      <TrainRoutines routines={overview.routines} />
-      {overview.program ? <TrainProgramCard program={overview.program} /> : null}
     </ScrollView>
   );
 }

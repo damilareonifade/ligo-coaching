@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
-import { LIModal } from '@/components/LIModal';
-import { LIButton, LIText } from '@/components/ui';
+import { LIButton, LIDialog, LIText } from '@/components/ui';
 
 export interface LeaveConsequence {
   readonly id: string;
@@ -44,6 +43,10 @@ interface LeaveSheetProps {
  * Everything that differs between the three is a prop; nothing branches on
  * which caller it is. That is what keeps a fourth caller from arriving as a
  * fourth variant of this file.
+ *
+ * Drawn through `LIDialog` rather than `LIModal`: the bottom sheet sizes
+ * itself by measuring its content and can present at zero height, which is how
+ * "Detach coach" came to do nothing at all. A confirmation has to open.
  */
 export default function LeaveSheet({
   visible,
@@ -58,7 +61,7 @@ export default function LeaveSheet({
   testID,
 }: LeaveSheetProps) {
   return (
-    <LIModal visible={visible} onClose={onClose} title={title}>
+    <LIDialog visible={visible} onClose={onClose} title={title}>
       <View className="gap-4" testID={testID}>
         <LIText size="p" color="body" text={body} className="font-geist" />
 
@@ -104,6 +107,6 @@ export default function LeaveSheet({
           />
         </View>
       </View>
-    </LIModal>
+    </LIDialog>
   );
 }

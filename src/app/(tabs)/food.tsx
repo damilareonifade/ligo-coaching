@@ -4,6 +4,8 @@ import { useFoodDayQuery, useLogFoodMutation } from '@/api/clientNutrition';
 import { errorMessage } from '@/api/client';
 import type { ApiQuickFood } from '@/api/types';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import { formatToday } from '@/lib/format';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import FoodContent from '@/screens/food/FoodContent';
 import FoodSkeleton from '@/screens/food/FoodSkeleton';
 import { useUiStore } from '@/store/uiStore';
@@ -33,6 +35,7 @@ export default function FoodScreen() {
   if (isPending) {
     return (
       <LISafeArea>
+        <ScreenHeader title="Food" eyebrow={formatToday()} />
         <FoodSkeleton />
       </LISafeArea>
     );
@@ -41,6 +44,7 @@ export default function FoodScreen() {
   if (error || !data) {
     return (
       <LISafeArea>
+        <ScreenHeader title="Food" eyebrow={formatToday()} />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -48,6 +52,7 @@ export default function FoodScreen() {
 
   return (
     <LISafeArea>
+      <ScreenHeader title="Food" eyebrow={formatToday()} />
       <FoodContent
         day={data}
         refreshing={isRefetching}

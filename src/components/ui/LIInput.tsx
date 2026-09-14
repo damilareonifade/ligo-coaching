@@ -41,6 +41,11 @@ export interface LIInputProps
    * reach the border, e.g. `border-violet` while the field has focus.
    */
   readonly fieldClassName?: string;
+  /**
+   * Merged onto the `TextInput` itself — for a field whose text is not body
+   * copy, such as the big centred number on the workout set editor.
+   */
+  readonly inputClassName?: string;
   /** Rendered inside the field, before the text — a search or currency glyph. */
   readonly leading?: ReactNode;
   /** Rendered inside the field, after the text — a clear or unit affordance. */
@@ -55,6 +60,7 @@ export const LIInput = forwardRef<TextInput, LIInputProps>(function LIInput(
     containerClassName,
     labelClassName,
     fieldClassName,
+    inputClassName,
     leading,
     trailing,
     variant = 'outline',
@@ -84,7 +90,7 @@ export const LIInput = forwardRef<TextInput, LIInputProps>(function LIInput(
         {leading}
         <TextInput
           ref={ref}
-          className="flex-1 text-p text-dark-gray"
+          className={cn('flex-1 text-p text-dark-gray', inputClassName)}
           placeholder={placeholder}
           placeholderTextColor={tokens.muted}
           secureTextEntry={isPassword && !revealed}

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 
 import type { ApiProgramSummary, ApiRosterClient } from '@/api/types';
-import { LIEmptyState, LIText } from '@/components/ui';
+import { LIEmptyState } from '@/components/ui';
 import { tokens } from '@/theme/tokens';
 
 import ProgramCard from './ProgramCard';
@@ -42,8 +42,6 @@ export default function ProgramsContent({
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={tokens.violet} />
       }
     >
-      <LIText size="h2" color="primary" text="Programs" className="font-geist-bold" />
-
       {programs.length === 0 ? (
         <LIEmptyState
           title="No programs yet"

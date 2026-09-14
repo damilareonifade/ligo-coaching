@@ -3,12 +3,13 @@ import { useCallback } from 'react';
 
 import { useBoardQuery } from '@/api/community';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import BoardContent from '@/screens/community-board/BoardContent';
 import BoardSkeleton from '@/screens/community-board/BoardSkeleton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — the header owns the top inset, so no safe-area edges here. */
+/** Composer only — ScreenHeader sits inside the safe area, which owns the inset. */
 export default function CommunityBoardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isPending, error, refetch, isRefetching } = useBoardQuery(id);
@@ -19,7 +20,12 @@ export default function CommunityBoardScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Leaderboard"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <BoardSkeleton />
       </LISafeArea>
     );
@@ -27,14 +33,24 @@ export default function CommunityBoardScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Leaderboard"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="Leaderboard"
+        eyebrow="Community"
+        backLabel="Community"
+      />
       <BoardContent board={data} refreshing={isRefetching} onRefresh={refresh} />
     </LISafeArea>
   );

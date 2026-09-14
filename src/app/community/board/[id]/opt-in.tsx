@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useClientProfileQuery } from '@/api/clientProfile';
 import { useBoardQuery } from '@/api/community';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import OptInContent from '@/screens/board-optin/OptInContent';
 import OptInSkeleton from '@/screens/board-optin/OptInSkeleton';
 
@@ -29,7 +30,12 @@ export default function BoardOptInScreen() {
 
   if (board.isPending || profile.isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Join leaderboard"
+          eyebrow="Leaderboard"
+          backLabel="Leaderboard"
+        />
         <OptInSkeleton />
       </LISafeArea>
     );
@@ -39,14 +45,24 @@ export default function BoardOptInScreen() {
 
   if (error || !board.data || !profile.data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Join leaderboard"
+          eyebrow="Leaderboard"
+          backLabel="Leaderboard"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="Join leaderboard"
+        eyebrow="Leaderboard"
+        backLabel="Leaderboard"
+      />
       <OptInContent board={board.data} realName={profile.data.name} />
     </LISafeArea>
   );

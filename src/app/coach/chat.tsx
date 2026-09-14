@@ -2,12 +2,13 @@ import { useCallback } from 'react';
 
 import { useClientChatQuery } from '@/api/clientChat';
 import { LIErrorState, LISafeArea } from '@/components/ui';
-import ChatSkeleton from '@/screens/chat/ChatSkeleton';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
+import ChatSkeleton from '@/components/chat/ChatSkeleton';
 import ChatContent from '@/screens/coach-chat/ChatContent';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — the header owns the top inset, so no safe-area edges here. */
+/** Composer only — ScreenHeader sits inside the safe area, which owns the inset. */
 export default function CoachChatScreen() {
   const { data, isPending, error, refetch } = useClientChatQuery();
 
@@ -18,6 +19,11 @@ export default function CoachChatScreen() {
   if (isPending) {
     return (
       <LISafeArea edges={['bottom']}>
+        <ScreenHeader
+          title="Messages"
+          eyebrow="Your coach"
+          backLabel="Back"
+        />
         <ChatSkeleton />
       </LISafeArea>
     );
@@ -26,6 +32,11 @@ export default function CoachChatScreen() {
   if (error || !data) {
     return (
       <LISafeArea edges={['bottom']}>
+        <ScreenHeader
+          title="Messages"
+          eyebrow="Your coach"
+          backLabel="Back"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -33,6 +44,11 @@ export default function CoachChatScreen() {
 
   return (
     <LISafeArea edges={['bottom']}>
+      <ScreenHeader
+        title="Messages"
+        eyebrow="Your coach"
+        backLabel="Back"
+      />
       <ChatContent chat={data} />
     </LISafeArea>
   );

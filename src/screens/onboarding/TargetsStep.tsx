@@ -2,14 +2,12 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { LIButton, LICard, LIChip, LISegmented, LIText } from '@/components/ui';
+import { UNIT_CHOICES } from '@/lib/onboarding';
 import { useOnboardingStore } from '@/store/onboardingStore';
 
 import { OnboardingBackButton } from './OnboardingBackButton';
 
-const UNIT_OPTIONS = [
-  { label: 'kg · cm', value: 'kg · cm' },
-  { label: 'lb · in', value: 'lb · in' },
-] as const;
+const UNIT_OPTIONS = UNIT_CHOICES.map((choice) => ({ label: choice, value: choice }));
 
 const SESSION_OPTIONS = [2, 3, 4, 5, 6] as const;
 

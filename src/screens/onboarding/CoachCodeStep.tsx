@@ -2,38 +2,13 @@ import { useRouter } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { View } from 'react-native';
 
-import { LIButton, LIText } from '@/components/ui';
+import { useInviteCodeQuery } from '@/api/coachProfile';
+import { LIButton, LISkeleton, LIText } from '@/components/ui';
 import { useFinishOnboarding } from '@/hooks/useFinishOnboarding';
-import { useOnboardingStore } from '@/store/onboardingStore';
+import { useInviteCodeActions } from '@/hooks/useInviteCodeActions';
 import { tokens } from '@/theme/tokens';
-import { useUiStore } from '@/store/uiStore';
 
 import { OnboardingBackButton } from './OnboardingBackButton';
-
-const CODE_CHARS = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-
-/** Deterministic, not cryptographic — just stable per name so the demo reads consistently. */
-function generateInviteCode(name: string): string {
-  const trimmed = name.trim();
-  if (trimmed.length === 0) return 'SAM-4KQ2';
-
-  const firstWord = trimmed.split(/\s+/)[0].toUpperCase().replace(/[^A-Z]/g, '');
-  const prefix = (firstWord + 'XXX').slice(0, 3);
-
-  let hash = 0;
-  for (let index = 0; index < trimmed.length; index += 1) {
-    hash = (hash * 31 + trimmed.charCodeAt(index)) >>> 0;
-  }
-
-  let suffix = '';
-  let remaining = hash;
-  for (let index = 0; index < 4; index += 1) {
-    suffix += CODE_CHARS[remaining % CODE_CHARS.length];
-    remaining = Math.floor(remaining / CODE_CHARS.length);
-  }
-
-  return `${prefix}-${suffix}`;
-}
 
 const EXPECTATIONS = [
   "They'll see your name and specialties before attaching.",
@@ -43,11 +18,13 @@ const EXPECTATIONS = [
 
 export default function CoachCodeStep() {
   const router = useRouter();
-  const name = useOnboardingStore((state) => state.name);
   const finishOnboarding = useFinishOnboarding();
-  const showToast = useUiStore((state) => state.showToast);
 
-  const code = generateInviteCode(name);
+  // Read, not invented. The code is issued by the database the moment an
+  // account becomes a coach, so this screen shows the same one the roster and
+  // settings do — which was not true while it was computed from the name here.
+  const { data: code, isPending } = useInviteCodeQuery();
+  const { copy, share } = useInviteCodeActions(code);
 
   const handleFinish = () => {
     finishOnboarding();
@@ -80,31 +57,37 @@ export default function CoachCodeStep() {
       </View>
 
       <View className="items-center gap-2 rounded-card bg-white py-8">
-        <LIText
-          size="h1"
-          color="primary"
-          text={code}
-          className="tracking-[6px] font-mono text-ink"
-          testID="invite-code"
-        />
+        {isPending || !code ? (
+          <LISkeleton className="h-8 w-48" />
+        ) : (
+          <LIText
+            size="h1"
+            color="primary"
+            text={code}
+            className="tracking-[6px] font-mono text-ink"
+            testID="invite-code"
+          />
+        )}
       </View>
 
       <View className="flex-row gap-3">
         <LIButton
           title="Copy code"
-          onPress={() => showToast('Not connected yet', 'success')}
+          onPress={copy}
+          disabled={!code}
           variant="outline"
           className="flex-1 border-violet"
           labelClassName="text-violet"
           testID="copy-code"
         />
         <LIButton
-          title="Share link"
-          onPress={() => showToast('Not connected yet', 'success')}
+          title="Share code"
+          onPress={share}
+          disabled={!code}
           variant="outline"
           className="flex-1 border-violet"
           labelClassName="text-violet"
-          testID="share-link"
+          testID="share-code"
         />
       </View>
 

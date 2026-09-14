@@ -81,7 +81,11 @@ export default function OnboardingWelcome() {
         />
         <LIButton
           title="I have a coach invite"
-          onPress={() => router.push('/onboarding/attach-coach?direct=1')}
+          // Not `direct=1`: that flag means "opened from the profile by
+          // someone already onboarded", where declining should pop back. From
+          // here declining has to finish onboarding, or this button is a loop
+          // with the goals branch as its only exit.
+          onPress={() => router.push('/onboarding/attach-coach')}
           variant="outline"
           fullWidth
           size="lg"

@@ -9,16 +9,16 @@ import { LIButton, LICard, LIText } from '@/components/ui';
  */
 export default function PickerCreateCard() {
   const router = useRouter();
-  const { programId, dayId } = useLocalSearchParams<{ programId?: string; dayId?: string }>();
+  const { programId, routineId } = useLocalSearchParams<{ programId?: string; routineId?: string }>();
   // Carried through so "Save and add" can put the new exercise straight on the
   // day the coach opened the picker for.
   const createExercise = useCallback(() => {
     const params = new URLSearchParams();
     if (programId) params.set('programId', programId);
-    if (dayId) params.set('dayId', dayId);
+    if (routineId) params.set('routineId', routineId);
     const query = params.toString();
     router.push(query ? `/programs/new-exercise?${query}` : '/programs/new-exercise');
-  }, [router, programId, dayId]);
+  }, [router, programId, routineId]);
 
   return (
     <LICard className="gap-3 border border-dashed border-hairline-strong bg-transparent">

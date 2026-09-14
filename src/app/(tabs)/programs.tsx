@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useProgramLibraryQuery } from '@/api/coachPrograms';
 import { useRosterQuery } from '@/api/roster';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import ProgramsContent from '@/screens/programs/ProgramsContent';
 import ProgramsSkeleton from '@/screens/programs/ProgramsSkeleton';
 
@@ -24,6 +25,7 @@ export default function ProgramsScreen() {
   if (library.isPending || roster.isPending) {
     return (
       <LISafeArea>
+        <ScreenHeader title="Programs" eyebrow="Your library" />
         <ProgramsSkeleton />
       </LISafeArea>
     );
@@ -32,6 +34,7 @@ export default function ProgramsScreen() {
   if (library.error || !library.data) {
     return (
       <LISafeArea>
+        <ScreenHeader title="Programs" eyebrow="Your library" />
         <LIErrorState message={library.error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -39,6 +42,7 @@ export default function ProgramsScreen() {
 
   return (
     <LISafeArea>
+      <ScreenHeader title="Programs" eyebrow="Your library" />
       <ProgramsContent
         programs={library.data}
         clients={roster.data?.clients ?? []}

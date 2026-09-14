@@ -1,27 +1,26 @@
 import { View } from 'react-native';
 
-import type { ApiClientDay } from '@/api/types';
-import { LIBadge, LICard, LIText, type LIBadgeProps } from '@/components/ui';
-
-/** Tag → badge tone. Anything unrecognised reads as neutral, never as an error. */
-function toneForTag(tag: string): NonNullable<LIBadgeProps['tone']> {
-  switch (tag) {
-    case 'Today':
-      return 'violet';
-    case 'Done':
-      return 'success';
-    case 'Missed':
-      return 'danger';
-    default:
-      return 'neutral';
-  }
-}
+import type { ApiWeeklyProgress } from '@/api/types';
+import { LICard, LIText } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 interface TodayWeekProps {
-  readonly week: readonly ApiClientDay[];
+  readonly week: ApiWeeklyProgress;
 }
 
+/**
+ * How much training has happened this week, against the target.
+ *
+ * It reports; it does not predict. This used to be a Mon–Fri strip tagging
+ * days "Planned" and "Missed", which claimed a calendar the app does not have:
+ * a program is a rotation the client works through at their own pace, so no
+ * routine is due on any day and none can be late. Counting what was done is
+ * the only honest thing to say.
+ */
 export default function TodayWeek({ week }: TodayWeekProps) {
+  const marks = Array.from({ length: Math.max(week.target, week.done) }, (_, index) => index);
+  const met = week.done >= week.target;
+
   return (
     <View className="gap-2">
       <LIText
@@ -31,38 +30,50 @@ export default function TodayWeek({ week }: TodayWeekProps) {
         className="font-geist-medium uppercase tracking-wide"
       />
 
-      {week.length === 0 ? (
-        <LICard>
+      <LICard className="gap-3">
+        <View className="flex-row items-baseline gap-2">
+          <LIText
+            size="h3"
+            color="primary"
+            text={`${week.done} of ${week.target}`}
+            className="font-geist-semibold"
+          />
           <LIText
             size="caption"
             color="muted"
-            text="Nothing planned this week yet."
+            text={week.target === 1 ? 'session' : 'sessions'}
             className="font-geist"
           />
-        </LICard>
-      ) : (
-        <LICard className="gap-3">
-          {week.map((day) => (
-            <View key={day.day} className="flex-row items-center gap-3">
-              <LIText
-                size="caption"
-                color="muted"
-                text={day.day}
-                className="w-10 font-geist-medium"
-              />
-              <View className="flex-1 gap-0.5">
-                <LIText size="h5" color="primary" text={day.title} className="font-geist-medium" />
-                <LIText size="caption" color="muted" text={day.meta} className="font-geist" />
-              </View>
-              <LIBadge
-                tone={toneForTag(day.tag)}
-                label={day.tag}
-                labelClassName="font-geist-medium"
-              />
-            </View>
+        </View>
+
+        <View
+          className="flex-row items-center gap-1.5"
+          accessibilityRole="progressbar"
+          accessibilityLabel={`${week.done} of ${week.target} sessions this week`}
+          accessibilityValue={{ min: 0, max: week.target, now: week.done }}
+        >
+          {marks.map((index) => (
+            <View
+              key={index}
+              className={cn(
+                'h-2 flex-1 rounded-pill',
+                index < week.done ? (met ? 'bg-success' : 'bg-violet') : 'bg-field',
+              )}
+            />
           ))}
-        </LICard>
-      )}
+        </View>
+
+        <LIText
+          size="caption"
+          color="muted"
+          text={
+            met
+              ? 'Target met. Anything more is a bonus.'
+              : 'Train on whichever days suit you — nothing is scheduled.'
+          }
+          className="font-geist"
+        />
+      </LICard>
     </View>
   );
 }

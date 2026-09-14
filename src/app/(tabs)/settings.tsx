@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
-import { View } from 'react-native';
 
 import { useDeviceSessionsQuery, useRevokeDeviceSessionMutation } from '@/api/appSessions';
-import { useCoachProfileQuery } from '@/api/coachProfile';
-import { LIErrorState, LISafeArea, LIText } from '@/components/ui';
+import { useCoachProfileQuery, useInviteCodeQuery } from '@/api/coachProfile';
+import { LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import CoachSettingsContent from '@/screens/coach-settings/CoachSettingsContent';
+import CoachSettingsFallback from '@/screens/coach-settings/CoachSettingsFallback';
 import CoachSettingsSkeleton from '@/screens/coach-settings/CoachSettingsSkeleton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
@@ -18,9 +19,11 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
  */
 export default function CoachSettingsScreen() {
   const { data, isPending, error, refetch, isRefetching } = useCoachProfileQuery();
-  // Real Supabase data on a screen whose profile is still mocked: the device
-  // list comes from public.sessions, so it is fetched here beside the profile
-  // rather than inside the card that renders it.
+  // Its own query, not a field on the profile: three screens show this code
+  // and it has one source, so none of them can drift from the others.
+  const { data: inviteCode } = useInviteCodeQuery();
+  // The device list comes from public.sessions, so it is fetched here beside
+  // the profile rather than inside the card that renders it.
   const devices = useDeviceSessionsQuery();
   const revoke = useRevokeDeviceSessionMutation();
 
@@ -38,19 +41,20 @@ export default function CoachSettingsScreen() {
 
   return (
     <LISafeArea>
-      <View className="px-4 pt-2">
-        <LIText size="h2" color="primary" text="Settings" className="font-geist-bold" />
-      </View>
-
+      <ScreenHeader title="Settings" eyebrow="Your account" />
       {isPending ? <CoachSettingsSkeleton /> : null}
 
+      {/* Sign out lives in here as well as in the list below — the list is in
+          the success branch, and a coach who cannot load this screen is
+          exactly the coach who needs to get out of the account. */}
       {!isPending && (error || !data) ? (
-        <LIErrorState message={error?.message} onRetry={refresh} />
+        <CoachSettingsFallback message={error?.message} onRetry={refresh} />
       ) : null}
 
       {!isPending && data ? (
         <CoachSettingsContent
           profile={data}
+          inviteCode={inviteCode}
           devices={devices.data ?? []}
           onRevokeDevice={handleRevoke}
           revokingDeviceId={revoke.isPending ? (revoke.variables ?? null) : null}

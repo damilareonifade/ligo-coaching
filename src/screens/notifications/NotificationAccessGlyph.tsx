@@ -1,25 +1,25 @@
 import { ShieldCheck, ShieldOff } from 'lucide-react-native';
 import { View } from 'react-native';
 
-import type { ActivityKind } from '@/api/types';
-import { isAccessLoss } from '@/lib/activity';
+import type { NotificationKind } from '@/api/types';
+import { isAccessLoss } from '@/lib/notifications';
 import { cn } from '@/lib/utils';
 import { tokens } from '@/theme/tokens';
 
-interface ActivityAccessGlyphProps {
-  readonly kind: ActivityKind;
+interface NotificationAccessGlyphProps {
+  readonly kind: NotificationKind;
 }
 
 /**
- * Pinned to the corner of the avatar, and only ever on the four access kinds.
- * The point is that it is the *only* glyph in the feed: a coach scrolling past
- * a column of plain initials sees a shield and knows, before reading a word,
- * that this row is about what he can see rather than about training.
+ * Pinned to the corner of the avatar, and only ever on the access kinds. The
+ * point is that it is the *only* glyph in the feed: anyone scrolling past a
+ * column of plain initials sees a shield and knows, before reading a word,
+ * that this row is about what somebody can see rather than about training.
  *
  * Open shield for a grant, struck-through for a loss — the two are both access
  * news and must both stand out, but they are not the same news.
  */
-export default function ActivityAccessGlyph({ kind }: ActivityAccessGlyphProps) {
+export default function NotificationAccessGlyph({ kind }: NotificationAccessGlyphProps) {
   const lost = isAccessLoss(kind);
   const Icon = lost ? ShieldOff : ShieldCheck;
 

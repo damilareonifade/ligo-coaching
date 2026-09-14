@@ -2,7 +2,8 @@ import { View } from 'react-native';
 
 import { LICard, LIText } from '@/components/ui';
 import { useElapsedMs } from '@/hooks/useElapsedMs';
-import { formatElapsed, formatVolumeKg } from '@/lib/format';
+import { useUnits } from '@/hooks/useUnits';
+import { formatElapsed } from '@/lib/format';
 
 interface StatCardProps {
   readonly label: string;
@@ -29,12 +30,13 @@ interface SessionStatsProps {
 }
 
 export default function SessionStats({ startedAtMs, volumeKg }: SessionStatsProps) {
+  const units = useUnits();
   const elapsedMs = useElapsedMs(startedAtMs);
 
   return (
     <View className="flex-row gap-3">
       <StatCard label="Elapsed" value={formatElapsed(elapsedMs)} />
-      <StatCard label="Volume" value={formatVolumeKg(volumeKg)} />
+      <StatCard label="Volume" value={units.formatVolume(volumeKg)} />
     </View>
   );
 }

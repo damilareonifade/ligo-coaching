@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { useClientReviewQuery } from '@/api/coachClient';
 import { useRosterQuery } from '@/api/roster';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import ReviewContent from '@/screens/client-review/ReviewContent';
 import ReviewSkeleton from '@/screens/client-review/ReviewSkeleton';
 
@@ -31,7 +32,12 @@ export default function ClientReviewScreen() {
 
   if (reviewQuery.isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Client"
+          eyebrow="Roster"
+          backLabel="Roster"
+        />
         <ReviewSkeleton />
       </LISafeArea>
     );
@@ -39,14 +45,24 @@ export default function ClientReviewScreen() {
 
   if (reviewQuery.error || !reviewQuery.data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Client"
+          eyebrow="Roster"
+          backLabel="Roster"
+        />
         <LIErrorState message={reviewQuery.error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="Client"
+        eyebrow="Roster"
+        backLabel="Roster"
+      />
       <ReviewContent
         review={reviewQuery.data}
         labels={rosterQuery.data?.labels ?? []}

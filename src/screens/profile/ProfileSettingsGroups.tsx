@@ -5,8 +5,8 @@ import type { ApiSettingsGroup, ApiSettingsRow } from '@/api/types';
 import { LICard, LIText } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 
-import ProfileRow from './ProfileRow';
-import { useRowAction } from './useRowAction';
+import ProfileRow from '@/components/profile/ProfileRow';
+import { useRowAction } from '@/components/profile/useRowAction';
 
 /** The one row that does something irreversible on tap rather than navigating. */
 const SIGN_OUT_ROW_ID = 'sign-out';

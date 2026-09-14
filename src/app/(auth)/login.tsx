@@ -10,7 +10,7 @@ import LoginFooter from '@/screens/auth/LoginFooter';
 import LoginForm, { type LoginValues } from '@/screens/auth/LoginForm';
 import LoginHeader from '@/screens/auth/LoginHeader';
 import LoginPrivacyNote from '@/screens/auth/LoginPrivacyNote';
-import SocialSignIn from '@/screens/auth/SocialSignIn';
+import SocialSignIn from '@/components/auth/SocialSignIn';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
 
@@ -28,7 +28,10 @@ export default function LoginScreen() {
     async (values: LoginValues) => {
       try {
         const result = await mutateAsync(values);
-        await signIn(result);
+        // The profile decides both gates in the tab layout — whether a role is
+        // still owed, and whether onboarding was ever finished. Routing to '/'
+        // is right either way: the layout redirects from there.
+        await signIn(result.session, result.profile);
         router.replace('/');
       } catch (error) {
         showToast(errorMessage(error), 'danger');

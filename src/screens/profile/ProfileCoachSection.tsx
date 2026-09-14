@@ -5,12 +5,12 @@ import { Pressable, View } from 'react-native';
 import { errorMessage } from '@/api/client';
 import { useDetachCoachMutation } from '@/api/clientProfile';
 import type { ApiClientCoachSummary, ApiSettingsRow } from '@/api/types';
+import ProfileRow from '@/components/profile/ProfileRow';
+import { useRowAction } from '@/components/profile/useRowAction';
 import { LIAvatar, LIBadge, LIButton, LICard, LIText } from '@/components/ui';
 import { useUiStore } from '@/store/uiStore';
 
 import DetachCoachSheet from './DetachCoachSheet';
-import ProfileRow from './ProfileRow';
-import { useRowAction } from './useRowAction';
 
 interface ProfileCoachSectionProps {
   readonly coach: ApiClientCoachSummary | null;
@@ -27,7 +27,7 @@ const DETACH_ROW_ID = 'detach';
  *
  * Detaching is handled here rather than through `useRowAction` because it is
  * the one coach row that is not navigation. Everything else on this card opens
- * a screen; this one opens a sheet and then ends an attachment, so it keeps
+ * a screen; this one opens a dialog and then ends an attachment, so it keeps
  * the mutation next to the section whose data it clears.
  */
 export default function ProfileCoachSection({ coach, rows }: ProfileCoachSectionProps) {
@@ -40,17 +40,6 @@ export default function ProfileCoachSection({ coach, rows }: ProfileCoachSection
   const openCoach = useCallback(() => router.push('/coach/chat'), [router]);
   const addCoach = useCallback(() => router.push('/onboarding/attach-coach?direct=1'), [router]);
 
-  const pressRow = useCallback(
-    (row: ApiSettingsRow) => {
-      if (row.id === DETACH_ROW_ID) {
-        setDetaching(true);
-        return;
-      }
-      handleRow(row);
-    },
-    [handleRow],
-  );
-
   const confirmDetach = useCallback(() => {
     detach.mutate(undefined, {
       onSuccess: () => {
@@ -62,6 +51,17 @@ export default function ProfileCoachSection({ coach, rows }: ProfileCoachSection
   }, [detach, showToast]);
 
   const closeDetach = useCallback(() => setDetaching(false), []);
+
+  const pressRow = useCallback(
+    (row: ApiSettingsRow) => {
+      if (row.id === DETACH_ROW_ID) {
+        setDetaching(true);
+        return;
+      }
+      handleRow(row);
+    },
+    [handleRow],
+  );
 
   return (
     <View className="gap-2">

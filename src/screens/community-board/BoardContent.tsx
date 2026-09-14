@@ -8,7 +8,7 @@ import { useLeaveBoardMutation } from '@/api/community';
 import type { ApiBoardRow, ApiCommunityBoard } from '@/api/types';
 import { LIButton, LIList, LIText } from '@/components/ui';
 import { BOARD_SHARE_NOTE, ordinal } from '@/lib/community';
-import LeaveSheet, { type LeaveConsequence } from '@/screens/community-shared/LeaveSheet';
+import LeaveSheet, { type LeaveConsequence } from '@/components/community/LeaveSheet';
 import { useUiStore } from '@/store/uiStore';
 import { tokens } from '@/theme/tokens';
 

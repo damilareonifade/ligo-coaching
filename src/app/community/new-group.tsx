@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import { useRosterQuery } from '@/api/roster';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import NewGroupContent from '@/screens/new-group/NewGroupContent';
 import NewGroupSkeleton from '@/screens/new-group/NewGroupSkeleton';
 
@@ -23,7 +24,12 @@ export default function NewGroupScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="New group"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <NewGroupSkeleton />
       </LISafeArea>
     );
@@ -31,14 +37,24 @@ export default function NewGroupScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="New group"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="New group"
+        eyebrow="Community"
+        backLabel="Community"
+      />
       <NewGroupContent clients={data.clients} />
     </LISafeArea>
   );

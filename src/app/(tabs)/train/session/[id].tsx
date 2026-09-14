@@ -8,7 +8,12 @@ import SessionSkeleton from '@/screens/session/SessionSkeleton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only: every fetch for this screen happens here, once. */
+/**
+ * Composer only: every fetch for this screen happens here, once.
+ *
+ * Keeps the default top inset — unlike every other route in this stack the
+ * workout draws its own header, so nothing above it is reserving that space.
+ */
 export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionQuery = useClientSessionQuery(id ?? '');
@@ -19,7 +24,7 @@ export default function SessionScreen() {
 
   if (sessionQuery.isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
         <SessionSkeleton />
       </LISafeArea>
     );
@@ -27,14 +32,14 @@ export default function SessionScreen() {
 
   if (sessionQuery.error || !sessionQuery.data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
         <LIErrorState message={sessionQuery.error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
       <SessionContent session={sessionQuery.data} />
     </LISafeArea>
   );

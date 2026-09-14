@@ -13,9 +13,9 @@ import {
   boardWindowLabel,
   inviteSummaryLine,
 } from '@/lib/community';
-import CommunityEyebrow from '@/screens/community-shared/CommunityEyebrow';
-import InviteSummaryCard from '@/screens/community-shared/InviteSummaryCard';
-import RosterPickList from '@/screens/community-shared/RosterPickList';
+import CommunityEyebrow from '@/components/community/CommunityEyebrow';
+import InviteSummaryCard from '@/components/community/InviteSummaryCard';
+import RosterPickList from '@/components/roster/RosterPickList';
 import { useUiStore } from '@/store/uiStore';
 
 import BoardWindowPicker from './BoardWindowPicker';

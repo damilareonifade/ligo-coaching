@@ -3,7 +3,8 @@ import { useCallback } from 'react';
 
 import { useCoachThreadQuery } from '@/api/coachMessages';
 import { LIErrorState, LISafeArea } from '@/components/ui';
-import ChatSkeleton from '@/screens/chat/ChatSkeleton';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
+import ChatSkeleton from '@/components/chat/ChatSkeleton';
 import CoachThreadContent from '@/screens/coach-thread/CoachThreadContent';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
@@ -20,6 +21,11 @@ export default function CoachThreadScreen() {
   if (isPending) {
     return (
       <LISafeArea edges={['bottom']}>
+        <ScreenHeader
+          title="Messages"
+          eyebrow="Thread"
+          backLabel="Messages"
+        />
         <ChatSkeleton />
       </LISafeArea>
     );
@@ -28,6 +34,11 @@ export default function CoachThreadScreen() {
   if (error || !data) {
     return (
       <LISafeArea edges={['bottom']}>
+        <ScreenHeader
+          title="Messages"
+          eyebrow="Thread"
+          backLabel="Messages"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -35,6 +46,11 @@ export default function CoachThreadScreen() {
 
   return (
     <LISafeArea edges={['bottom']}>
+      <ScreenHeader
+        title="Messages"
+        eyebrow="Thread"
+        backLabel="Messages"
+      />
       <CoachThreadContent thread={data} />
     </LISafeArea>
   );

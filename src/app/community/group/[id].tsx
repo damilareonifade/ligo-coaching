@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 
 import { useGroupQuery } from '@/api/community';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import { groupScreenTitle } from '@/lib/community';
 import GroupContent from '@/screens/community-group/GroupContent';
 import GroupSkeleton from '@/screens/community-group/GroupSkeleton';
@@ -28,6 +29,11 @@ export default function CommunityGroupScreen() {
   if (isPending) {
     return (
       <LISafeArea edges={['bottom']}>
+        <ScreenHeader
+          title="Group"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <GroupSkeleton />
       </LISafeArea>
     );
@@ -36,6 +42,11 @@ export default function CommunityGroupScreen() {
   if (error || !data) {
     return (
       <LISafeArea edges={['bottom']}>
+        <ScreenHeader
+          title="Group"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -43,6 +54,11 @@ export default function CommunityGroupScreen() {
 
   return (
     <LISafeArea edges={['bottom']}>
+      <ScreenHeader
+        title="Group"
+        eyebrow="Community"
+        backLabel="Community"
+      />
       <Stack.Screen options={{ title: groupScreenTitle(data.name) }} />
       <GroupContent group={data} />
     </LISafeArea>

@@ -5,23 +5,24 @@ import { View } from 'react-native';
 
 import { LIButton, LICard, LIText } from '@/components/ui';
 import { setsLabel } from '@/lib/programs';
-import { selectDraftDay, useProgramDraftStore } from '@/store/programDraftStore';
+import { selectDraftRoutine, useProgramDraftStore } from '@/store/programDraftStore';
 import { tokens } from '@/theme/tokens';
 
 import BuilderBlockRow from './BuilderBlockRow';
 
-/** The blocks on the day currently selected, and the way to add another. */
+/** The exercises in the selected routine, and the way to add another. */
 export default function BuilderBlockList() {
   const router = useRouter();
   const kind = useProgramDraftStore((state) => state.kind);
-  const day = useProgramDraftStore(selectDraftDay);
+  const routine = useProgramDraftStore(selectDraftRoutine);
   const removeBlock = useProgramDraftStore((state) => state.removeBlock);
+  const updateBlock = useProgramDraftStore((state) => state.updateBlock);
 
   // No programId: the picker adds straight to the draft, not to a saved program.
   const openPicker = useCallback(() => router.push('/programs/picker'), [router]);
 
-  const blocks = day?.blocks ?? [];
-  const heading = kind === 'routine' ? 'EXERCISES' : (day?.label ?? 'DAY 1').toUpperCase();
+  const blocks = routine?.blocks ?? [];
+  const heading = kind === 'routine' ? 'EXERCISES' : (routine?.name ?? 'ROUTINE 1').toUpperCase();
 
   return (
     <View className="gap-3">
@@ -52,7 +53,12 @@ export default function BuilderBlockList() {
       ) : (
         <View className="gap-2">
           {blocks.map((block) => (
-            <BuilderBlockRow key={block.id} block={block} onRemove={removeBlock} />
+            <BuilderBlockRow
+              key={block.id}
+              block={block}
+              onChange={updateBlock}
+              onRemove={removeBlock}
+            />
           ))}
         </View>
       )}

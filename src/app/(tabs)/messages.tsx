@@ -3,10 +3,11 @@ import { useCallback, useState } from 'react';
 import { useCoachGroupsQuery } from '@/api/community';
 import { useInboxQuery } from '@/api/coachMessages';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import CommunityCreateSheet from '@/screens/messages/CommunityCreateSheet';
 import InboxContent from '@/screens/messages/InboxContent';
 import InboxSkeleton from '@/screens/messages/InboxSkeleton';
-import MessagesTitle from '@/screens/messages/MessagesTitle';
+import MessagesNewButton from '@/screens/messages/MessagesNewButton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
@@ -37,7 +38,7 @@ export default function MessagesScreen() {
   if (isPending) {
     return (
       <LISafeArea>
-        <MessagesTitle />
+        <ScreenHeader title="Messages" eyebrow="Your clients" />
         <InboxSkeleton />
       </LISafeArea>
     );
@@ -46,7 +47,7 @@ export default function MessagesScreen() {
   if (error || !data) {
     return (
       <LISafeArea>
-        <MessagesTitle />
+        <ScreenHeader title="Messages" eyebrow="Your clients" />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -54,7 +55,11 @@ export default function MessagesScreen() {
 
   return (
     <LISafeArea>
-      <MessagesTitle onNew={openCreate} />
+      <ScreenHeader
+          title="Messages"
+          eyebrow="Your clients"
+          action={<MessagesNewButton onNew={openCreate} />}
+        />
       <InboxContent
         entries={data}
         groups={groups.data ?? []}

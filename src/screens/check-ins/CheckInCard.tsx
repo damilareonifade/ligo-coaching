@@ -1,12 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
+import { useUnits } from '@/hooks/useUnits';
 
 import type { ApiCheckIn } from '@/api/types';
 import { LIBadge, LIButton, LICard, LIText } from '@/components/ui';
 
 interface CheckInCardProps {
   readonly entry: ApiCheckIn;
+  /** Set when a coach is reading a client's — carried into the editor. */
+  readonly clientId?: string;
 }
 
 /** A drop reads as progress here; "—" is the first month, with nothing to compare. */
@@ -14,12 +17,19 @@ function deltaColor(delta: string): 'success' | 'muted' {
   return delta.startsWith('−') ? 'success' : 'muted';
 }
 
-export default function CheckInCard({ entry }: CheckInCardProps) {
+export default function CheckInCard({ entry, clientId }: CheckInCardProps) {
+  const units = useUnits();
   const router = useRouter();
 
   const edit = useCallback(
-    () => router.push({ pathname: '/check-ins/edit', params: { id: entry.id } }),
-    [entry.id, router],
+    () =>
+      router.push({
+        pathname: '/check-ins/edit',
+        // Whose, so the editor writes to the right person. Absent is the
+        // caller's own.
+        params: clientId ? { id: entry.id, clientId } : { id: entry.id },
+      }),
+    [clientId, entry.id, router],
   );
 
   return (
@@ -34,7 +44,7 @@ export default function CheckInCard({ entry }: CheckInCardProps) {
         <LIText
           size="p"
           color="body"
-          text={`${entry.weightKg} kg`}
+          text={units.formatWeight(Number(entry.weightKg))}
           className="font-geist-medium"
         />
         <LIText

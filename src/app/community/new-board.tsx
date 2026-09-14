@@ -2,12 +2,13 @@ import { useCallback } from 'react';
 
 import { useRosterQuery } from '@/api/roster';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import NewBoardContent from '@/screens/new-board/NewBoardContent';
 import NewBoardSkeleton from '@/screens/new-board/NewBoardSkeleton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — the header owns the top inset, so no safe-area edges here. */
+/** Composer only — ScreenHeader sits inside the safe area, which owns the inset. */
 export default function NewBoardScreen() {
   const { data, isPending, error, refetch } = useRosterQuery();
 
@@ -17,7 +18,12 @@ export default function NewBoardScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="New leaderboard"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <NewBoardSkeleton />
       </LISafeArea>
     );
@@ -25,14 +31,24 @@ export default function NewBoardScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="New leaderboard"
+          eyebrow="Community"
+          backLabel="Community"
+        />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="New leaderboard"
+        eyebrow="Community"
+        backLabel="Community"
+      />
       <NewBoardContent clients={data.clients} />
     </LISafeArea>
   );

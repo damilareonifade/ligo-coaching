@@ -1,19 +1,30 @@
+import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { useCallback } from 'react';
 import { Pressable } from 'react-native';
 
 import { LIText } from '@/components/ui';
-import { useUiStore } from '@/store/uiStore';
 import { tokens } from '@/theme/tokens';
 
-/** Stubbed until the exercise library ships — same pattern as SocialSignIn. */
-export default function SessionAddExercise() {
-  const showToast = useUiStore((state) => state.showToast);
-  const stub = useCallback(() => showToast('Not connected yet', 'success'), [showToast]);
+interface SessionAddExerciseProps {
+  readonly sessionId: string;
+}
+
+/**
+ * Opens the exercise library against this workout. The same picker the coach
+ * builds programs with — see `useAddExerciseToTarget`, which decides where a
+ * picked exercise lands.
+ */
+export default function SessionAddExercise({ sessionId }: SessionAddExerciseProps) {
+  const router = useRouter();
+
+  const open = useCallback(() => {
+    router.push({ pathname: '/programs/picker', params: { sessionId } });
+  }, [router, sessionId]);
 
   return (
     <Pressable
-      onPress={stub}
+      onPress={open}
       accessibilityRole="button"
       className="h-12 w-full flex-row items-center justify-center gap-2 rounded-card border border-dashed border-hairline-strong active:opacity-70"
       testID="session-add-exercise"

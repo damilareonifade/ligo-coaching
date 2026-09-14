@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 
 import { useLiveSessionQuery } from '@/api/coachClient';
 import { LIErrorState, LISafeArea } from '@/components/ui';
+import ScreenHeader from '@/components/chrome/ScreenHeader';
 import LiveContent from '@/screens/live-session/LiveContent';
 import LiveEndedState from '@/screens/live-session/LiveEndedState';
 import LiveSkeleton from '@/screens/live-session/LiveSkeleton';
@@ -25,7 +26,12 @@ export default function LiveSessionScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Live session"
+          eyebrow="Watching now"
+          backLabel="Client"
+        />
         <LiveSkeleton />
       </LISafeArea>
     );
@@ -33,7 +39,12 @@ export default function LiveSessionScreen() {
 
   if (error) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Live session"
+          eyebrow="Watching now"
+          backLabel="Client"
+        />
         <LIErrorState message={error.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -41,14 +52,24 @@ export default function LiveSessionScreen() {
 
   if (!data) {
     return (
-      <LISafeArea edges={[]}>
+      <LISafeArea>
+        <ScreenHeader
+          title="Live session"
+          eyebrow="Watching now"
+          backLabel="Client"
+        />
         <LiveEndedState clientId={clientId} />
       </LISafeArea>
     );
   }
 
   return (
-    <LISafeArea edges={[]}>
+    <LISafeArea>
+      <ScreenHeader
+        title="Live session"
+        eyebrow="Watching now"
+        backLabel="Client"
+      />
       <LiveContent session={data} refreshing={isRefetching} onRefresh={refresh} />
     </LISafeArea>
   );

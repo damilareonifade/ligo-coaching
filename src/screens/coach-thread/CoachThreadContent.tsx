@@ -4,10 +4,10 @@ import { KeyboardAvoidingView, Platform, View } from 'react-native';
 
 import { useSendCoachMessageMutation } from '@/api/coachMessages';
 import type { ApiCoachThread } from '@/api/types';
-import ChatArchivedNotice from '@/screens/chat/ChatArchivedNotice';
-import ChatComposer from '@/screens/chat/ChatComposer';
-import ChatHeaderCard from '@/screens/chat/ChatHeaderCard';
-import ChatThread from '@/screens/chat/ChatThread';
+import ChatArchivedNotice from '@/components/chat/ChatArchivedNotice';
+import ChatComposer from '@/components/chat/ChatComposer';
+import ChatHeaderCard from '@/components/chat/ChatHeaderCard';
+import ChatThread from '@/components/chat/ChatThread';
 
 interface CoachThreadContentProps {
   readonly thread: ApiCoachThread;

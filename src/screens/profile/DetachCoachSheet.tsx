@@ -1,6 +1,7 @@
 import { EyeOff, FileText, MessageSquareOff, ShieldCheck } from 'lucide-react-native';
 import { useMemo, type ReactNode } from 'react';
 
+import LeaveSheet, { type LeaveConsequence } from '@/components/community/LeaveSheet';
 import type { DetachConsequence } from '@/lib/detach';
 import {
   DETACH_CONFIRM_TITLE,
@@ -9,7 +10,6 @@ import {
   detachBody,
   detachTitle,
 } from '@/lib/detach';
-import LeaveSheet, { type LeaveConsequence } from '@/screens/community-shared/LeaveSheet';
 import { tokens } from '@/theme/tokens';
 
 interface DetachCoachSheetProps {
@@ -39,7 +39,7 @@ const ICONS: Record<DetachConsequence['id'], ReactNode> = {
 };
 
 /**
- * The client's side of every permission screen in the app, in one sheet.
+ * The client's side of every permission screen in the app, in one dialog.
  *
  * It is the same component the community leave flows use, with different rows
  * — deliberately, because the two are the same decision at different scales,

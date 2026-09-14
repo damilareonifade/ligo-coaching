@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import SocialSignIn from '@/screens/auth/SocialSignIn';
+import SocialSignIn from '@/components/auth/SocialSignIn';
 
 describe('SocialSignIn', () => {
   it('offers Google and passkey, not GitHub', async () => {

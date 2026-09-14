@@ -151,6 +151,42 @@ export type Database = {
           },
         ];
       };
+      catalogue_syncs: {
+        Row: {
+          id: string;
+          source: string;
+          started_at: string;
+          finished_at: string | null;
+          written: number;
+          requests: number;
+          dataset_etag: string | null;
+          error: string | null;
+          next_offset: number;
+        };
+        Insert: {
+          id?: string;
+          source: string;
+          started_at?: string;
+          finished_at?: string | null;
+          written?: number;
+          requests?: number;
+          dataset_etag?: string | null;
+          error?: string | null;
+          next_offset?: number;
+        };
+        Update: {
+          id?: string;
+          source?: string;
+          started_at?: string;
+          finished_at?: string | null;
+          written?: number;
+          requests?: number;
+          dataset_etag?: string | null;
+          error?: string | null;
+          next_offset?: number;
+        };
+        Relationships: [];
+      };
       client_profiles: {
         Row: {
           client_id: string;
@@ -366,6 +402,19 @@ export type Database = {
           muscle_group: string;
           created_at: string;
           updated_at: string;
+          source: string | null;
+          external_id: string | null;
+          gif_url: string | null;
+          body_part: string | null;
+          target: string | null;
+          equipment: string | null;
+          secondary_muscles: string[];
+          instructions: string[];
+          difficulty: string | null;
+          mechanic: string | null;
+          force: string | null;
+          synced_at: string | null;
+          gif_path: string | null;
         };
         Insert: {
           id?: string;
@@ -376,6 +425,19 @@ export type Database = {
           muscle_group?: string;
           created_at?: string;
           updated_at?: string;
+          source?: string | null;
+          external_id?: string | null;
+          gif_url?: string | null;
+          body_part?: string | null;
+          target?: string | null;
+          equipment?: string | null;
+          secondary_muscles?: string[];
+          instructions?: string[];
+          difficulty?: string | null;
+          mechanic?: string | null;
+          force?: string | null;
+          synced_at?: string | null;
+          gif_path?: string | null;
         };
         Update: {
           id?: string;
@@ -386,6 +448,19 @@ export type Database = {
           muscle_group?: string;
           created_at?: string;
           updated_at?: string;
+          source?: string | null;
+          external_id?: string | null;
+          gif_url?: string | null;
+          body_part?: string | null;
+          target?: string | null;
+          equipment?: string | null;
+          secondary_muscles?: string[];
+          instructions?: string[];
+          difficulty?: string | null;
+          mechanic?: string | null;
+          force?: string | null;
+          synced_at?: string | null;
+          gif_path?: string | null;
         };
         Relationships: [
           {
@@ -519,6 +594,7 @@ export type Database = {
           order_index: number;
           created_at: string;
           updated_at: string;
+          exercise_id: string | null;
         };
         Insert: {
           id?: string;
@@ -531,6 +607,7 @@ export type Database = {
           order_index?: number;
           created_at?: string;
           updated_at?: string;
+          exercise_id?: string | null;
         };
         Update: {
           id?: string;
@@ -543,8 +620,16 @@ export type Database = {
           order_index?: number;
           created_at?: string;
           updated_at?: string;
+          exercise_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'program_blocks_exercise_id_fkey';
+            columns: ['exercise_id'];
+            isOneToOne: false;
+            referencedRelation: 'exercises';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'program_blocks_program_routine_id_fkey';
             columns: ['program_routine_id'];
@@ -728,6 +813,7 @@ export type Database = {
           order_index: number;
           created_at: string;
           updated_at: string;
+          exercise_id: string | null;
         };
         Insert: {
           id?: string;
@@ -740,6 +826,7 @@ export type Database = {
           order_index?: number;
           created_at?: string;
           updated_at?: string;
+          exercise_id?: string | null;
         };
         Update: {
           id?: string;
@@ -752,8 +839,16 @@ export type Database = {
           order_index?: number;
           created_at?: string;
           updated_at?: string;
+          exercise_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'routine_blocks_exercise_id_fkey';
+            columns: ['exercise_id'];
+            isOneToOne: false;
+            referencedRelation: 'exercises';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'routine_blocks_routine_instance_id_fkey';
             columns: ['routine_instance_id'];
@@ -1085,6 +1180,7 @@ export type Database = {
           order_index: number;
           created_at: string;
           updated_at: string;
+          exercise_id: string | null;
         };
         Insert: {
           id?: string;
@@ -1095,6 +1191,7 @@ export type Database = {
           order_index?: number;
           created_at?: string;
           updated_at?: string;
+          exercise_id?: string | null;
         };
         Update: {
           id?: string;
@@ -1105,8 +1202,16 @@ export type Database = {
           order_index?: number;
           created_at?: string;
           updated_at?: string;
+          exercise_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workout_exercises_exercise_id_fkey';
+            columns: ['exercise_id'];
+            isOneToOne: false;
+            referencedRelation: 'exercises';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workout_exercises_workout_session_id_fkey';
             columns: ['workout_session_id'];
@@ -1230,7 +1335,13 @@ export type Database = {
         Returns: string;
       };
       add_session_exercise: {
-        Args: { p_workout_session_id: string; p_exercise_id: string; p_name: string; p_sets: Json };
+        Args: {
+          p_workout_session_id: string;
+          p_exercise_id: string;
+          p_name: string;
+          p_sets: Json;
+          p_catalogue_id?: string | null;
+        };
         Returns: undefined;
       };
       answer_access_request: {
@@ -1288,6 +1399,29 @@ export type Database = {
       domain_label: {
         Args: { p_domain: string };
         Returns: string;
+      };
+      exercise_filter_options: {
+        Args: Record<string, never>;
+        Returns: { kind: string; value: string; label: string; count: number }[];
+      };
+      exercise_meta: {
+        Args: { p_equipment: string; p_body_part: string };
+        Returns: string;
+      };
+      exercise_preview: {
+        Args: { p_exercise_id?: string | null; p_name?: string | null };
+        Returns: {
+          id: string;
+          name: string;
+          gif_path: string;
+          external_id: string;
+          body_part: string;
+          target: string;
+          equipment: string;
+          secondary_muscles: string[];
+          instructions: string[];
+          difficulty: string;
+        }[];
       };
       has_client_permission: {
         Args: { p_client_id: string; p_domain: string };

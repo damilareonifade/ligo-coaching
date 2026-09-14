@@ -124,6 +124,12 @@ export interface ApiExerciseOption {
   readonly tag: string;
   /** Picker section: "Recent" | "Chest" | "Back" | "Legs" | "Shoulders" */
   readonly group: string;
+  /**
+   * The catalogue's animation. `null` for an exercise somebody typed, and for
+   * a catalogue entry that has none — the row draws initials instead of a
+   * broken frame.
+   */
+  readonly gifUrl?: string | null;
 }
 
 export interface ApiAuthResult {
@@ -374,6 +380,12 @@ export interface ApiSessionSet {
 }
 
 export interface ApiSessionExercise {
+  /**
+   * Which catalogue entry this came from, for the preview. `null` for an
+   * exercise somebody typed, and for anything logged before the link existed
+   * — the name is then the only handle there is.
+   */
+  readonly exerciseId?: string | null;
   readonly id: string;
   readonly name: string;
   /**
@@ -735,6 +747,42 @@ export interface ApiRosterClient {
 export interface ApiRoster {
   readonly clients: readonly ApiRosterClient[];
   readonly labels: readonly ApiRosterLabel[];
+}
+
+/* ------------------------------------------------------------------ *
+ * The exercise catalogue.
+ *
+ * Imported from WorkoutX into `public.exercises` and read from there,
+ * so the picker answers instantly and answers offline — see the
+ * migration for why it is a copy rather than a proxy.
+ * ------------------------------------------------------------------ */
+
+/** One chip in the picker's filter rows, with how many exercises it holds. */
+export interface ApiExerciseFilterOption {
+  readonly kind: 'body_part' | 'equipment';
+  readonly value: string;
+  readonly label: string;
+  readonly count: number;
+}
+
+export interface ApiExercisePreview {
+  readonly id: string;
+  readonly name: string;
+  /**
+   * The stored animation. `null` until somebody opens this exercise for the
+   * first time — WorkoutX serves GIFs from an authenticated endpoint, so one
+   * is fetched server-side and kept rather than loaded from the phone.
+   */
+  readonly gifUrl: string | null;
+  /** The catalogue id, when this came from one. `null` means nothing to fetch. */
+  readonly externalId: string | null;
+  readonly bodyPart: string | null;
+  readonly target: string | null;
+  readonly equipment: string | null;
+  readonly secondaryMuscles: readonly string[];
+  /** Step by step. Empty for an exercise somebody invented. */
+  readonly instructions: readonly string[];
+  readonly difficulty: string | null;
 }
 
 /* ------------------------------------------------------------------ *

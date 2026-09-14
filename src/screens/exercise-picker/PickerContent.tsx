@@ -6,7 +6,8 @@ import { useExerciseOptionsQuery, useProgramDetailQuery } from '@/api/coachProgr
 import type { ApiExerciseOption } from '@/api/types';
 import { LIErrorState, LIList, LIText } from '@/components/ui';
 import { useAddExerciseToTarget } from '@/hooks/useAddExerciseToTarget';
-import { groupExerciseOptions, type ExerciseFilter } from '@/lib/programs';
+import { useExerciseFilterOptionsQuery } from '@/api/exerciseFilters';
+import { groupExerciseOptions, NO_EXERCISE_FILTER, type ExerciseFilter } from '@/lib/programs';
 import { selectDraftRoutine, useProgramDraftStore } from '@/store/programDraftStore';
 
 import PickerCreateCard from './PickerCreateCard';
@@ -35,7 +36,10 @@ export default function PickerContent() {
   }>();
 
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<ExerciseFilter>('all');
+  const [filter, setFilter] = useState<ExerciseFilter>(NO_EXERCISE_FILTER);
+  // The chips come from the catalogue, so they name what it actually holds.
+  // Not awaited: the search field and the list should not wait on chrome.
+  const filterOptions = useExerciseFilterOptionsQuery();
 
   const optionsQuery = useExerciseOptionsQuery(query, filter);
   // One path for both destinations — a saved program or the builder's draft.
@@ -68,7 +72,9 @@ export default function PickerContent() {
 
   const add = useCallback(
     (option: ApiExerciseOption) => {
-      addExercise(option.name);
+      // The option's id *is* the catalogue row's id — the picker reads
+      // public.exercises — so the block remembers where it came from.
+      addExercise(option.name, option.id);
       // Back either way: picking an exercise is one decision, and staying here
       // would leave the coach wondering whether the tap landed.
       router.back();
@@ -116,7 +122,11 @@ export default function PickerContent() {
       <View className="gap-3 px-4">
         {noticeText.length > 0 ? <PickerNotice text={noticeText} /> : null}
         <PickerSearchField value={query} onChange={setQuery} resultCount={options.length} />
-        <PickerFilters value={filter} onChange={setFilter} />
+        <PickerFilters
+          options={filterOptions.data ?? []}
+          value={filter}
+          onChange={setFilter}
+        />
       </View>
 
       {optionsQuery.isPending ? (

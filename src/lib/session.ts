@@ -24,10 +24,16 @@ const DEFAULT_REPS = 8;
  * and zero is also the right answer for a bodyweight movement. The lifter taps
  * the chip to set it.
  */
-export function newSessionExercise(name: string): ApiSessionExercise {
+export function newSessionExercise(
+  name: string,
+  exerciseId: string | null = null,
+): ApiSessionExercise {
   return {
     id: randomUUID(),
     name: name.trim(),
+    // Which catalogue entry it was picked from, so the preview works even
+    // after somebody renames their copy. NULL when it was typed.
+    exerciseId,
     // Added on the spot, so nobody has left a cue on it yet.
     coachNote: null,
     ownNote: null,

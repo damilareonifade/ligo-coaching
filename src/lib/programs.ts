@@ -195,23 +195,44 @@ export function formatTargetKg(targetKg: number | null | undefined): string {
  * ------------------------------------------------------------------ */
 
 /** `all` plus the tag filters, plus `recent` which is a section, not a tag. */
-export type ExerciseFilter = 'all' | 'compound' | 'accessory' | 'yours' | 'recent';
+/**
+ * What the picker is narrowed by.
+ *
+ * Two dimensions, both from the catalogue itself. It used to be one list
+ * mixing unlike things — Compound and Accessory describe a movement, Yours and
+ * Recent describe who made it — so picking one meant giving up the other, and
+ * "dumbbell chest exercises" could not be asked at all.
+ *
+ * `null` in either slot means "any", which is what the All chip sets.
+ */
+export interface ExerciseFilter {
+  readonly bodyPart: string | null;
+  readonly equipment: string | null;
+}
 
+export const NO_EXERCISE_FILTER: ExerciseFilter = { bodyPart: null, equipment: null };
+
+/**
+ * The mocked half of the picker's search. The live one filters in the
+ * database — this exists so a mocked run behaves the same way.
+ *
+ * Both dimensions narrow together: picking Chest and Dumbbell asks for chest
+ * exercises done with dumbbells, not for either.
+ */
 export function filterExerciseOptions(
   options: readonly ApiExerciseOption[],
   query: string,
-  filter: string,
+  filter: ExerciseFilter,
 ): readonly ApiExerciseOption[] {
   const needle = query.trim().toLowerCase();
+  const matches = (value: string | null, against: string): boolean =>
+    value === null || against.toLowerCase().includes(value.toLowerCase());
 
   return options.filter((option) => {
-    if (filter === 'recent' && option.group !== 'Recent') return false;
-    if (
-      (filter === 'compound' || filter === 'accessory' || filter === 'yours') &&
-      option.tag.toLowerCase() !== filter
-    ) {
-      return false;
-    }
+    // `meta` is "Dumbbell · Chest", which is where both of these are written.
+    if (!matches(filter.bodyPart, option.meta)) return false;
+    if (!matches(filter.equipment, option.meta)) return false;
+
     if (needle.length === 0) return true;
     // The placeholder promises equipment and muscle are searchable too.
     return (

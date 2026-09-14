@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 
 import { env } from '@/lib/env';
-import { assignedLabel } from '@/lib/programs';
+import { assignedLabel, type ExerciseFilter } from '@/lib/programs';
 
 import { ApiError } from './client';
 import {
@@ -457,7 +457,7 @@ export function usePublishProgramMutation(): UseMutationResult<void, Error, stri
 
 async function fetchExerciseOptions(
   query: string,
-  filter: string,
+  filter: ExerciseFilter,
 ): Promise<readonly ApiExerciseOption[]> {
   if (env.useMocks) {
     return mockDelay(mockExerciseOptions(query, filter), 200);
@@ -475,11 +475,12 @@ async function fetchExerciseOptions(
     .order('owner_id', { ascending: false, nullsFirst: false })
     .order('name');
 
-  if (filter === 'recent' || filter === 'yours') {
-    request = request.eq('owner_id', coachId);
-  } else if (filter === 'compound' || filter === 'accessory') {
-    request = request.ilike('tag', filter);
-  }
+  // Both narrow together: Chest and Dumbbell asks for chest exercises done
+  // with dumbbells. A coach's own rows have neither column filled in, so they
+  // drop out of a filtered list — which is right, since they were not filed
+  // under anything.
+  if (filter.bodyPart) request = request.eq('body_part', filter.bodyPart);
+  if (filter.equipment) request = request.eq('equipment', filter.equipment);
 
   if (query.length > 0) {
     // The placeholder promises equipment and muscle are searchable too, and
@@ -502,12 +503,12 @@ async function fetchExerciseOptions(
  */
 export function useExerciseOptionsQuery(
   query: string,
-  filter: string,
+  filter: ExerciseFilter,
 ): UseQueryResult<readonly ApiExerciseOption[], Error> {
   const trimmed = query.trim();
 
   return useQuery({
-    queryKey: queryKeys.coachPrograms.exercises(trimmed, filter),
+    queryKey: queryKeys.coachPrograms.exercises(trimmed, filter.bodyPart, filter.equipment),
     queryFn: () => fetchExerciseOptions(trimmed, filter),
   });
 }

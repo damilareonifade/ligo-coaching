@@ -11,6 +11,7 @@
  * restated, so a migration that renames a column fails the build here instead
  * of quietly handing a screen `undefined`.
  */
+import { exerciseGifUrl } from '@/lib/exerciseGif';
 import { parseDestination } from '@/lib/notifications';
 import { assignedLabel, programMeta, programStatusLabel } from '@/lib/programs';
 
@@ -151,6 +152,9 @@ export function toExerciseOption(
     meta: row.meta,
     tag: row.tag,
     group,
+    // `gif_path`, not `gif_url`: the latter is WorkoutX's own authenticated
+    // endpoint and 401s from a device. NULL until somebody opens this one.
+    gifUrl: exerciseGifUrl(row.gif_path),
   };
 }
 
@@ -236,7 +240,7 @@ export type WorkoutSetRow = Pick<
 
 export type WorkoutExerciseRow = Pick<
   Tables['workout_exercises']['Row'],
-  'id' | 'name' | 'coach_note' | 'own_note' | 'order_index'
+  'id' | 'name' | 'coach_note' | 'own_note' | 'order_index' | 'exercise_id'
 > & {
   readonly workout_sets: readonly WorkoutSetRow[] | null;
 };
@@ -252,6 +256,7 @@ export function toSessionSet(row: WorkoutSetRow): ApiSessionSet {
 
 export function toSessionExercise(row: WorkoutExerciseRow): ApiSessionExercise {
   return {
+    exerciseId: row.exercise_id ?? null,
     id: row.id,
     name: row.name,
     coachNote: row.coach_note,

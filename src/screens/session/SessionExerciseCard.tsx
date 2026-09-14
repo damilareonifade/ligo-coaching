@@ -1,5 +1,6 @@
-import { Plus } from 'lucide-react-native';
-import { memo } from 'react';
+import { useRouter } from 'expo-router';
+import { CircleHelp, Plus } from 'lucide-react-native';
+import { memo, useCallback } from 'react';
 import { Pressable, View } from 'react-native';
 
 import type { ApiSessionExercise, ApiSessionSet } from '@/api/types';
@@ -34,13 +35,49 @@ function SessionExerciseCardBase({
   onSaveNote,
 }: SessionExerciseCardProps) {
   const tokens = useThemeTokens();
+  const router = useRouter();
+
+  /**
+   * The most useful tap in the app, and the one that was missing: somebody
+   * mid-set who does not know the movement. Before this the only way to find
+   * out was to leave the workout, which nobody does — so they guess the form
+   * or skip the lift.
+   */
+  const openPreview = useCallback(() => {
+    router.push({
+      pathname: '/exercise/[name]',
+      // Omitted rather than blanked when there is no link: a param that is
+      // present and empty is harder to handle than one that is absent.
+      params: exercise.exerciseId
+        ? { name: exercise.name, exerciseId: exercise.exerciseId }
+        : { name: exercise.name },
+    });
+  }, [exercise.exerciseId, exercise.name, router]);
+
   return (
     // No padding on the card itself: a completed set tints its whole row, and
     // that tint has to run to both edges to read as a row rather than a patch.
     <LICard className="gap-0 overflow-hidden p-0">
       <View className="flex-row items-start gap-3 px-4 pb-3 pt-4">
         <View className="flex-1 gap-0.5">
-          <LIText size="h5" color="primary" text={exercise.name} className="font-geist-semibold" />
+          <Pressable
+            onPress={openPreview}
+            accessibilityRole="button"
+            accessibilityLabel={`How to do ${exercise.name}`}
+            hitSlop={6}
+            className="flex-row items-center gap-1.5 self-start active:opacity-70"
+            testID={`session-exercise-preview-${exercise.id}`}
+          >
+            <LIText
+              size="h5"
+              color="primary"
+              text={exercise.name}
+              className="font-geist-semibold"
+            />
+            {/* Small and quiet. It is an offer, not an instruction — the
+                screen's job is still logging the set in front of you. */}
+            <CircleHelp color={tokens['foreground-subtle']} size={15} />
+          </Pressable>
           <SessionExerciseNote exercise={exercise} onSaveNote={onSaveNote} />
         </View>
         <LIText

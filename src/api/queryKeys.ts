@@ -34,8 +34,8 @@ export const queryKeys = {
     publishImpact: (id: string) => ['coach', 'programs', 'publish-impact', id] as const,
     /** Prefix for every search/filter combination at once. */
     exercisesAll: ['coach', 'exercises'] as const,
-    exercises: (query: string, filter: string) =>
-      ['coach', 'exercises', query, filter] as const,
+    exercises: (query: string, bodyPart: string | null, equipment: string | null) =>
+      ['coach', 'exercises', query, bodyPart, equipment] as const,
   },
   clientTraining: {
     today: ['client', 'today'] as const,
@@ -87,6 +87,14 @@ export const queryKeys = {
   },
   /** Who is on the gym floor, and who wants a look — see src/api/coachHome.ts. */
   coachHome: ['coach', 'home'] as const,
+  /**
+   * One catalogue entry, by whichever handle the caller has. Both go in the
+   * key: two blocks with the same name but different links are two answers.
+   */
+  /** The muscle groups and equipment the catalogue actually holds. */
+  exerciseFilterOptions: ['exercise-filter-options'] as const,
+  exercisePreview: (exerciseId: string | null, name: string | null) =>
+    ['exercise-preview', exerciseId, name] as const,
   /** The coach's shareable code — one source for all three screens showing it. */
   coachInviteCode: ['coach', 'invite-code'] as const,
   /** The coach's own account and notification settings. */

@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { cn } from '@/lib/utils';
 
@@ -17,6 +17,16 @@ export interface LIChipGroupProps {
   readonly value: string;
   readonly onChange: (value: string) => void;
   readonly className?: string;
+  /**
+   * Scroll on one line instead of wrapping.
+   *
+   * The default is to wrap, so nothing can hide off the right edge — right
+   * when the options are a short fixed set somebody wrote. It is wrong when
+   * they come from data: the catalogue has ten muscle groups and nearly thirty
+   * pieces of equipment, and wrapping those is eight lines of chrome above a
+   * list somebody is trying to read.
+   */
+  readonly scrollable?: boolean;
   readonly testID?: string;
 }
 
@@ -31,6 +41,7 @@ export function LIChipGroup({
   value,
   onChange,
   className,
+  scrollable = false,
   testID,
 }: LIChipGroupProps) {
   return (
@@ -43,17 +54,39 @@ export function LIChipGroup({
           className="font-geist-medium uppercase tracking-wide"
         />
       ) : null}
-      <View className="flex-row flex-wrap gap-2">
-        {options.map((option) => (
-          <LIChip
-            key={option.value}
-            label={option.label}
-            selected={option.value === value}
-            onPress={() => onChange(option.value)}
-            testID={testID ? `${testID}-${option.value}` : undefined}
-          />
-        ))}
-      </View>
+      {scrollable ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          // Negative margin and matching padding so the row bleeds to the
+          // screen's edge — a chip half-cut at the margin is the only thing
+          // that tells you there are more.
+          className="-mx-4"
+          contentContainerClassName="flex-row gap-2 px-4"
+        >
+          {options.map((option) => (
+            <LIChip
+              key={option.value}
+              label={option.label}
+              selected={option.value === value}
+              onPress={() => onChange(option.value)}
+              testID={testID ? `${testID}-${option.value}` : undefined}
+            />
+          ))}
+        </ScrollView>
+      ) : (
+        <View className="flex-row flex-wrap gap-2">
+          {options.map((option) => (
+            <LIChip
+              key={option.value}
+              label={option.label}
+              selected={option.value === value}
+              onPress={() => onChange(option.value)}
+              testID={testID ? `${testID}-${option.value}` : undefined}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }

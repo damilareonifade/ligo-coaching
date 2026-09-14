@@ -27,7 +27,7 @@ interface AddExerciseTarget {
  * route a listed one does.
  */
 export function useAddExerciseToTarget({ programId, routineId, sessionId }: AddExerciseTarget): {
-  readonly addExercise: (name: string) => void;
+  readonly addExercise: (name: string, exerciseId?: string | null) => void;
   readonly adding: boolean;
 } {
   const showToast = useUiStore((state) => state.showToast);
@@ -43,10 +43,10 @@ export function useAddExerciseToTarget({ programId, routineId, sessionId }: AddE
   }, [program, routineId]);
 
   const addExercise = useCallback(
-    (name: string) => {
+    (name: string, exerciseId: string | null = null) => {
       if (sessionId) {
         addToSession(
-          { sessionId, exercise: newSessionExercise(name) },
+          { sessionId, exercise: newSessionExercise(name, exerciseId) },
           { onError: (error) => showToast(errorMessage(error), 'danger') },
         );
         return;

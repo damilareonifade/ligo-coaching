@@ -113,6 +113,11 @@ export default function RootLayout() {
                     read in a sitting and left, and it hands off to the client
                     it is talking about. */}
                 <Stack.Screen name="notifications" />
+                {/* What a movement looks like. Reached from the picker, from a
+                    routine block, and — the one that matters — from a set
+                    mid-workout, where "what is this" is asked with a barbell
+                    already in hand. */}
+                <Stack.Screen name="exercise/[name]" />
                 {/* One client's thread, off the Messages tab. Titled for the
                     thread, not the client — their name is the card at the top,
                     exactly as on the client's own side. */}

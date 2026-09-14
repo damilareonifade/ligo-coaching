@@ -377,6 +377,9 @@ async function postAddSessionExercise({
       // stored are the same row.
       p_exercise_id: exercise.id,
       p_name: exercise.name,
+      // The catalogue link, which is a different thing from the row id above
+      // despite the older parameter's name — see the migration.
+      p_catalogue_id: exercise.exerciseId ?? undefined,
       p_sets: exercise.sets.map((set) => ({
         n: set.n,
         weight_kg: set.weightKg,

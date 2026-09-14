@@ -4,6 +4,8 @@ import type {
   ApiNotificationGroup,
   ApiChatMessage,
   ApiCheckIn,
+  ApiExerciseFilterOption,
+  ApiExercisePreview,
   ApiClientChat,
   ApiCoachGroupSummary,
   ApiCoachThread,
@@ -66,7 +68,12 @@ import {
 } from '@/lib/community';
 import { initials } from '@/lib/format';
 import { appendOwnMessage, filterInbox, withLatestPreview } from '@/lib/messages';
-import { assignedLabel, filterExerciseOptions, parseScheme } from '@/lib/programs';
+import {
+  assignedLabel,
+  filterExerciseOptions,
+  parseScheme,
+  type ExerciseFilter,
+} from '@/lib/programs';
 import { hasFeature } from '@/lib/features';
 import { countThisWeek, summariseRoutines } from '@/lib/rotation';
 import { accessRequestBody, accessRequestTitle } from '@/lib/sharing';
@@ -2844,7 +2851,31 @@ const initialExerciseOptions: readonly ApiExerciseOption[] = [
 let exerciseState: readonly ApiExerciseOption[] = initialExerciseOptions;
 
 /** Mirrors GET /coach/exercises?q=&filter= — the app filters with the same function. */
-export function mockExerciseOptions(query: string, filter: string): readonly ApiExerciseOption[] {
+/** The handful the mocked catalogue actually contains. */
+export function mockExerciseFilterOptions(): readonly ApiExerciseFilterOption[] {
+  const seen = new Map<string, number>();
+  for (const option of exerciseState) {
+    for (const part of option.meta.split(' · ')) {
+      const key = part.trim();
+      if (key.length > 0) seen.set(key, (seen.get(key) ?? 0) + 1);
+    }
+  }
+
+  return [...seen.entries()].map(([label, count], index) => ({
+    // Equipment is written first in `meta` ("Dumbbell · Chest"), so odd
+    // positions are muscles. Good enough for a fixture; the real one asks the
+    // database which is which.
+    kind: index % 2 === 0 ? ('equipment' as const) : ('body_part' as const),
+    value: label,
+    label,
+    count,
+  }));
+}
+
+export function mockExerciseOptions(
+  query: string,
+  filter: ExerciseFilter,
+): readonly ApiExerciseOption[] {
   return filterExerciseOptions(exerciseState, query, filter);
 }
 
@@ -3058,6 +3089,51 @@ let notificationFeeds: Record<'coach' | 'client', readonly ApiNotificationGroup[
   coach: coachNotifications,
   client: clientNotifications,
 };
+
+/**
+ * A catalogue entry, offline. Only the handful of names the other fixtures
+ * use — the point is that the preview screen has something to draw, not that
+ * 1,400 exercises exist here too.
+ */
+const exercisePreviews: Readonly<Record<string, ApiExercisePreview>> = {
+  'bench press': {
+    id: 'wx-0025',
+    externalId: '0025',
+    name: 'Barbell bench press',
+    gifUrl: 'https://cdn.workoutxapp.com/gifs/0025.gif',
+    bodyPart: 'chest',
+    target: 'pectorals',
+    equipment: 'barbell',
+    secondaryMuscles: ['triceps', 'shoulders'],
+    instructions: [
+      'Lie back on a flat bench holding the bar at shoulder width.',
+      'Lower the bar to the middle of your chest, elbows at about 45 degrees.',
+      'Press back up until your arms are straight, without locking hard.',
+    ],
+    difficulty: 'intermediate',
+  },
+  'incline dumbbell press': {
+    id: 'wx-0314',
+    externalId: '0314',
+    name: 'Incline dumbbell press',
+    gifUrl: 'https://cdn.workoutxapp.com/gifs/0314.gif',
+    bodyPart: 'chest',
+    target: 'pectorals',
+    equipment: 'dumbbell',
+    secondaryMuscles: ['shoulders', 'triceps'],
+    instructions: [
+      'Set the bench to about 30 degrees and sit back with a dumbbell in each hand.',
+      'Press both dumbbells up until your arms are straight.',
+      'Lower under control until you feel a stretch across the chest.',
+    ],
+    difficulty: 'beginner',
+  },
+};
+
+/** `null` for anything invented — the screen says so rather than inventing back. */
+export function mockExercisePreview(name: string): ApiExercisePreview | null {
+  return exercisePreviews[name.trim().toLowerCase()] ?? null;
+}
 
 export function mockNotifications(
   audience: 'coach' | 'client',

@@ -5,6 +5,7 @@ import {
   composeRpe,
   composeScheme,
   filterExerciseOptions,
+  NO_EXERCISE_FILTER,
   groupExerciseOptions,
   parseRpe,
   parseScheme,
@@ -108,26 +109,44 @@ describe('exercise picker', () => {
     option({ id: 'd', name: 'Back squat', meta: 'Barbell · Quads', group: 'Legs', tag: 'Compound' }),
   ];
 
-  it('filters by tag', () => {
-    expect(filterExerciseOptions(options, '', 'compound').map((item) => item.id)).toEqual(['a', 'd']);
-    expect(filterExerciseOptions(options, '', 'yours').map((item) => item.id)).toEqual(['b']);
+  it('filters by muscle group', () => {
+    expect(
+      filterExerciseOptions(options, '', { bodyPart: 'Quads', equipment: null }).map((i) => i.id),
+    ).toEqual(['b', 'd']);
+    expect(
+      filterExerciseOptions(options, '', { bodyPart: null, equipment: 'Cable' }).map((i) => i.id),
+    ).toEqual(['c']);
   });
 
-  it('treats Recent as a section, not a tag', () => {
-    expect(filterExerciseOptions(options, '', 'recent').map((item) => item.id)).toEqual(['a', 'b']);
+  it('narrows by both together rather than by either', () => {
+    // Both narrow together rather than either matching.
+    expect(
+      filterExerciseOptions(options, '', { bodyPart: 'Quads', equipment: 'Barbell' }).map(
+        (i) => i.id,
+      ),
+    ).toEqual(['d']);
   });
 
   it('searches the equipment and muscle line as well as the name', () => {
-    expect(filterExerciseOptions(options, 'cable', 'all').map((item) => item.id)).toEqual(['c']);
-    expect(filterExerciseOptions(options, 'quads', 'all').map((item) => item.id)).toEqual(['b', 'd']);
+    expect(
+      filterExerciseOptions(options, 'cable', NO_EXERCISE_FILTER).map((item) => item.id),
+    ).toEqual(['c']);
+    expect(
+      filterExerciseOptions(options, 'quads', NO_EXERCISE_FILTER).map((item) => item.id),
+    ).toEqual(['b', 'd']);
   });
 
   it('combines the query with the filter', () => {
-    expect(filterExerciseOptions(options, 'squat', 'compound').map((item) => item.id)).toEqual(['d']);
+    expect(
+      filterExerciseOptions(options, 'squat', { bodyPart: 'Quads', equipment: null }).map(
+        (item) => item.id,
+      ),
+      // Both of these are Quads and both are called squat.
+    ).toEqual(['b', 'd']);
   });
 
-  it('returns everything for an empty query on All', () => {
-    expect(filterExerciseOptions(options, '   ', 'all')).toHaveLength(4);
+  it('returns everything when neither dimension is set', () => {
+    expect(filterExerciseOptions(options, '   ', NO_EXERCISE_FILTER)).toHaveLength(4);
   });
 
   it('groups in first-seen order so Recent stays on top', () => {

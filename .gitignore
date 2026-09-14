@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Supabase CLI state for this machine, not source. `pooler-url` holds a
+# Postgres connection string with the database password in it — the one thing
+# .env's own header says must never be in the repo.
+supabase/.temp/

@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(ls -d ~/Developer/ligo-coaching 2>/dev/null && echo \"DEST EXISTS — STOP\" || echo \"dest free\"; echo \"--- pre-move state:\"; git rev-parse HEAD && git status --porcelain && echo \"--- .env present:\" && ls .env)",
+      "Read(//Users/nonsobarn/Developer/**)",
+      "Bash(npx tsc *)",
+      "Bash(npm test *)",
+      "Bash(npm run *)"
+    ]
+  },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   }

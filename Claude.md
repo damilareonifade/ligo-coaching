@@ -40,6 +40,7 @@ Versions below are what is installed — check `package.json` before assuming.
 src/app/            ← routes & layouts (Expo Router: _layout.tsx, (auth)/, (tabs)/, student/[id].tsx)
 src/components/     ← LI components (LIText, LIButton, LIInput, LISelect, LIModal, LIToast, LITable, LIChart, LIForm, LIFormItem, LIFormLabel, LIFormMessage, LIFormDescription…)
 src/components/ui/  ← Base primitives (LICard, LIAvatar, LIBadge, LISkeleton, LIBottomSheet, LISafeArea…)
+src/components/<domain>/ ← Shared feature components used by 2+ screens (chat/, community/, builder/, profile/, auth/)
 src/screens/        ← Screen-level sections (Login, Register, Roster, StudentDetail, ProgramBuilder, SessionLog, Dashboard)
 src/api/            ← axios client, endpoints, query keys, query/mutation hooks, mocks/
 src/lib/            ← shared utilities, helpers, constants
@@ -205,6 +206,27 @@ export default function RosterStats({ students }: RosterStatsProps) { ... }
   module branches on `env.useMocks`; nothing outside `src/api/` knows mocks exist.
 - Child components handle only their **empty state** — loading/error belong at the screen level
 - Pull-to-refresh wires to `refetch`, never to a manual re-fetch function
+
+## Component Placement Rule (Critical)
+
+**One screen → colocated. Two screens → shared. Screens never import each other.**
+
+- A section used by exactly one screen lives in `src/screens/<screen>/` beside it, and its
+  siblings import it relatively (`./RosterStats`).
+- The moment a *second* screen wants it, it stops belonging to the first: move it to
+  `src/components/<domain>/` and import it by alias (`@/components/chat/ChatThread`).
+- `src/components/ui/` stays what it is — `LI*` primitives. A shared feature component is not
+  a primitive and does not get an `LI` prefix.
+
+This is enforced by lint, not by discipline: `eslint.config.js` restricts `@/screens/*/*` inside
+`src/screens/**`, so a screen reaching into another screen fails `npm run lint`. Route files in
+`src/app/` are unaffected — composing screens is their whole job — and a screen's own
+`__tests__` may name their subject by alias.
+
+The reason is coupling, not tidiness. A borrowed component makes the borrower depend on a
+screen it has no other relationship with, and after that neither folder can be changed safely:
+the owner cannot refactor without breaking a screen it has never heard of, and the borrower
+cannot tell which props exist for its sake and which for someone else's.
 
 ## Screen Composition Rule (Critical)
 

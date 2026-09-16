@@ -190,7 +190,7 @@ describe('the consent copy', () => {
       'I understand my ranking and total volume will be visible to everyone on this leaderboard.',
     );
     expect(BOARD_SHARE_NOTE).toBe(
-      'Only this metric is shared. Posting your placement anywhere outside Ligo is a separate choice, asked for each time.',
+      'Only this metric is shared. Posting your placement anywhere outside SetTrack is a separate choice, asked for each time.',
     );
     expect(GROUP_INVITE_NOTE).toBe(
       'Each client answers on their own consent screen. You are told who accepted, never who declined and why.',

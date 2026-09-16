@@ -250,6 +250,11 @@ async function saveProgram(input: SaveProgramInput): Promise<ApiProgramDetail> {
           target_kg: block.targetKg ?? null,
           note: block.note,
           order_index: blockIndex,
+          // As on the client's own routines: the save replaces the blocks, so
+          // a field left out is a field cleared.
+          exercise_id: block.exerciseId ?? null,
+          target_distance_km: block.targetDistanceKm ?? null,
+          target_duration_seconds: block.targetDurationSeconds ?? null,
         })),
       })),
       p_program_id: input.id,

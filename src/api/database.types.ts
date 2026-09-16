@@ -392,6 +392,94 @@ export type Database = {
           },
         ];
       };
+      data_exports: {
+        Row: {
+          id: string;
+          client_id: string;
+          requested_at: string;
+          finished_at: string | null;
+          path: string | null;
+          bytes: number | null;
+          format: string;
+          error: string | null;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          requested_at?: string;
+          finished_at?: string | null;
+          path?: string | null;
+          bytes?: number | null;
+          format?: string;
+          error?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          requested_at?: string;
+          finished_at?: string | null;
+          path?: string | null;
+          bytes?: number | null;
+          format?: string;
+          error?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'data_exports_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      data_imports: {
+        Row: {
+          id: string;
+          client_id: string;
+          source: string;
+          started_at: string;
+          finished_at: string | null;
+          path: string | null;
+          sessions_written: number;
+          sets_written: number;
+          sessions_skipped: number;
+          error: string | null;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          source: string;
+          started_at?: string;
+          finished_at?: string | null;
+          path?: string | null;
+          sessions_written?: number;
+          sets_written?: number;
+          sessions_skipped?: number;
+          error?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          source?: string;
+          started_at?: string;
+          finished_at?: string | null;
+          path?: string | null;
+          sessions_written?: number;
+          sets_written?: number;
+          sessions_skipped?: number;
+          error?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'data_imports_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       exercises: {
         Row: {
           id: string;
@@ -415,6 +503,7 @@ export type Database = {
           force: string | null;
           synced_at: string | null;
           gif_path: string | null;
+          measure: string;
         };
         Insert: {
           id?: string;
@@ -438,6 +527,7 @@ export type Database = {
           force?: string | null;
           synced_at?: string | null;
           gif_path?: string | null;
+          measure?: string;
         };
         Update: {
           id?: string;
@@ -461,6 +551,7 @@ export type Database = {
           force?: string | null;
           synced_at?: string | null;
           gif_path?: string | null;
+          measure?: string;
         };
         Relationships: [
           {
@@ -595,6 +686,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           exercise_id: string | null;
+          target_distance_km: number | null;
+          target_duration_seconds: number | null;
         };
         Insert: {
           id?: string;
@@ -608,6 +701,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           exercise_id?: string | null;
+          target_distance_km?: number | null;
+          target_duration_seconds?: number | null;
         };
         Update: {
           id?: string;
@@ -621,6 +716,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           exercise_id?: string | null;
+          target_distance_km?: number | null;
+          target_duration_seconds?: number | null;
         };
         Relationships: [
           {
@@ -814,6 +911,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           exercise_id: string | null;
+          target_distance_km: number | null;
+          target_duration_seconds: number | null;
         };
         Insert: {
           id?: string;
@@ -827,6 +926,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           exercise_id?: string | null;
+          target_distance_km?: number | null;
+          target_duration_seconds?: number | null;
         };
         Update: {
           id?: string;
@@ -840,6 +941,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           exercise_id?: string | null;
+          target_distance_km?: number | null;
+          target_duration_seconds?: number | null;
         };
         Relationships: [
           {
@@ -1006,6 +1109,9 @@ export type Database = {
           target_kg: number | null;
           note: string | null;
           order_index: number;
+          exercise_id: string | null;
+          target_distance_km: number | null;
+          target_duration_seconds: number | null;
         };
         Insert: {
           id?: string;
@@ -1016,6 +1122,9 @@ export type Database = {
           target_kg?: number | null;
           note?: string | null;
           order_index?: number;
+          exercise_id?: string | null;
+          target_distance_km?: number | null;
+          target_duration_seconds?: number | null;
         };
         Update: {
           id?: string;
@@ -1026,8 +1135,18 @@ export type Database = {
           target_kg?: number | null;
           note?: string | null;
           order_index?: number;
+          exercise_id?: string | null;
+          target_distance_km?: number | null;
+          target_duration_seconds?: number | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'routine_update_blocks_exercise_id_fkey';
+            columns: ['exercise_id'];
+            isOneToOne: false;
+            referencedRelation: 'exercises';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'routine_update_blocks_routine_update_id_fkey';
             columns: ['routine_update_id'];
@@ -1135,6 +1254,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           invite_code: string | null;
+          deactivated_at: string | null;
         };
         Insert: {
           id: string;
@@ -1147,6 +1267,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           invite_code?: string | null;
+          deactivated_at?: string | null;
         };
         Update: {
           id?: string;
@@ -1159,6 +1280,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           invite_code?: string | null;
+          deactivated_at?: string | null;
         };
         Relationships: [
           {
@@ -1231,6 +1353,8 @@ export type Database = {
           finished_at: string | null;
           created_at: string;
           updated_at: string;
+          imported_from: string | null;
+          imported_key: string | null;
         };
         Insert: {
           id?: string;
@@ -1241,6 +1365,8 @@ export type Database = {
           finished_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          imported_from?: string | null;
+          imported_key?: string | null;
         };
         Update: {
           id?: string;
@@ -1251,6 +1377,8 @@ export type Database = {
           finished_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          imported_from?: string | null;
+          imported_key?: string | null;
         };
         Relationships: [
           {
@@ -1287,6 +1415,8 @@ export type Database = {
           created_at: string;
           updated_at: string;
           updated_by: string | null;
+          distance_km: number | null;
+          duration_seconds: number | null;
         };
         Insert: {
           id?: string;
@@ -1298,6 +1428,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           updated_by?: string | null;
+          distance_km?: number | null;
+          duration_seconds?: number | null;
         };
         Update: {
           id?: string;
@@ -1309,6 +1441,8 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           updated_by?: string | null;
+          distance_km?: number | null;
+          duration_seconds?: number | null;
         };
         Relationships: [
           {
@@ -1372,6 +1506,10 @@ export type Database = {
         Args: { p_client_id: string };
         Returns: boolean;
       };
+      client_data_counts: {
+        Args: Record<string, never>;
+        Returns: { label: string; value: string }[];
+      };
       client_stats: {
         Args: { p_client_id: string };
         Returns: { sessions: number; week_streak: number; personal_records: number }[];
@@ -1385,6 +1523,10 @@ export type Database = {
         Returns: string;
       };
       complete_password_reset_request: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      deactivate_account: {
         Args: Record<string, never>;
         Returns: undefined;
       };
@@ -1447,6 +1589,15 @@ export type Database = {
         Args: { p_id: string };
         Returns: undefined;
       };
+      measure_for_block: {
+        Args: {
+          p_exercise_id: string;
+          p_target_kg: number;
+          p_target_distance_km: number;
+          p_target_duration_seconds: number;
+        };
+        Returns: string;
+      };
       mint_invite_code: {
         Args: { p_name: string };
         Returns: string;
@@ -1505,6 +1656,10 @@ export type Database = {
         Args: { p_recipient: string; p_actor: string; p_kind: string; p_payload?: Json | null };
         Returns: undefined;
       };
+      reactivate_account: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
       record_password_reset_request: {
         Args: { p_email: string };
         Returns: undefined;
@@ -1549,6 +1704,10 @@ export type Database = {
           p_program_id?: string | null;
         };
         Returns: string;
+      };
+      save_program_blocks: {
+        Args: { p_program_routine_id: string; p_blocks: Json };
+        Returns: undefined;
       };
       save_routine: {
         Args: {

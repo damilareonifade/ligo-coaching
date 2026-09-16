@@ -51,6 +51,22 @@ export type ProgramStatus = 'published' | 'draft' | 'archived';
 /** A routine is one session; a program is several routines and a length. */
 export type BuilderKind = 'routine' | 'program';
 
+/**
+ * How a set of an exercise is counted. Mirrors `exercises.measure`, and is
+ * the authority on which of the four numbers below mean anything.
+ *
+ * `load_reps` is a barbell bench press and is almost everything. `reps` is a
+ * pull-up — the load is the body. `duration` is a plank. `distance_duration`
+ * is a treadmill. `load_distance` is a farmers walk. See `@/lib/measures` for
+ * what each one asks a coach for.
+ */
+export type SetMeasure =
+  | 'load_reps'
+  | 'reps'
+  | 'duration'
+  | 'distance_duration'
+  | 'load_distance';
+
 export interface ApiProgramBlock {
   readonly id: string;
   readonly name: string;
@@ -67,6 +83,26 @@ export interface ApiProgramBlock {
    * instead of zero, which is the whole point of setting one.
    */
   readonly targetKg?: number | null;
+  /**
+   * How far, and for how long. Both `null` for the overwhelming majority —
+   * they are the prescription for a run, a hold or a loaded carry, and the
+   * measure below says which of them the block is actually counted in.
+   */
+  readonly targetDistanceKm?: number | null;
+  readonly targetDurationSeconds?: number | null;
+  /**
+   * Which catalogue entry this was picked from, or `null` for a name somebody
+   * typed. It is what lets the block know how it is measured — and what the
+   * preview is looked up by after a coach renames their copy.
+   */
+  readonly exerciseId?: string | null;
+  /**
+   * The exercise's measure, carried on the block so the editor and the summary
+   * line do not each have to go and ask. Absent means nobody knows yet, which
+   * `fieldsFor` reads as load × reps — what almost everything is, and what
+   * every block written before any of this existed meant.
+   */
+  readonly measure?: SetMeasure;
   /** The one cue the client should remember on this lift. */
   readonly note: string | null;
 }
@@ -130,6 +166,11 @@ export interface ApiExerciseOption {
    * broken frame.
    */
   readonly gifUrl?: string | null;
+  /**
+   * How the catalogue says it is counted, so a block added from this row is
+   * asked for the right numbers from the moment it lands.
+   */
+  readonly measure?: SetMeasure;
 }
 
 export interface ApiAuthResult {
@@ -799,7 +840,7 @@ export interface ApiExercisePreview {
  * ------------------------------------------------------------------ */
 
 export type NotificationKind =
-  // Training. No 'session-missed': nothing in Ligo is scheduled to a day, so
+  // Training. No 'session-missed': nothing in SetTrack is scheduled to a day, so
   // nothing can be missed — the coach's home derives "needs a look" from
   // silence instead, which is a state and not an event.
   | 'session-done'
@@ -824,7 +865,7 @@ export type NotificationKind =
  *
  * A union rather than a string, because "open this" has three genuinely
  * different meanings and the device has to know which it is being handed: a
- * screen is pushed, a web page opens inside Ligo, an external link leaves for
+ * screen is pushed, a web page opens inside SetTrack, an external link leaves for
  * the browser or another app. A bare string could only ever be one of them,
  * and the row would have to guess from its shape.
  *

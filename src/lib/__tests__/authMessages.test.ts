@@ -3,7 +3,7 @@ import { existingAccountMessage } from '@/lib/authMessages';
 describe('existingAccountMessage', () => {
   it('acknowledges the sign-in when the role matches what they picked', () => {
     expect(existingAccountMessage('coach', 'coach')).toBe(
-      'You already have a Ligo account — signed you in.',
+      'You already have a SetTrack account — signed you in.',
     );
   });
 

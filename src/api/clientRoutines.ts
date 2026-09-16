@@ -43,7 +43,7 @@ import type { ApiProgramBlock, ApiRoutineInstance } from './types';
  * at most, enforced by a unique key the database reads back as a to-one.
  */
 const ROUTINE_SELECT =
-  '*, routine_blocks(*), routine_updates(*, routine_update_blocks(*))' as const;
+  '*, routine_blocks(*, exercises(measure)), routine_updates(*, routine_update_blocks(*, exercises(measure)))' as const;
 
 async function fetchClientRoutine(routineId: string): Promise<ApiRoutineInstance> {
   if (env.useMocks) {
@@ -140,6 +140,12 @@ async function saveClientRoutine(input: SaveClientRoutineInput): Promise<ApiRout
         // Position comes from the array, so a reordered list needs no extra
         // field on the block itself.
         order_index: index,
+        // Which catalogue entry it came from, and what it asked for in its own
+        // terms. Sent even when null: the save replaces the block wholesale,
+        // so omitting them is how a treadmill loses its distance on an edit.
+        exercise_id: block.exerciseId ?? null,
+        target_distance_km: block.targetDistanceKm ?? null,
+        target_duration_seconds: block.targetDurationSeconds ?? null,
       })),
     }),
   );

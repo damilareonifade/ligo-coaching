@@ -6,8 +6,17 @@ import { useUnits } from '@/hooks/useUnits';
 import type { ApiProgramBlock } from '@/api/types';
 import { LIBadge, LIButton, LICard, LIInput, LIText } from '@/components/ui';
 import {
+  composeSchemeFor,
+  fieldsFor,
+  formatDistanceInput,
+  formatDurationInput,
+  measureHint,
+  parseDistanceInput,
+  parseDurationInput,
+  RPE_PRESCRIBING,
+} from '@/lib/measures';
+import {
   composeRpe,
-  composeScheme,
   formatTargetKg,
   parseRpe,
   parseScheme,
@@ -15,7 +24,10 @@ import {
 } from '@/lib/programs';
 import { useThemeTokens } from '@/theme/tokens';
 
-export type BlockPatch = Pick<ApiProgramBlock, 'scheme' | 'rpe' | 'targetKg'>;
+export type BlockPatch = Pick<
+  ApiProgramBlock,
+  'scheme' | 'rpe' | 'targetKg' | 'targetDistanceKm' | 'targetDurationSeconds'
+>;
 
 interface BuilderBlockRowProps {
   readonly block: ApiProgramBlock;
@@ -30,22 +42,42 @@ interface BuilderBlockRowProps {
   readonly onRemove: (blockId: string) => void;
 }
 
+/** What the boxes currently hold, as typed. */
+interface Draft {
+  readonly sets: string;
+  readonly reps: string;
+  readonly kg: string;
+  readonly rpe: string;
+  readonly distance: string;
+  readonly duration: string;
+}
+
 /**
  * The row is its own editor. Tapping it expands the fields in place rather
  * than opening a sheet: an inline panel cannot fail to present, it keeps the
  * other exercises visible while you set this one against them, and it is one
  * tap to reach instead of a modal to dismiss.
+ *
+ * Which boxes appear follows the exercise's measure. A treadmill was being
+ * asked for sets, reps and a working weight — three questions nobody can
+ * answer — so a field that means nothing here is absent rather than disabled:
+ * a greyed-out box still reads as something you are failing to fill in.
  */
 function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlockRowProps) {
   const tokens = useThemeTokens();
   const units = useUnits();
   const [open, setOpen] = useState(false);
 
+  const fields = fieldsFor(block.measure);
   const parsed = parseScheme(block.scheme);
-  const [sets, setSets] = useState(() => String(parsed.sets));
-  const [reps, setReps] = useState(() => String(parsed.reps));
-  const [kg, setKg] = useState(() => formatTargetKg(block.targetKg));
-  const [rpe, setRpe] = useState(() => parseRpe(block.rpe));
+  const [draft, setDraft] = useState<Draft>(() => ({
+    sets: String(parsed.sets),
+    reps: String(parsed.reps),
+    kg: formatTargetKg(block.targetKg),
+    rpe: parseRpe(block.rpe),
+    distance: formatDistanceInput(block.targetDistanceKm),
+    duration: formatDurationInput(block.targetDurationSeconds),
+  }));
 
   const remove = useCallback(() => onRemove(block.id), [onRemove, block.id]);
 
@@ -53,27 +85,41 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
    * Written straight through on every keystroke — there is no Save here and
    * nothing to lose by leaving the row. A half-typed field falls back to what
    * the block already held, so clearing a box never writes a zero.
+   *
+   * Only the fields this measure asks for reach the patch. A run that once had
+   * a weight typed into it does not keep prescribing that weight.
    */
   const patchFrom = useCallback(
-    (next: { sets?: string; reps?: string; kg?: string; rpe?: string }): BlockPatch => {
-      const nextSets = Number.parseInt(next.sets ?? sets, 10);
-      const nextReps = Number.parseInt(next.reps ?? reps, 10);
+    (next: Draft): BlockPatch => {
+      const sets = Number.parseInt(next.sets, 10);
+      const reps = Number.parseInt(next.reps, 10);
+      const distanceKm = fields.distance ? parseDistanceInput(next.distance) : null;
+      const durationSeconds = fields.duration ? parseDurationInput(next.duration) : null;
 
       return {
-        scheme: composeScheme(
-          Number.isFinite(nextSets) && nextSets > 0 ? nextSets : parsed.sets,
-          Number.isFinite(nextReps) && nextReps > 0 ? nextReps : parsed.reps,
-        ),
-        rpe: composeRpe(next.rpe ?? rpe),
-        targetKg: parseTargetKg(next.kg ?? kg),
+        scheme: composeSchemeFor(block.measure ?? 'load_reps', {
+          sets: Number.isFinite(sets) && sets > 0 ? sets : parsed.sets,
+          reps: Number.isFinite(reps) && reps > 0 ? reps : parsed.reps,
+          distanceKm,
+          durationSeconds,
+        }),
+        rpe: composeRpe(next.rpe),
+        targetKg: fields.load ? parseTargetKg(next.kg) : null,
+        targetDistanceKm: distanceKm,
+        targetDurationSeconds: durationSeconds,
       };
     },
-    [sets, reps, kg, rpe, parsed.sets, parsed.reps],
+    [block.measure, fields.distance, fields.duration, fields.load, parsed.reps, parsed.sets],
   );
 
-  const commit = useCallback(
-    (next: { sets?: string; reps?: string; kg?: string; rpe?: string }) => {
-      onChange(block.id, patchFrom(next));
+  /** One handler for six boxes: set the field, then write the whole draft. */
+  const edit = useCallback(
+    (field: keyof Draft) => (value: string) => {
+      setDraft((current) => {
+        const next = { ...current, [field]: value };
+        onChange(block.id, patchFrom(next));
+        return next;
+      });
     },
     [block.id, onChange, patchFrom],
   );
@@ -84,14 +130,17 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
    */
   const toggle = useCallback(() => {
     setOpen((current) => {
-      if (current) onCommit?.(block.id, patchFrom({}));
+      if (current) onCommit?.(block.id, patchFrom(draft));
       return !current;
     });
-  }, [onCommit, block.id, patchFrom]);
+  }, [onCommit, block.id, patchFrom, draft]);
 
-  const summary = block.targetKg
-    ? `${block.scheme} · ${units.formatWeight(block.targetKg)}`
-    : block.scheme;
+  // The weight only belongs in the summary where the exercise is loaded — a
+  // run reading "5 km · 0 kg" states a prescription nobody made.
+  const summary =
+    fields.load && block.targetKg
+      ? `${block.scheme} · ${units.formatWeight(block.targetKg)}`
+      : block.scheme;
 
   return (
     <LICard className="gap-3 px-4 py-3" testID={`builder-block-${block.id}`}>
@@ -151,63 +200,99 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
 
       {open ? (
         <View className="gap-2 border-t border-border pt-3">
-          <View className="flex-row gap-2">
-            <LIInput
-              label="Sets"
-              value={sets}
-              onChangeText={(value) => {
-                setSets(value);
-                commit({ sets: value });
-              }}
-              keyboardType="number-pad"
-              selectTextOnFocus
-              containerClassName="flex-1"
-              testID={`builder-sets-${block.id}`}
-            />
-            <LIInput
-              label="Reps"
-              value={reps}
-              onChangeText={(value) => {
-                setReps(value);
-                commit({ reps: value });
-              }}
-              keyboardType="number-pad"
-              selectTextOnFocus
-              containerClassName="flex-1"
-              testID={`builder-reps-${block.id}`}
-            />
-            <LIInput
-              label={units.weight}
-              value={kg}
-              onChangeText={(value) => {
-                setKg(value);
-                commit({ kg: value });
-              }}
-              keyboardType="decimal-pad"
-              placeholder="—"
-              selectTextOnFocus
-              containerClassName="flex-1"
-              testID={`builder-kg-${block.id}`}
-            />
-            <LIInput
-              label="RPE"
-              value={rpe}
-              onChangeText={(value) => {
-                setRpe(value);
-                commit({ rpe: value });
-              }}
-              keyboardType="decimal-pad"
-              placeholder="—"
-              selectTextOnFocus
-              containerClassName="flex-1"
-              testID={`builder-rpe-${block.id}`}
-            />
+          {/*
+            Wrapping, because a measure asking for four fields on a narrow
+            phone is four boxes too cramped to type into otherwise.
+          */}
+          <View className="flex-row flex-wrap gap-2">
+            {fields.sets ? (
+              <LIInput
+                label="Sets"
+                value={draft.sets}
+                onChangeText={edit('sets')}
+                keyboardType="number-pad"
+                selectTextOnFocus
+                containerClassName="min-w-16 flex-1"
+                testID={`builder-sets-${block.id}`}
+              />
+            ) : null}
+
+            {fields.reps ? (
+              <LIInput
+                label="Reps"
+                value={draft.reps}
+                onChangeText={edit('reps')}
+                keyboardType="number-pad"
+                selectTextOnFocus
+                containerClassName="min-w-16 flex-1"
+                testID={`builder-reps-${block.id}`}
+              />
+            ) : null}
+
+            {fields.load ? (
+              <LIInput
+                label={units.weight}
+                value={draft.kg}
+                onChangeText={edit('kg')}
+                keyboardType="decimal-pad"
+                placeholder="—"
+                selectTextOnFocus
+                containerClassName="min-w-16 flex-1"
+                testID={`builder-kg-${block.id}`}
+              />
+            ) : null}
+
+            {fields.distance ? (
+              <LIInput
+                label="km"
+                value={draft.distance}
+                onChangeText={edit('distance')}
+                keyboardType="decimal-pad"
+                placeholder="—"
+                selectTextOnFocus
+                containerClassName="min-w-16 flex-1"
+                testID={`builder-distance-${block.id}`}
+              />
+            ) : null}
+
+            {fields.duration ? (
+              <LIInput
+                label="Time"
+                value={draft.duration}
+                onChangeText={edit('duration')}
+                // Not a number pad: "1:30" has a colon in it.
+                keyboardType="numbers-and-punctuation"
+                placeholder="mm:ss"
+                selectTextOnFocus
+                containerClassName="min-w-20 flex-1"
+                testID={`builder-duration-${block.id}`}
+              />
+            ) : null}
+
+            {/*
+              Parked rather than deleted — see `RPE_PRESCRIBING`. `draft.rpe`
+              still holds whatever the block arrived with and still goes back
+              out through the patch, so an RPE set before this stays set
+              instead of being silently dropped on the next edit.
+            */}
+            {RPE_PRESCRIBING ? (
+              <LIInput
+                label="RPE"
+                value={draft.rpe}
+                onChangeText={edit('rpe')}
+                keyboardType="decimal-pad"
+                placeholder="—"
+                selectTextOnFocus
+                containerClassName="min-w-16 flex-1"
+                testID={`builder-rpe-${block.id}`}
+              />
+            ) : null}
           </View>
 
           <LIText
             size="caption"
             color="muted"
-            text="kg and RPE are optional. Leave them blank and nothing is prescribed."
+            text={measureHint(block.measure, units.weight)}
             className="font-geist"
           />
         </View>

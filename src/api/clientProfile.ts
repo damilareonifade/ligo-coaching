@@ -9,7 +9,9 @@ import {
 import { env } from '@/lib/env';
 import {
   buildCoachRows,
+  buildDataAccessRows,
   buildProfileGroups,
+  IMPORT_SOURCES,
   memberSinceLabel,
   permissionSummary,
 } from '@/lib/clientProfile';
@@ -24,7 +26,7 @@ import {
 import { accessRequestBody, accessRequestTitle } from '@/lib/sharing';
 import { useSettingsStore } from '@/store/settingsStore';
 
-import { client } from './client';
+import { ApiError, client } from './client';
 import {
   mockAccessRequests,
   mockAnswerAccessRequest,
@@ -81,7 +83,7 @@ const ATTACHED_COACH_SELECT =
 
 /** The app's own version line, not something the server has an opinion on. */
 const VERSION_NOTE =
-  'Ligo 2.4.0 · your profile works with no coach, no subscription and no export fee.';
+  'SetTrack 2.4.0 · your profile works with no coach, no subscription and no export fee.';
 
 async function fetchClientProfile(): Promise<ApiClientProfile> {
   if (env.useMocks) {
@@ -380,29 +382,116 @@ async function fetchClientData(): Promise<ApiClientData> {
   if (env.useMocks) {
     return mockDelay(mockClientData);
   }
-  const { data } = await client.get<ApiClientData>('/client/data');
-  return data;
+
+  const clientId = await currentUserId();
+
+  const [counts, links, lastExport] = await Promise.all([
+    supabase.rpc('client_data_counts').then(unwrap),
+    supabase
+      .from('coach_clients')
+      .select('permissions, log_for, coach:users!coach_clients_coach_id_fkey(full_name)')
+      .eq('client_id', clientId)
+      .eq('status', 'active')
+      .limit(1)
+      .then(unwrap),
+    // The screen shows one date. Errors are swallowed rather than surfaced:
+    // not knowing when you last exported must not stop you exporting now.
+    supabase
+      .from('data_exports')
+      .select('finished_at')
+      .eq('client_id', clientId)
+      .not('finished_at', 'is', null)
+      .order('finished_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      // Not knowing when you last exported must not stop you exporting now.
+      .then((result) => result.data?.finished_at ?? null),
+  ]);
+
+  const link = links[0];
+
+  return {
+    counts: counts.map((row: { label: string; value: string }) => ({
+      label: row.label,
+      value: row.value,
+    })),
+    lastExport: lastExport ? relativeTime(lastExport) : 'Never',
+    // A statement about what we can parse, so it is composed here rather than
+    // fetched — see IMPORT_SOURCES.
+    importSources: IMPORT_SOURCES,
+    access: buildDataAccessRows(
+      link?.coach?.full_name ?? null,
+      (link?.permissions ?? {}) as ApiSharePermissions,
+      link?.log_for ?? false,
+    ),
+  };
 }
 
 export function useClientDataQuery(): UseQueryResult<ApiClientData, Error> {
   return useQuery({ queryKey: queryKeys.clientProfile.data, queryFn: fetchClientData });
 }
 
-export interface RunExportInput {
-  readonly format: string;
-  readonly includePrograms: boolean;
-}
+/* ------------------------------------------------------------------ *
+ * Standing down, and coming back.
+ * ------------------------------------------------------------------ */
 
-async function postRunExport({ format, includePrograms }: RunExportInput): Promise<void> {
+async function postDeactivate(): Promise<void> {
   if (env.useMocks) {
-    await mockDelay(undefined, 600);
+    await mockDelay(undefined, 400);
     return;
   }
-  await client.post('/client/data/export', { format, includePrograms });
+  assertOk(await supabase.rpc('deactivate_account'));
 }
 
-export function useRunExportMutation(): UseMutationResult<void, Error, RunExportInput> {
-  return useMutation({ mutationFn: postRunExport });
+/**
+ * Not optimistic, and not quiet.
+ *
+ * This ends every relationship the account has, and the screen must not say so
+ * before the server agrees — the one lie this card cannot tell. The caller
+ * signs out afterwards, which is the visible effect.
+ */
+export function useDeactivateAccountMutation(): UseMutationResult<void, Error, void> {
+  return useMutation({ mutationFn: postDeactivate });
+}
+
+export interface RunExportInput {
+  /** 'json' — everything — or 'csv', which is the logged sets alone. */
+  readonly format: string;
+}
+
+/**
+ * Gathers everything and hands back a link to it.
+ *
+ * The URL is signed and expires within the hour, so it is opened straight
+ * away rather than kept — which is why this returns it instead of storing it
+ * anywhere.
+ */
+async function postRunExport({ format }: RunExportInput): Promise<string> {
+  if (env.useMocks) {
+    await mockDelay(undefined, 600);
+    return `https://example.invalid/ligo-export.${format}`;
+  }
+
+  const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>(
+    'export-my-data',
+    { body: { format } },
+  );
+
+  if (error) throw new ApiError(data?.error ?? error.message, null);
+  if (!data?.url) throw new ApiError('The export finished without a file.', null);
+  return data.url;
+}
+
+export function useRunExportMutation(): UseMutationResult<string, Error, RunExportInput> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: postRunExport,
+    onSuccess: () => {
+      // So "last exported" stops saying Never the moment it is not true.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.clientProfile.data });
+    },
+  });
 }
 
 /* ------------------------------------------------------------------ *

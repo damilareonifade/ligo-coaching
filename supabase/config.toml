@@ -23,3 +23,12 @@ verify_jwt = true
 # ---------------------------------------------------------------------------
 [functions.cache-exercise-gif]
 verify_jwt = true
+
+# ---------------------------------------------------------------------------
+# One person's whole history, as a file. `verify_jwt` on, and the function
+# additionally reads the user from the caller's own token rather than from the
+# request body — an id taken from a body would be an endpoint for downloading
+# anybody's data.
+# ---------------------------------------------------------------------------
+[functions.export-my-data]
+verify_jwt = true

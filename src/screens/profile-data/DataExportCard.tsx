@@ -1,21 +1,29 @@
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { Linking } from 'react-native';
 
 import { useRunExportMutation } from '@/api/clientProfile';
-import { LIButton, LICard, LISegmented, LISwitch, LIText } from '@/components/ui';
+import { LIButton, LICard, LISegmented, LIText } from '@/components/ui';
+import { errorMessage } from '@/api/client';
 import { useUiStore } from '@/store/uiStore';
 
+/**
+ * PDF was here and produced nothing — the export only ever wrote JSON, so two
+ * of the three choices were decoration. It is gone rather than built: a
+ * rendering pipeline is real work for something nobody does with a training
+ * history, and an option that does nothing is worse than an option that is
+ * absent.
+ */
 const FORMATS = [
   { label: 'JSON', value: 'json' },
   { label: 'CSV', value: 'csv' },
-  { label: 'PDF', value: 'pdf' },
 ] as const;
 
-/** What each format is actually good for — the choice is otherwise opaque. */
+/** What each is actually good for — the choice is otherwise opaque. */
 const FORMAT_NOTES: Record<string, string> = {
-  json: 'Complete and machine-readable. Best for moving to another app.',
-  csv: 'One row per set and meal. Opens in any spreadsheet.',
-  pdf: 'A readable archive to keep or print. Not meant for importing.',
+  json: 'Everything, and machine-readable. Best for moving to another app.',
+  // Says what it holds rather than what it is, because "CSV" does not tell
+  // anybody that their check-ins are not in it.
+  csv: 'Your logged sets, one per row. Opens in any spreadsheet.',
 };
 
 interface DataExportCardProps {
@@ -25,17 +33,29 @@ interface DataExportCardProps {
 export default function DataExportCard({ lastExport }: DataExportCardProps) {
   // Local to this card — nothing else in the app needs the pending choice.
   const [format, setFormat] = useState<string>('json');
-  const [includePrograms, setIncludePrograms] = useState(true);
 
   const showToast = useUiStore((state) => state.showToast);
   const runExport = useRunExportMutation();
 
   const submit = useCallback(() => {
     runExport.mutate(
-      { format, includePrograms },
-      { onSuccess: () => showToast('Export ready', 'success') },
+      { format },
+      {
+        /**
+         * Opened, not announced. The link is signed and expires within the
+         * hour, so a toast saying "ready" would leave somebody hunting for a
+         * file that is quietly rotting — the browser takes it straight to
+         * their downloads instead.
+         */
+        onSuccess: (url) => {
+          void Linking.openURL(url).catch(() =>
+            showToast('The export is ready but could not be opened.', 'danger'),
+          );
+        },
+        onError: (error) => showToast(errorMessage(error), 'danger'),
+      },
     );
-  }, [runExport, format, includePrograms, showToast]);
+  }, [runExport, format, showToast]);
 
   return (
     <LICard className="gap-3">
@@ -55,31 +75,17 @@ export default function DataExportCard({ lastExport }: DataExportCardProps) {
         className="font-geist"
       />
 
-      <View className="flex-row items-center gap-3 border-t border-border pt-3">
-        <View className="flex-1 gap-0.5">
-          <LIText
-            size="p"
-            color="primary"
-            text="Include coach-authored programs"
-            className="font-geist-medium"
-          />
-          <LIText
-            size="caption"
-            color="muted"
-            text={
-              includePrograms
-                ? 'Programs written for you are in the archive.'
-                : 'Only what you logged yourself.'
-            }
-            className="font-geist"
-          />
-        </View>
-        <LISwitch
-          value={includePrograms}
-          onValueChange={setIncludePrograms}
-          testID="export-include-programs"
-        />
-      </View>
+      {/* "Include coach-authored programs" was a switch here that changed
+          nothing — the export ignored it. It is gone rather than wired up,
+          because it could never have been true either way: a coach's programs
+          are the coach's, and the copies assigned to you are yours and are
+          always included. There was no second answer for it to give. */}
+      <LIText
+        size="caption"
+        color="muted"
+        text="Includes the routines assigned to you. Programs your coach wrote stay theirs."
+        className="border-t border-border pt-3 font-geist"
+      />
 
       <LIButton
         title="Export my data"

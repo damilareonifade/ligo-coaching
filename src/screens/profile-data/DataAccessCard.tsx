@@ -12,7 +12,10 @@ interface DataAccessCardProps {
 export default function DataAccessCard({ access }: DataAccessCardProps) {
   const router = useRouter();
 
-  const review = useCallback(() => router.push('/onboarding/coach-permissions'), [router]);
+  // Not `/onboarding/coach-permissions`: that reads the onboarding draft and
+  // bounces anyone already attached back to "find a coach". Same broken target
+  // the Permissions row on the profile had.
+  const review = useCallback(() => router.push('/profile/permissions'), [router]);
 
   return (
     <LICard className="gap-3">

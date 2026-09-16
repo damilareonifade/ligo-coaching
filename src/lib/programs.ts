@@ -3,7 +3,9 @@ import type {
   ApiProgramBlock,
   ApiProgramRoutine,
   ProgramStatus,
+  SetMeasure,
 } from '@/api/types';
+import { composeSchemeFor, DEFAULT_MEASURE, fieldsFor } from '@/lib/measures';
 
 /* ------------------------------------------------------------------ *
  * Set maths. The scheme is authored as display text ("4 × 8") because
@@ -42,6 +44,7 @@ export interface SchemeParts {
 }
 
 export const DEFAULT_REPS = 10;
+export const DEFAULT_SETS = 3;
 
 /** Falls back rather than throwing: a scheme is free text and may be anything. */
 export function parseScheme(scheme: string): SchemeParts {
@@ -160,16 +163,50 @@ export function resizeRoutines(
  */
 export const DEFAULT_SCHEME = '3 × 10';
 
+/** Three sets of 45 seconds is a plank, and what a hold is edited away from. */
+const DEFAULT_HOLD_SECONDS = 45;
+/** One kilometre, for a run. A number to change, not a prescription. */
+const DEFAULT_DISTANCE_KM = 1;
+
 let blockSeq = 0;
 
-export function newBlock(name: string): ApiProgramBlock {
+/**
+ * A block, opened in the terms its exercise is counted in.
+ *
+ * The measure comes from the catalogue row the coach picked, so a treadmill
+ * arrives reading "1 km" and a plank "3 × 45s" rather than both claiming three
+ * sets of ten reps — a prescription nobody can follow and every coach has to
+ * delete before typing the real one.
+ */
+export function newBlock(
+  name: string,
+  exerciseId: string | null = null,
+  measure: SetMeasure = DEFAULT_MEASURE,
+): ApiProgramBlock {
   blockSeq += 1;
+  const fields = fieldsFor(measure);
+
+  // Only where the field is the point. A pull-up may be timed, but a default
+  // of 45 seconds on one would be a prescription nobody wrote.
+  const targetDistanceKm = fields.distance && !fields.load ? DEFAULT_DISTANCE_KM : null;
+  const targetDurationSeconds =
+    fields.duration && !fields.reps && !fields.distance ? DEFAULT_HOLD_SECONDS : null;
+
   return {
     id: `blk-${Date.now()}-${blockSeq}`,
     name: name.trim(),
-    scheme: DEFAULT_SCHEME,
+    scheme: composeSchemeFor(measure, {
+      sets: DEFAULT_SETS,
+      reps: DEFAULT_REPS,
+      distanceKm: targetDistanceKm,
+      durationSeconds: targetDurationSeconds,
+    }),
     rpe: '',
     targetKg: null,
+    targetDistanceKm,
+    targetDurationSeconds,
+    exerciseId,
+    measure,
     note: null,
   };
 }

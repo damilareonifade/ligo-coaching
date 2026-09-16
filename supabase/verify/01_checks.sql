@@ -2,7 +2,7 @@
 \set QUIET on
 
 insert into auth.users (id, email, raw_user_meta_data) values
-  ('11111111-1111-1111-1111-111111111111', 'sam@ligo.app',
+  ('11111111-1111-1111-1111-111111111111', 'sam@settrack.app',
    '{"role":"coach","full_name":"Sam Okafor"}'),
   ('22222222-2222-2222-2222-222222222222', 'maya@example.com',
    '{"name":"Maya Andersson","picture":"https://example.com/m.png"}'),
@@ -625,7 +625,7 @@ reset request.jwt.claims;
 select email,
        invite_code is not null as has_code,
        invite_code ~ '^[A-Z]{3}-[0-9A-HJ-NP-Z]{4}$' as well_formed
-  from public.users where email in ('sam@ligo.app', 'maya@example.com') order by email;
+  from public.users where email in ('sam@settrack.app', 'maya@example.com') order by email;
 
 \echo ''
 \echo '=== 62. a code is issued on becoming a coach, not only at signup ==='
@@ -648,7 +648,7 @@ update public.users set invite_code = 'NIK-0001' where id = auth.uid();
 \echo ''
 \echo '=== 64. a stranger resolves a code to a name, and nothing more ==='
 reset role;
-select invite_code as sam_code from public.users where email = 'sam@ligo.app' \gset
+select invite_code as sam_code from public.users where email = 'sam@settrack.app' \gset
 set role authenticated;
 set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
 select full_name, client_count from public.lookup_coach(:'sam_code');
@@ -815,7 +815,7 @@ select gym, specialties from public.coach_profiles where coach_id = auth.uid();
 \echo ''
 \echo '=== 85. the lookup now says who they are, not just that they exist ==='
 reset role;
-select invite_code as sam_code from public.users where email = 'sam@ligo.app' \gset
+select invite_code as sam_code from public.users where email = 'sam@settrack.app' \gset
 set role authenticated;
 set request.jwt.claims = '{"sub":"44444444-4444-4444-4444-444444444444"}';
 select full_name, gym, specialties, client_count from public.lookup_coach(:'sam_code');
@@ -1610,3 +1610,244 @@ select b.name as block_name, p.name as catalogue_name
 \echo '=== 164. something invented has no preview, and says so by returning nothing ==='
 select count(*) as rows_for_an_invented_lift
   from public.exercise_preview(null, 'Nordic curl on a bosu');
+
+\echo ''
+\echo '=== 165. deactivating ends every relationship, in both directions ==='
+reset role;
+reset request.jwt.claims;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.attach_coach('11111111-1111-1111-1111-111111111111') is not null as attached;
+select public.deactivate_account();
+reset role;
+select status, permissions ->> 'workouts' as workouts, log_for
+  from public.coach_clients where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 166. and touches no training data — the whole point of the word ==='
+select
+  (select count(*) from public.workout_sessions
+    where client_id = '22222222-2222-2222-2222-222222222222') as workouts,
+  (select count(*) from public.body_measurements
+    where client_id = '22222222-2222-2222-2222-222222222222') as check_ins,
+  (select deactivated_at is not null
+     from public.users where id = '22222222-2222-2222-2222-222222222222') as dormant;
+
+\echo ''
+\echo '=== 167. signing back in wakes it, and says so once ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.reactivate_account() as woke_it;
+-- Second call returns false: there is nothing left to wake, so the app does
+-- not greet somebody with "welcome back" on every launch.
+select public.reactivate_account() as woke_it_again;
+
+\echo ''
+\echo '=== 168. the coach link does not come back with them ==='
+reset role;
+select status from public.coach_clients
+ where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 169. a block records which catalogue entry it came from ==='
+reset role;
+reset request.jwt.claims;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select e.id as wx_id from public.exercises e where e.external_id = 'wx-1' \gset
+select public.save_routine('Measured routine', jsonb_build_array(
+  jsonb_build_object('name', 'Barbell bench press', 'scheme', '3 × 10',
+                     'order_index', 0, 'exercise_id', :'wx_id', 'target_kg', 80),
+  jsonb_build_object('name', 'Treadmill', 'scheme', '5 km', 'order_index', 1,
+                     'target_distance_km', 5, 'target_duration_seconds', 1800),
+  jsonb_build_object('name', 'Plank', 'scheme', '3 × 45s', 'order_index', 2,
+                     'target_duration_seconds', 45)
+)) as routine \gset
+select name, scheme, target_kg, target_distance_km, target_duration_seconds,
+       exercise_id is not null as linked
+  from public.routine_blocks where routine_instance_id = :'routine'
+ order by order_index;
+
+\echo ''
+\echo '=== 170. a zero target is the stepper floor, not a prescription ==='
+select public.save_routine('Measured routine', jsonb_build_array(
+  jsonb_build_object('name', 'Treadmill', 'scheme', '5 km', 'order_index', 0,
+                     'target_distance_km', 0, 'target_duration_seconds', 0)
+), null, :'routine') is not null as saved;
+select target_distance_km, target_duration_seconds
+  from public.routine_blocks where routine_instance_id = :'routine';
+
+\echo ''
+\echo '=== 171. the measure comes from the catalogue, or from what was prescribed ==='
+reset role;
+reset request.jwt.claims;
+-- A cardio catalogue entry. The seed has none, and `body_part = 'cardio'` is
+-- how the import guesses one.
+insert into public.exercises (name, source, external_id, body_part, equipment, measure)
+values ('Treadmill', 'workoutx', 'wx-run', 'cardio', 'machine', 'distance_duration')
+returning id as wx_run \gset
+select
+  -- Linked: the catalogue answers, whatever the targets happen to be.
+  public.measure_for_block(:'wx_run', null, null, null) as from_catalogue,
+  -- Typed by hand: the prescription answers for itself.
+  public.measure_for_block(null, null, 5, 1800) as a_run,
+  public.measure_for_block(null, 30, 0.03, null) as a_carry,
+  public.measure_for_block(null, null, null, 45) as a_hold,
+  public.measure_for_block(null, null, null, null) as everything_else;
+
+\echo ''
+\echo '=== 172. starting a routine seeds each lift in the terms it is counted in ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.save_routine('Mixed day', jsonb_build_array(
+  jsonb_build_object('name', 'Bench', 'scheme', '3 × 10', 'order_index', 0,
+                     'target_kg', 80),
+  jsonb_build_object('name', 'Treadmill', 'scheme', '5 km · 30:00', 'order_index', 1,
+                     'exercise_id', :'wx_run',
+                     'target_distance_km', 5, 'target_duration_seconds', 1800),
+  jsonb_build_object('name', 'Plank', 'scheme', '3 × 45s', 'order_index', 2,
+                     'target_duration_seconds', 45)
+)) as mixed \gset
+select public.start_workout(:'mixed') as mixed_session \gset
+select e.name, count(s.id) as sets,
+       max(s.weight_kg) as kg, max(s.reps) as reps,
+       max(s.distance_km) as km, max(s.duration_seconds) as secs
+  from public.workout_exercises e
+  left join public.workout_sets s on s.workout_exercise_id = e.id
+ where e.workout_session_id = :'mixed_session'
+ group by e.name, e.order_index
+ order by e.order_index;
+
+\echo ''
+\echo '=== 173. and the catalogue link reaches the session, for the preview ==='
+select e.name, e.exercise_id is not null as linked
+  from public.workout_exercises e
+ where e.workout_session_id = :'mixed_session'
+ order by e.order_index;
+
+\echo ''
+\echo '=== 174. an assigned copy arrives with the distance, not without it ==='
+select public.attach_coach('11111111-1111-1111-1111-111111111111');
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select public.save_program('Conditioning', 1, 1, jsonb_build_array(
+  jsonb_build_object('name', 'Cardio', 'order_index', 0, 'blocks', jsonb_build_array(
+    jsonb_build_object('name', 'Treadmill', 'scheme', '3 km · 20:00', 'order_index', 0,
+                       'exercise_id', :'wx_run',
+                       'target_distance_km', 3, 'target_duration_seconds', 1200)
+  ))
+)) as cardio_program \gset
+select public.assign_program(:'cardio_program',
+  array['22222222-2222-2222-2222-222222222222']::uuid[]) as assigned;
+reset role;
+-- Taken here rather than as the client: `program_routines` is the coach's to
+-- read, so a client joining through it sees nothing and the \gset comes back
+-- empty.
+select i.id as cardio_instance
+  from public.routine_instances i
+  join public.program_routines r on r.id = i.program_routine_id
+ where r.program_id = :'cardio_program' limit 1 \gset
+select b.name, b.target_distance_km, b.target_duration_seconds,
+       b.exercise_id is not null as linked
+  from public.routine_blocks b
+ where b.routine_instance_id = :'cardio_instance';
+
+\echo ''
+\echo '=== 175. moving only the distance is a change, and is proposed as one ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select public.save_program('Conditioning', 1, 1, jsonb_build_array(
+  jsonb_build_object('name', 'Cardio', 'order_index', 0, 'blocks', jsonb_build_array(
+    -- The scheme is display text and did not move; only the prescription did.
+    jsonb_build_object('name', 'Treadmill', 'scheme', '3 km · 20:00', 'order_index', 0,
+                       'exercise_id', :'wx_run',
+                       'target_distance_km', 5, 'target_duration_seconds', 1200)
+  ))
+), null, :'cardio_program') is not null as resaved;
+select public.publish_program(:'cardio_program') as asked;
+reset role;
+select u.summary, b.target_distance_km as proposed_km
+  from public.routine_updates u
+  join public.routine_update_blocks b on b.routine_update_id = u.id
+  join public.routine_instances i on i.id = u.routine_instance_id
+  join public.program_routines r on r.id = i.program_routine_id
+ where r.program_id = :'cardio_program';
+
+\echo ''
+\echo '=== 176. accepting it keeps the distance rather than flattening the copy ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.decide_routine_update(:'cardio_instance', true) as accepted;
+reset role;
+select b.target_distance_km, b.target_duration_seconds,
+       b.exercise_id is not null as still_linked
+  from public.routine_blocks b
+ where b.routine_instance_id = :'cardio_instance';
+
+\echo ''
+\echo '=== 177. a coach editing the copy keeps the prescription they can see ==='
+-- The fourth write path. It replaces the blocks like every other save here, so
+-- a coach fixing a typo used to blank the distance on the client''s treadmill.
+set role authenticated;
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select public.save_client_routine(:'cardio_instance', 'Conditioning (fixed)',
+  jsonb_build_array(
+    jsonb_build_object('name', 'Treadmill', 'scheme', '5 km · 20:00', 'order_index', 0,
+                       'exercise_id', :'wx_run',
+                       'target_distance_km', 5, 'target_duration_seconds', 1200)
+  )) is not null as saved;
+reset role;
+select b.name, b.target_distance_km, b.target_duration_seconds,
+       b.exercise_id is not null as still_linked
+  from public.routine_blocks b
+ where b.routine_instance_id = :'cardio_instance';
+
+\echo ''
+\echo '=== 178. the measure guess reads equipment, not just the body part ==='
+-- Battling ropes came through as load × reps, and the builder offered a coach
+-- a working weight in kilograms for it.
+reset role;
+reset request.jwt.claims;
+select
+  public.guess_exercise_measure('Battling Ropes', 'waist', 'rope') as ropes,
+  public.guess_exercise_measure('Jump rope', 'cardio', 'rope') as skipping,
+  public.guess_exercise_measure('Sled push', 'upper legs', 'sled machine') as sled,
+  public.guess_exercise_measure('Stationary bike walk', 'cardio', 'stationary bike')
+    as bike,
+  public.guess_exercise_measure('Front plank', 'waist', 'body weight') as plank,
+  public.guess_exercise_measure('3/4 sit-up', 'waist', 'body weight') as situp,
+  public.guess_exercise_measure('Barbell bench press', 'chest', 'barbell') as bench;
+
+\echo ''
+\echo '=== 179. and it runs on every import, not once in a migration ==='
+-- The sync inserts rows without setting `measure`, so a guess that only ever
+-- ran as a one-off UPDATE left everything imported afterwards on the default.
+insert into public.exercises (name, source, external_id, body_part, equipment)
+values ('Battle Ropes Wave', 'workoutx', 'wx-ropes', 'shoulders', 'rope');
+select name, measure from public.exercises where external_id = 'wx-ropes';
+
+\echo ''
+\echo '=== 180. an answered measure is not overruled by the guess ==='
+-- What makes a coach-facing override possible later: the guess fills in the
+-- default and nothing else.
+update public.exercises set measure = 'load_reps' where external_id = 'wx-ropes';
+select measure as guessed_again from public.exercises where external_id = 'wx-ropes';
+update public.exercises set measure = 'load_distance', name = 'Battle Ropes Drag'
+ where external_id = 'wx-ropes';
+select measure as kept_the_answer from public.exercises where external_id = 'wx-ropes';
+
+\echo ''
+\echo '=== 181. distance is claimed only where something measures distance ==='
+-- The dataset files burpees and mountain climbers under cardio. Asking a coach
+-- for kilometres of burpees is the same bug as offering kilograms of rope.
+select
+  public.guess_exercise_measure('Burpee', 'cardio', 'body weight') as burpee,
+  public.guess_exercise_measure('Mountain climber', 'cardio', 'body weight')
+    as climber,
+  public.guess_exercise_measure('Jumping jack', 'cardio', 'body weight') as jacks,
+  -- A machine that does measure it still says so.
+  public.guess_exercise_measure('Treadmill walk', 'cardio', 'treadmill') as treadmill,
+  -- And a hold is still a hold, body weight or not.
+  public.guess_exercise_measure('Front plank', 'waist', 'body weight') as plank,
+  -- A rope on a cable stack is not a battling rope.
+  public.guess_exercise_measure('Cable rope overhead triceps extension',
+    'upper arms', 'cable') as cable_rope;

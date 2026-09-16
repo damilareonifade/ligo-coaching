@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { ApiProgramBlock, ApiProgramRoutine, BuilderKind } from '@/api/types';
+import type { ApiProgramBlock, ApiProgramRoutine, BuilderKind, SetMeasure } from '@/api/types';
 import { newBlock, resizeRoutines } from '@/lib/programs';
 
 /**
@@ -41,7 +41,12 @@ interface ProgramDraftState {
   readonly selectRoutine: (routineId: string) => void;
   /** Names a routine. "Routine 2" is a starting point, not a requirement. */
   readonly renameRoutine: (routineId: string, name: string) => void;
-  readonly addBlock: (name: string) => void;
+  /**
+   * The catalogue row it came from, and how that row is measured — so a
+   * treadmill is not opened asking for reps. Both absent for a name typed on
+   * the create-exercise screen, which reads as load × reps.
+   */
+  readonly addBlock: (name: string, exerciseId?: string | null, measure?: SetMeasure) => void;
   readonly updateBlock: (blockId: string, patch: Partial<ApiProgramBlock>) => void;
   readonly removeBlock: (blockId: string) => void;
   /** Seed the draft from something already saved, for an edit. */
@@ -109,10 +114,12 @@ export const useProgramDraftStore = create<ProgramDraftState>((set, get) => ({
       ),
     })),
 
-  addBlock: (name) =>
+  addBlock: (name, exerciseId = null, measure) =>
     set((state) => ({
       routines: state.routines.map((routine) =>
-        routine.id === state.selectedRoutineId ? { ...routine, blocks: [...routine.blocks, newBlock(name)] } : routine,
+        routine.id === state.selectedRoutineId
+          ? { ...routine, blocks: [...routine.blocks, newBlock(name, exerciseId, measure)] }
+          : routine,
       ),
     })),
 

@@ -13,6 +13,7 @@
  */
 import { exerciseGifUrl } from '@/lib/exerciseGif';
 import { parseDestination } from '@/lib/notifications';
+import { toMeasure } from '@/lib/measures';
 import { assignedLabel, programMeta, programStatusLabel } from '@/lib/programs';
 
 import { ApiError } from './client';
@@ -32,6 +33,7 @@ import type {
   ApiRoutineUpdate,
   ApiSessionExercise,
   ApiSessionSet,
+  SetMeasure,
 } from './types';
 
 type Tables = Database['public']['Tables'];
@@ -45,7 +47,19 @@ type Tables = Database['public']['Tables'];
 export type BlockRow = Pick<
   Tables['routine_blocks']['Row'],
   'id' | 'name' | 'scheme' | 'rpe' | 'target_kg' | 'note' | 'order_index'
->;
+> &
+  Partial<
+    Pick<
+      Tables['routine_blocks']['Row'],
+      'exercise_id' | 'target_distance_km' | 'target_duration_seconds'
+    >
+  > & {
+    /**
+     * The catalogue row, embedded for its measure alone. To-one, and null for
+     * a block whose name was typed rather than picked.
+     */
+    readonly exercises?: { readonly measure: string } | null;
+  };
 
 export function toBlock(row: BlockRow): ApiProgramBlock {
   return {
@@ -54,8 +68,27 @@ export function toBlock(row: BlockRow): ApiProgramBlock {
     scheme: row.scheme,
     rpe: row.rpe,
     targetKg: row.target_kg,
+    targetDistanceKm: row.target_distance_km ?? null,
+    targetDurationSeconds: row.target_duration_seconds ?? null,
+    exerciseId: row.exercise_id ?? null,
+    // Unlinked blocks answer from their own prescription — a block carrying a
+    // distance is measured in distance, whatever it is called. The same rule
+    // `measure_for_block` applies on the server.
+    measure: row.exercises
+      ? toMeasure(row.exercises.measure)
+      : inferMeasure(row.target_kg, row.target_distance_km, row.target_duration_seconds),
     note: row.note,
   };
+}
+
+function inferMeasure(
+  targetKg: number | null | undefined,
+  distanceKm: number | null | undefined,
+  durationSeconds: number | null | undefined,
+): SetMeasure {
+  if (distanceKm) return (targetKg ?? 0) > 0 ? 'load_distance' : 'distance_duration';
+  if (durationSeconds) return 'duration';
+  return 'load_reps';
 }
 
 /**
@@ -78,7 +111,7 @@ export function toBlocks(rows: readonly BlockRow[] | null): readonly ApiProgramB
  * routine at a time — so the answer is the distinct clients across all of them.
  */
 export const PROGRAM_SELECT =
-  '*, program_routines(*, program_blocks(*), routine_instances(client_id))';
+  '*, program_routines(*, program_blocks(*, exercises(measure)), routine_instances(client_id))';
 
 export type ProgramRoutineRow = Pick<
   Tables['program_routines']['Row'],
@@ -155,6 +188,8 @@ export function toExerciseOption(
     // `gif_path`, not `gif_url`: the latter is WorkoutX's own authenticated
     // endpoint and 401s from a device. NULL until somebody opens this one.
     gifUrl: exerciseGifUrl(row.gif_path),
+    // A text column with a check constraint, so it arrives as `string`.
+    measure: toMeasure(row.measure),
   };
 }
 
@@ -189,7 +224,7 @@ export type RoutineInstanceRow = Tables['routine_instance_progress']['Row'] & {
  * decides which routine the client is offered next.
  */
 export const ROUTINE_SELECT =
-  '*, routine_blocks(*), routine_updates(*, routine_update_blocks(*))';
+  '*, routine_blocks(*, exercises(measure)), routine_updates(*, routine_update_blocks(*, exercises(measure)))';
 
 function toRoutineUpdate(row: RoutineUpdateRow | null | undefined): ApiRoutineUpdate | null {
   if (!row) return null;

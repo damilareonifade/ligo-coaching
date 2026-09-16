@@ -73,8 +73,9 @@ export default function PickerContent() {
   const add = useCallback(
     (option: ApiExerciseOption) => {
       // The option's id *is* the catalogue row's id — the picker reads
-      // public.exercises — so the block remembers where it came from.
-      addExercise(option.name, option.id);
+      // public.exercises — so the block remembers where it came from, and
+      // opens asking for the numbers this exercise is actually counted in.
+      addExercise(option.name, option.id, option.measure);
       // Back either way: picking an exercise is one decision, and staying here
       // would leave the coach wondering whether the tap landed.
       router.back();

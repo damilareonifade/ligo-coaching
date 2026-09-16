@@ -15,7 +15,8 @@ type UserRow = {
   readonly onboarded_at: string | null;
 };
 
-const COLUMNS = 'id, email, full_name, avatar_url, role, role_confirmed, onboarded_at';
+const COLUMNS =
+  'id, email, full_name, avatar_url, role, role_confirmed, onboarded_at, deactivated_at';
 
 export function profileFromRow(row: UserRow): ApiProfile {
   return {
@@ -76,6 +77,22 @@ export async function fetchOwnProfile(): Promise<ApiProfile> {
     // account (deleted user, or a token from another project).
     throw new ApiError('Your profile could not be found. Please sign in again.', 404);
   }
+
+  /**
+   * Coming back.
+   *
+   * Somebody who has signed in has already answered the only question
+   * deactivation asks, so there is no "reactivate?" screen — the account wakes
+   * up here, on the first read after auth.
+   *
+   * Failure is swallowed on purpose: a dormant flag that could not be cleared
+   * must not become a locked door. The worst case is that it clears on the
+   * next launch instead.
+   */
+  if (data.deactivated_at) {
+    await Promise.resolve(supabase.rpc('reactivate_account')).catch(() => undefined);
+  }
+
   return profileFromRow(data);
 }
 

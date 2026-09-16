@@ -1,5 +1,11 @@
 import { SHARE_DOMAINS } from '@/api/types';
-import type { ApiSettingsGroup, ApiSettingsRow, ApiSharePermissions } from '@/api/types';
+import type {
+  ApiDataAccessRow,
+  ApiImportSource,
+  ApiSettingsGroup,
+  ApiSettingsRow,
+  ApiSharePermissions,
+} from '@/api/types';
 import { hasFeature } from '@/lib/features';
 import { unitsSummary, type LengthUnit, type WeightUnit } from '@/lib/units';
 
@@ -13,6 +19,78 @@ import { unitsSummary, type LengthUnit, type WeightUnit } from '@/lib/units';
  * becomes a deploy. It is composed here instead, from the handful of
  * values that genuinely come from the database.
  * ------------------------------------------------------------------ */
+
+/**
+ * The apps a history can be brought in from.
+ *
+ * Two, and both for the same reason: they are gym-logging apps whose exports
+ * are sessions and sets, which is what SetTrack stores, so nothing is invented in
+ * the middle.
+ *
+ * MyFitnessPal was here and is not: it exports meals and foods, and nutrition
+ * does not exist yet — there is no table for it to land in. It comes back with
+ * the `food` feature.
+ *
+ * Apple Health was here too and never belonged. It is a device framework, not
+ * a file somebody exports, so it is a connection rather than an import — it
+ * sits with the other integrations, behind their flag.
+ */
+export const IMPORT_SOURCES: readonly ApiImportSource[] = [
+  { id: 'strong', name: 'Strong', meta: 'Sessions and sets', mark: 'ST' },
+  { id: 'hevy', name: 'Hevy', meta: 'Sessions and sets', mark: 'HE' },
+];
+
+/**
+ * Who can reach this data, for the Data & privacy screen.
+ *
+ * Composed from the same `coach_clients` row every other permission surface
+ * reads, rather than a list the API sends — two sources for "what does my
+ * coach see" is how a screen ends up reassuring somebody about access they
+ * revoked last week.
+ */
+export function buildDataAccessRows(
+  coachName: string | null,
+  permissions: ApiSharePermissions,
+  logFor: boolean,
+): readonly ApiDataAccessRow[] {
+  const rows: ApiDataAccessRow[] = [
+    {
+      id: 'you',
+      label: 'You',
+      chip: 'Everything',
+      tone: 'violet',
+    },
+  ];
+
+  if (!coachName) {
+    rows.push({ id: 'coach', label: 'No coach attached', chip: 'Nothing', tone: 'neutral' });
+    return rows;
+  }
+
+  const shared = SHARE_DOMAINS.filter((domain) => permissions[domain]).length;
+
+  rows.push({
+    id: 'coach',
+    label: coachName,
+    chip: shared === 0 ? 'Nothing' : `${shared} of ${SHARE_DOMAINS.length}`,
+    // Neutral when they can see nothing: violet would read as a warning about
+    // access that does not exist.
+    tone: shared === 0 ? 'neutral' : 'violet',
+  });
+
+  if (logFor) {
+    rows.push({
+      id: 'log-for',
+      label: `${coachName.split(' ')[0]} can write in your name`,
+      chip: 'Logging',
+      // The one row that is a caution rather than a statement: it is the only
+      // permission that lets somebody else add to this history.
+      tone: 'danger',
+    });
+  }
+
+  return rows;
+}
 
 /** "3 of 5" — how much of themselves the client has shared. */
 export function permissionSummary(permissions: ApiSharePermissions): string {

@@ -632,6 +632,12 @@ async function patchClientRoutine({
         target_kg: block.targetKg ?? null,
         note: block.note,
         order_index: index,
+        // The blocks are replaced wholesale, so anything left out of this
+        // object is a field cleared — which is how a coach fixing a typo used
+        // to blank the distance on a client's treadmill.
+        exercise_id: block.exerciseId ?? null,
+        target_distance_km: block.targetDistanceKm ?? null,
+        target_duration_seconds: block.targetDurationSeconds ?? null,
       })),
     }),
   );

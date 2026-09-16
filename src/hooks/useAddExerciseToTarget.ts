@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { useAddSessionExerciseMutation } from '@/api/clientTraining';
 import { useProgramDetailQuery, useSaveProgramMutation } from '@/api/coachPrograms';
 import { errorMessage } from '@/api/client';
+import type { SetMeasure } from '@/api/types';
 import { newBlock } from '@/lib/programs';
 import { newSessionExercise } from '@/lib/session';
 import { useProgramDraftStore } from '@/store/programDraftStore';
@@ -27,7 +28,11 @@ interface AddExerciseTarget {
  * route a listed one does.
  */
 export function useAddExerciseToTarget({ programId, routineId, sessionId }: AddExerciseTarget): {
-  readonly addExercise: (name: string, exerciseId?: string | null) => void;
+  readonly addExercise: (
+    name: string,
+    exerciseId?: string | null,
+    measure?: SetMeasure,
+  ) => void;
   readonly adding: boolean;
 } {
   const showToast = useUiStore((state) => state.showToast);
@@ -43,7 +48,7 @@ export function useAddExerciseToTarget({ programId, routineId, sessionId }: AddE
   }, [program, routineId]);
 
   const addExercise = useCallback(
-    (name: string, exerciseId: string | null = null) => {
+    (name: string, exerciseId: string | null = null, measure?: SetMeasure) => {
       if (sessionId) {
         addToSession(
           { sessionId, exercise: newSessionExercise(name, exerciseId) },
@@ -52,13 +57,15 @@ export function useAddExerciseToTarget({ programId, routineId, sessionId }: AddE
         return;
       }
       if (!programId) {
-        addToDraft(name);
+        addToDraft(name, exerciseId, measure);
         return;
       }
       if (!program || !targetRoutine) return;
 
       const routines = program.routines.map((day) =>
-        day.id === targetRoutine.id ? { ...day, blocks: [...day.blocks, newBlock(name)] } : day,
+        day.id === targetRoutine.id
+          ? { ...day, blocks: [...day.blocks, newBlock(name, exerciseId, measure)] }
+          : day,
       );
       saveProgram(
         {

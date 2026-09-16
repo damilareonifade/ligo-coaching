@@ -68,6 +68,7 @@ import {
 } from '@/lib/community';
 import { initials } from '@/lib/format';
 import { appendOwnMessage, filterInbox, withLatestPreview } from '@/lib/messages';
+import { IMPORT_SOURCES } from '@/lib/clientProfile';
 import {
   assignedLabel,
   filterExerciseOptions,
@@ -82,7 +83,7 @@ import { useAuthStore } from '@/store/authStore';
 
 
 /* ------------------------------------------------------------------ *
- * Client-side training fixtures. Copy is verbatim from the "Ligo
+ * Client-side training fixtures. Copy is verbatim from the "SetTrack
  * Client App" design canvas — do not paraphrase it here.
  * ------------------------------------------------------------------ */
 
@@ -1017,7 +1018,7 @@ const mockClientProfileBase: ApiClientProfile = {
       ],
     },
   ],
-  version: 'Ligo 2.4.0 · your profile works with no coach, no subscription and no export fee.',
+  version: 'SetTrack 2.4.0 · your profile works with no coach, no subscription and no export fee.',
 };
 
 /**
@@ -1244,16 +1245,11 @@ export const mockClientData: ApiClientData = {
     { label: 'PROGRAMS', value: '9' },
   ],
   lastExport: 'Last export: 12 Jul 2026',
-  importSources: [
-    { id: 'strong', name: 'Strong', meta: 'Sessions and sets', mark: 'ST' },
-    { id: 'hevy', name: 'Hevy', meta: 'Sessions and sets', mark: 'HE' },
-    { id: 'mfp', name: 'MyFitnessPal', meta: 'Meals and foods', mark: 'MF' },
-    { id: 'apple-health', name: 'Apple Health', meta: 'Weight and steps', mark: 'AH' },
-  ],
+  importSources: IMPORT_SOURCES,
   access: [
     { id: 'you', label: 'You', chip: 'Full control', tone: 'violet' },
     { id: 'coach', label: 'Sam Okafor', chip: '3 of 5 areas', tone: 'violet' },
-    { id: 'staff', label: 'Ligo staff', chip: 'No access', tone: 'neutral' },
+    { id: 'staff', label: 'SetTrack staff', chip: 'No access', tone: 'neutral' },
   ],
 };
 
@@ -1284,7 +1280,7 @@ const initialHealth: ApiClientHealth = {
     {
       id: 'conditions',
       title: 'CONDITIONS',
-      note: 'Only what you enter. Ligo never infers a condition.',
+      note: 'Only what you enter. SetTrack never infers a condition.',
       rows: [{ id: 'asthma', label: 'Asthma', value: 'Exercise-induced, inhaler pre-session' }],
     },
     {
@@ -2801,7 +2797,15 @@ const initialExerciseOptions: readonly ApiExerciseOption[] = [
     group: 'Chest',
   },
   { id: 'ex-fly', name: 'Cable fly', meta: 'Cable · Chest', tag: 'Accessory', group: 'Chest' },
-  { id: 'ex-pushup', name: 'Push-up', meta: 'Bodyweight · Chest', tag: 'Accessory', group: 'Chest' },
+  {
+    id: 'ex-pushup',
+    name: 'Push-up',
+    meta: 'Bodyweight · Chest',
+    tag: 'Accessory',
+    group: 'Chest',
+    // The load is the body, so the builder offers no weight to prescribe.
+    measure: 'reps',
+  },
   {
     id: 'ex-pulldown',
     name: 'Lat pulldown',
@@ -2845,6 +2849,33 @@ const initialExerciseOptions: readonly ApiExerciseOption[] = [
     meta: 'Dumbbell · Shoulders',
     tag: 'Accessory',
     group: 'Shoulders',
+  },
+  // The three that are not load × reps. Here so a mocked run meets them at
+  // all — without one in the catalogue the builder's distance and time fields
+  // are unreachable offline, which is where most of this is developed.
+  {
+    id: 'ex-treadmill',
+    name: 'Treadmill',
+    meta: 'Machine · Cardio',
+    tag: 'Accessory',
+    group: 'Cardio',
+    measure: 'distance_duration',
+  },
+  {
+    id: 'ex-plank',
+    name: 'Plank',
+    meta: 'Bodyweight · Core',
+    tag: 'Accessory',
+    group: 'Core',
+    measure: 'duration',
+  },
+  {
+    id: 'ex-farmers',
+    name: 'Farmers walk',
+    meta: 'Dumbbell · Core',
+    tag: 'Compound',
+    group: 'Core',
+    measure: 'load_distance',
   },
 ];
 
@@ -3010,7 +3041,7 @@ const coachNotifications: readonly ApiNotificationGroup[] = [
         body: 'A short guide, since Ben is the second this month.',
         when: '4d',
         unread: false,
-        // Opens inside Ligo — the reader is mid-triage and coming back.
+        // Opens inside SetTrack — the reader is mid-triage and coming back.
         destination: { kind: 'web', url: 'https://ligo.app/help/detaching' },
       },
     ],
@@ -3078,7 +3109,7 @@ const clientNotifications: readonly ApiNotificationGroup[] = [
         body: 'Ironworks Lagos, 09:00. Opens in your calendar.',
         when: '5d',
         unread: false,
-        // Leaves Ligo on purpose: the calendar owns this, not us.
+        // Leaves SetTrack on purpose: the calendar owns this, not us.
         destination: { kind: 'external', url: 'https://cal.ligo.app/e/sat-0900' },
       },
     ],

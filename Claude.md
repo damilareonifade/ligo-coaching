@@ -3,7 +3,7 @@
 
 ## Project
 
-## ligo — Ligo is a coaching companion for gyms, built to help gym coaches run a better day. Coaches build and assign programs, track every student's sessions, log progress, send form cues and feedback, and keep their whole roster on plan — all from their phone, so guiding a student never depends on being in the same room.
+## settrack — SetTrack is a coaching companion for gyms, built to help gym coaches run a better day. Coaches build and assign programs, track every student's sessions, log progress, send form cues and feedback, and keep their whole roster on plan — all from their phone, so guiding a student never depends on being in the same room.
 
 ## Slogan
 

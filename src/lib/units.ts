@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------ *
  * Units.
  *
- * Ligo stores kilograms and centimetres, always. Nothing here changes
+ * SetTrack stores kilograms and centimetres, always. Nothing here changes
  * what is written down — a client on pounds and their coach on kilos
  * are reading one number, and the database has one answer for what a
  * bench press weighed.

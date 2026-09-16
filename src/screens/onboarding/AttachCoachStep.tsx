@@ -64,7 +64,7 @@ export default function AttachCoachStep() {
         <LIText
           size="p"
           color="body"
-          text="Optional, and reversible. Everything in Ligo works without one."
+          text="Optional, and reversible. Everything in SetTrack works without one."
           className="font-geist"
         />
       </View>

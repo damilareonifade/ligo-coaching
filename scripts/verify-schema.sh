@@ -7,7 +7,7 @@
 # It does NOT touch the remote project.
 set -euo pipefail
 
-DB="${LIGO_VERIFY_DB:-ligo_verify}"
+DB="${SETTRACK_VERIFY_DB:-settrack_verify}"
 
 command -v psql >/dev/null || { echo "psql not found"; exit 1; }
 

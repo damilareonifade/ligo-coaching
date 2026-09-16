@@ -55,7 +55,7 @@ export default function ChatContent({ chat }: ChatContentProps) {
       <View className="flex-1">
         <ChatThread
           messages={chat.messages}
-          emptyMessage={`Say hello — ${chat.coachName} will see it the next time he opens Ligo.`}
+          emptyMessage={`Say hello — ${chat.coachName} will see it the next time he opens SetTrack.`}
         />
       </View>
 

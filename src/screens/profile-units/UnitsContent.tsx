@@ -21,7 +21,7 @@ const LENGTH_OPTIONS = [
 /**
  * Which units this person reads in.
  *
- * A display choice and nothing more: Ligo stores kilograms and centimetres
+ * A display choice and nothing more: SetTrack stores kilograms and centimetres
  * whatever is picked here, so a client on pounds and their coach on kilos are
  * looking at one number written two ways. Nothing is converted in the
  * database, and switching back and forth cannot drift a weight.

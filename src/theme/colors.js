@@ -1,4 +1,4 @@
-// Single source of truth for Ligo colors.
+// Single source of truth for SetTrack colors.
 //
 // Two palettes, one set of names. Every colour below is named for the job it
 // does — `surface`, `foreground`, `border` — rather than for what it looks

@@ -40,7 +40,7 @@ export default function HomeHeader({ subtitle, unread = false }: HomeHeaderProps
       unread={unread}
       // Today's own size. A greeting is the longest title in the app and the
       // least important thing on the screen — the plan card under it is what
-      // a client opened Ligo to see.
+      // a client opened SetTrack to see.
       titleSize="h4"
       testID="home-header"
     />

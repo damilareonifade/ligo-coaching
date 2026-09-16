@@ -292,7 +292,7 @@ export const BOARD_CONSENT_LABEL =
 
 /** Being on a board is not permission to be posted about. */
 export const BOARD_SHARE_NOTE =
-  'Only this metric is shared. Posting your placement anywhere outside Ligo is a separate choice, asked for each time.';
+  'Only this metric is shared. Posting your placement anywhere outside SetTrack is a separate choice, asked for each time.';
 
 /** The coach's half of the bargain, on the screen where they send invites. */
 export const GROUP_INVITE_NOTE =

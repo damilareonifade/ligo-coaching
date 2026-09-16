@@ -49,7 +49,7 @@ export default function ChooseRoleAfterSignIn() {
         <LIText
           size="h1"
           color="primary"
-          text="How will you use Ligo?"
+          text="How will you use SetTrack?"
           className="font-geist-semibold text-foreground"
         />
         <LIText

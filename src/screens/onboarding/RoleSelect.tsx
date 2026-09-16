@@ -59,7 +59,7 @@ export default function RoleSelect() {
         <LIText
           size="p"
           color="body"
-          text="Pick how you will use Ligo. Adding coaching later needs no second account."
+          text="Pick how you will use SetTrack. Adding coaching later needs no second account."
           className="font-geist"
         />
       </View>

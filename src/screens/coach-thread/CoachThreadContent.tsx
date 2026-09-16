@@ -55,7 +55,7 @@ export default function CoachThreadContent({ thread }: CoachThreadContentProps) 
       <View className="flex-1">
         <ChatThread
           messages={thread.messages}
-          emptyMessage={`Nothing here yet. Open with a question — ${thread.name} sees it the next time they open Ligo.`}
+          emptyMessage={`Nothing here yet. Open with a question — ${thread.name} sees it the next time they open SetTrack.`}
         />
       </View>
 

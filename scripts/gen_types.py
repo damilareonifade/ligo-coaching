@@ -1,6 +1,6 @@
 """Emits src/api/database.types.ts from a Postgres holding the migrations.
 
-Called by scripts/gen-types.sh. Covers exactly what Ligo's schema uses; if a
+Called by scripts/gen-types.sh. Covers exactly what SetTrack's schema uses; if a
 migration introduces a type this does not map, it fails loudly rather than
 emitting `any` — that is the point of having types at all.
 """
@@ -296,7 +296,7 @@ def relationships_by_relation(catalog: dict) -> dict[str, list[dict]]:
 
 
 def main() -> None:
-    database = sys.argv[1] if len(sys.argv) > 1 else "ligo_types"
+    database = sys.argv[1] if len(sys.argv) > 1 else "settrack_types"
     raw = subprocess.run(
         ["psql", "-Atq", "-d", database, "-c", CATALOG_QUERY],
         capture_output=True,

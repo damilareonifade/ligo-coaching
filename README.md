@@ -1,4 +1,4 @@
-# Ligo
+# SetTrack
 
 **Coach. Guide. Progress.**
 

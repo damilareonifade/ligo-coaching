@@ -30,7 +30,7 @@ const COPY: Readonly<Record<HealthSection, SectionCopy>> = {
   },
   conditions: {
     title: 'CONDITIONS',
-    note: 'Only what you enter. Ligo never infers a condition.',
+    note: 'Only what you enter. SetTrack never infers a condition.',
     labelHint: 'Asthma',
     valueHint: 'Exercise-induced, inhaler pre-session',
   },

@@ -47,7 +47,7 @@ function NotificationRow({ item, onRead, first, last }: NotificationRowProps) {
     }
 
     if (destination.kind === 'web') {
-      // In-app, so the person stays in Ligo and comes back with a Done button
+      // In-app, so the person stays in SetTrack and comes back with a Done button
       // rather than having to find their way back through a browser.
       void WebBrowser.openBrowserAsync(destination.url).catch(() =>
         showToast('That link could not be opened.', 'danger'),

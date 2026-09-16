@@ -2,7 +2,7 @@ const expoPreset = require('jest-expo/jest-preset');
 
 /**
  * Packages that ship untransformed ESM/TS and must go through Babel.
- * The first entry mirrors jest-expo's own allowlist plus Ligo's additions.
+ * The first entry mirrors jest-expo's own allowlist plus SetTrack's additions.
  */
 const transformAllowlist = [
   // jest-expo defaults
@@ -18,7 +18,7 @@ const transformAllowlist = [
   '@sentry/react-native',
   'native-base',
   'standard-navigation',
-  // Ligo: styling, lists, sheets, charts
+  // SetTrack: styling, lists, sheets, charts
   'nativewind',
   'react-native-url-polyfill',
   'react-native-css',

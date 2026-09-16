@@ -2,7 +2,7 @@
  * Which features this build actually has.
  *
  * Not entitlement, and not a per-user setting — this is "does this part of the
- * app exist yet". Ligo is being built domain by domain against a real backend,
+ * app exist yet". SetTrack is being built domain by domain against a real backend,
  * and a tab that opens onto an error is worse than a tab that is not there.
  *
  * A flag being off removes the feature everywhere at once: its tab, and every

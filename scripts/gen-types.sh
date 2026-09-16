@@ -7,7 +7,7 @@
 # instead, so types can be regenerated without the daemon running.
 set -euo pipefail
 
-DB="${LIGO_VERIFY_DB:-ligo_types}"
+DB="${SETTRACK_VERIFY_DB:-settrack_types}"
 
 dropdb --if-exists "$DB"
 createdb "$DB"

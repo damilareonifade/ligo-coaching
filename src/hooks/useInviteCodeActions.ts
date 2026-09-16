@@ -21,7 +21,7 @@ export interface InviteCodeActions {
 
 /** What the coach sends, rather than the bare code with no explanation. */
 export function inviteMessage(code: string): string {
-  return `Join me on Ligo — my invite code is ${code}. You choose what I can see.`;
+  return `Join me on SetTrack — my invite code is ${code}. You choose what I can see.`;
 }
 
 export function useInviteCodeActions(code: string | undefined): InviteCodeActions {

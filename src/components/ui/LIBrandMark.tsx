@@ -19,14 +19,14 @@ const glyph = {
   lg: 26,
 } as const;
 
-/** Ligo's mark: the app icon in-app, for auth screens and empty brand slots. */
+/** SetTrack's mark: the app icon in-app, for auth screens and empty brand slots. */
 export function LIBrandMark({ size = 'md', className }: LIBrandMarkProps) {
   const tokens = useThemeTokens();
   return (
     <View
       className={cn('items-center justify-center rounded-2xl bg-violet', box[size], className)}
       accessibilityRole="image"
-      accessibilityLabel="Ligo"
+      accessibilityLabel="SetTrack"
     >
       <Dumbbell color={tokens.inverse} size={glyph[size]} />
     </View>

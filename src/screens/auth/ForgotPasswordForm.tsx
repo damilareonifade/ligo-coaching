@@ -50,7 +50,7 @@ export default function ForgotPasswordForm() {
           <LIText
             size="p"
             color="body"
-            text={`If ${sentTo} has a Ligo account, a reset link is on its way. The link opens straight back into the app.`}
+            text={`If ${sentTo} has a SetTrack account, a reset link is on its way. The link opens straight back into the app.`}
             className="font-geist"
           />
           <LIText

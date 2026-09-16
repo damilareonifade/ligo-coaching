@@ -1,27 +1,26 @@
 {
   "expo": {
-    "name": "Ligo",
-    "slug": "ligo",
+    "name": "SetTrack",
+    "slug": "settrack",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/brand/SetTrack/ios/AppIcon~ios-marketing.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.ligo.coach"
+      "bundleIdentifier": "app.settrack.coach"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#EBF4FB",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#8B5CF6",
+        "foregroundImage": "./assets/brand/SetTrack/android/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+        "monochromeImage": "./assets/brand/SetTrack/android/res/mipmap-xxxhdpi/ic_launcher_monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "app.ligo.coach"
+      "package": "app.settrack.coach"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/brand/SetTrack/web/icon-512.png",
       "bundler": "metro",
       "output": "single"
     },
@@ -33,10 +32,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/brand/SetTrack-wordmark-white.png",
+          "imageWidth": 260,
           "resizeMode": "contain",
-          "backgroundColor": "#EBF4FB"
+          "backgroundColor": "#8B5CF6"
         }
       ],
       [

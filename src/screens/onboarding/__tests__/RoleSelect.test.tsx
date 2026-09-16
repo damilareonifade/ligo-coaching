@@ -117,7 +117,7 @@ describe('RoleSelect', () => {
     // Signed in rather than bounced to the login screen — Google has already
     // vouched for them — but not silently.
     const [toast] = useUiStore.getState().toasts;
-    expect(toast?.message).toBe('You already have a Ligo account — signed you in.');
+    expect(toast?.message).toBe('You already have a SetTrack account — signed you in.');
     expect(toast?.tone).toBe('info');
   });
 

@@ -20,8 +20,8 @@ function roleLabel(role: UserRole): string {
  */
 export function existingAccountMessage(accountRole: UserRole, chosenRole: UserRole): string {
   if (accountRole === chosenRole) {
-    return 'You already have a Ligo account — signed you in.';
+    return 'You already have a SetTrack account — signed you in.';
   }
 
-  return `You already have a Ligo account as ${roleLabel(accountRole)}, so that is where we signed you in. A role is set when the account is created and cannot be changed afterwards.`;
+  return `You already have a SetTrack account as ${roleLabel(accountRole)}, so that is where we signed you in. A role is set when the account is created and cannot be changed afterwards.`;
 }

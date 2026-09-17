@@ -16,13 +16,20 @@ export type LoginValues = z.infer<typeof loginSchema>;
 interface LoginFormProps {
   readonly onSubmit: (values: LoginValues) => void;
   readonly submitting: boolean;
+  /**
+   * Prefilled address, when the welcome screen already knows whose account
+   * this is. A default rather than a fixed value: the field stays editable,
+   * because "Continue as Sam" is a shortcut and not a claim about who is
+   * holding the phone.
+   */
+  readonly defaultEmail?: string;
 }
 
 /** Owns validation only — the sign-in call lives in the route. */
-export default function LoginForm({ onSubmit, submitting }: LoginFormProps) {
+export default function LoginForm({ onSubmit, submitting, defaultEmail }: LoginFormProps) {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: defaultEmail ?? '', password: '' },
   });
 
   const submit = form.handleSubmit(onSubmit);

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
@@ -19,6 +19,8 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
 /** Composer only: the sign-in call happens here and results flow down as props. */
 export default function LoginScreen() {
   const router = useRouter();
+  // Set when this screen was opened by "Continue as …" on the welcome screen.
+  const { email } = useLocalSearchParams<{ email?: string }>();
   const signIn = useAuthStore((state) => state.signIn);
   const showToast = useUiStore((state) => state.showToast);
   const { mutateAsync, isPending } = useLoginMutation();
@@ -75,7 +77,11 @@ export default function LoginScreen() {
           <LoginHeader />
 
           <View className="gap-6 pt-8">
-            <LoginForm onSubmit={(values) => void handleSubmit(values)} submitting={isPending} />
+            <LoginForm
+              onSubmit={(values) => void handleSubmit(values)}
+              submitting={isPending}
+              defaultEmail={email}
+            />
             <LIText
               size="caption"
               color="accent"

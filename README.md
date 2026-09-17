@@ -43,7 +43,7 @@ Run all five verification steps before calling a change done; the order is in
 ```
 src/app/            Routes. Dumb composers — they fetch, then hand data down.
   _layout.tsx       Providers (Query, gesture handler, safe area, sheets) + auth gate
-  (auth)/           login, register — shown when signed out
+  (auth)/           welcome (the landing), login, register — shown when signed out
   (tabs)/           Today, Roster, Programs, Settings — shown when signed in
   student/[id].tsx  Student detail
 src/screens/        All screen UI, one folder per screen, incl. its skeleton

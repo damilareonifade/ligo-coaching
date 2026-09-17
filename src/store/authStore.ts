@@ -12,6 +12,8 @@ import {
 import type { ApiAuthResult, ApiProfile, ApiSessionUser } from '@/api/types';
 import { fetchOwnProfile, sessionUserFromProfile } from '@/api/users';
 
+import { useLastAccountStore } from './lastAccountStore';
+
 const USER_KEY = 'ligo.auth.user';
 
 /**
@@ -146,6 +148,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const profile = await fetchOwnProfile();
       const user = sessionUserFromProfile(profile);
       await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+      // Kept fresh here as well as at sign-in, so the welcome screen offers
+      // the current name rather than whatever it was on the day this device
+      // was first signed in to.
+      useLastAccountStore.getState().remember(user);
       logAuth('restore · fresh profile', user, {
         source: 'supabase',
         roleConfirmed: profile.roleConfirmed,
@@ -187,6 +193,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async ({ token, user }, profile) => {
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
     setAuthToken(token);
+    // Survives the sign-out that eventually follows — see lastAccountStore.
+    useLastAccountStore.getState().remember(user);
     logAuth('signIn', user, {
       // `undefined` means the caller passed no profile, which leaves both
       // gates at false — worth seeing if onboarding is being skipped.

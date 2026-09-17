@@ -297,6 +297,47 @@ import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanim
 </Animated.View>
 ```
 
+**`className` does not work on `Animated.*` — put it on a `View` inside.**
+
+NativeWind resolves `className` only for components held **by reference** in its own registry
+(React Native's primitives, plus anything passed to `cssInterop`). `Animated.View` is Reanimated
+wrapping `View`, which is a new reference it has never seen, so the class is handed to a component
+that ignores it. There is no warning, no type error and no lint error — the style simply never
+arrives, exactly as with `expo-image` before `LIImage` registered it.
+
+```tsx
+// Wrong — renders unstyled, silently.
+<Animated.View style={fade} className="flex-1 items-center rounded-card bg-surface" />
+
+// Right — the wrapper animates, the View inside is styled.
+<Animated.View style={[styles.fill, fade]}>
+  <View className="flex-1 items-center rounded-card bg-surface" />
+</Animated.View>
+```
+
+Layout the wrapper itself needs (`flex: 1`, `width: '100%'`, `alignSelf: 'stretch'`) is the one
+sanctioned use of `StyleSheet` — it cannot take a class to get it. Do **not** fix this by calling
+`cssInterop(Animated.View, …)`: that swaps every animated view in the app for an interop wrapper,
+and inline `style` arrays stop arriving intact.
+
+**Motion vocabulary — `src/theme/motion.ts`.** Durations, easings and springs live there, and
+`useMotion()` returns entrance/exit presets that are already `undefined` under Reduce Motion.
+Reach for those rather than picking a duration per component; a button that answers in 140ms beside
+a sheet that takes 400ms reads as two apps.
+
+**Opening and closing — `LICollapsible`.** `{open ? <Panel /> : null}` is a cut, not a dropdown:
+the row is one height on one frame and another on the next, and everything below it jumps. A fade
+does not fix it — the content softens while the layout still snaps. `LICollapsible` keeps its
+children mounted and animates the container's height between zero and what they measured. Two
+things follow: the parent must not use `gap-*` around it (a zero-height child still gets a gap, so
+put that spacing inside the panel), and a collapsed panel is hidden from touch and from screen
+readers rather than unmounted.
+
+**Pressing — `LIPressable`.** Every `LI*` control that can be pressed is built on it, and new ones
+should be. `active:opacity-80` is a step, not a transition: NativeWind applies it as a cut. Use
+`effect="dim"` for full-bleed rows whose edges are pinned to a divider, and `stretch` when the
+target is meant to fill its parent.
+
 **When to animate:**
 
 - Screen/component mount & unmount → `entering` / `exiting`

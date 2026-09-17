@@ -1,9 +1,11 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 
 import { cn } from '@/lib/utils';
 import { useThemeTokens } from '@/theme/tokens';
+
+import { LIPressable } from './LIPressable';
 
 const button = cva('flex-row items-center justify-center gap-2', {
   variants: {
@@ -94,7 +96,8 @@ export function LIButton({
     variant === 'primary' || variant === 'danger' || variant === 'violet' ? tokens.inverse : tokens.violet;
 
   return (
-    <Pressable
+    <LIPressable
+      stretch={fullWidth === true}
       onPress={onPress}
       disabled={isInactive}
       accessibilityRole="button"
@@ -115,6 +118,6 @@ export function LIButton({
           <Text className={cn(label({ variant, size }), labelClassName)}>{title}</Text>
         </>
       )}
-    </Pressable>
+    </LIPressable>
   );
 }

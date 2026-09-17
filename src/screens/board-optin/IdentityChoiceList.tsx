@@ -1,8 +1,7 @@
 import { Pressable, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import type { ApiIdentityOption, CommunityIdentity } from '@/api/types';
-import { LIInput, LIRadio, LIText } from '@/components/ui';
+import { LICollapsible, LIInput, LIRadio, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface IdentityChoiceListProps {
@@ -78,8 +77,8 @@ export default function IdentityChoiceList({
                 />
               </Pressable>
 
-              {option.id === 'handle' && selected ? (
-                <Animated.View entering={FadeIn} exiting={FadeOut} className="pb-3">
+              <LICollapsible open={option.id === 'handle' && selected}>
+                <View className="pb-3">
                   <LIInput
                     placeholder="Your handle"
                     value={handle}
@@ -91,8 +90,8 @@ export default function IdentityChoiceList({
                     hint="No part of your real name is shown on the board."
                     testID="identity-handle-input"
                   />
-                </Animated.View>
-              ) : null}
+                </View>
+              </LICollapsible>
             </View>
           );
         })}

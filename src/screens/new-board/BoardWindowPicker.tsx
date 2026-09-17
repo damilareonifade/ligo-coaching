@@ -1,8 +1,7 @@
 import { View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import type { BoardWindow } from '@/api/types';
-import { LIChipGroup, LIInput, LIText } from '@/components/ui';
+import { LIChipGroup, LICollapsible, LIInput, LIText } from '@/components/ui';
 import { BOARD_WINDOW_OPTIONS } from '@/lib/community';
 
 interface BoardWindowPickerProps {
@@ -41,8 +40,11 @@ export default function BoardWindowPicker({
         testID="board-window"
       />
 
-      {value === 'custom' ? (
-        <Animated.View entering={FadeIn} exiting={FadeOut} className="flex-row gap-3 pt-1">
+      {/* Always mounted, opened by height. Fading it in while the layout
+          below still jumped was the worst of both: the fields softened in
+          and everything under them moved on a single frame anyway. */}
+      <LICollapsible open={value === 'custom'}>
+        <View className="flex-row gap-3 pt-1">
           <LIInput
             containerClassName="flex-1"
             label="From"
@@ -61,8 +63,8 @@ export default function BoardWindowPicker({
             maxLength={16}
             testID="board-window-to"
           />
-        </Animated.View>
-      ) : null}
+        </View>
+      </LICollapsible>
 
       <LIText
         size="caption"

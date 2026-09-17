@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { cn } from '@/lib/utils';
+
+import { LIPressable } from './LIPressable';
 
 export interface LICardProps {
   readonly children: ReactNode;
@@ -27,15 +29,16 @@ export function LICard({
 
   if (onPress) {
     return (
-      <Pressable
+      <LIPressable
+        stretch
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        className={cn(classes, 'active:opacity-80')}
+        className={classes}
         testID={testID}
       >
         {children}
-      </Pressable>
+      </LIPressable>
     );
   }
 

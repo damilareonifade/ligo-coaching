@@ -1,10 +1,12 @@
-import { ChevronDown, ChevronUp, GripVertical, X } from 'lucide-react-native';
-import { memo, useCallback, useState } from 'react';
+import { ChevronDown, GripVertical, X } from 'lucide-react-native';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useUnits } from '@/hooks/useUnits';
 
 import type { ApiProgramBlock } from '@/api/types';
-import { LIBadge, LIButton, LICard, LIInput, LIText } from '@/components/ui';
+import { LIBadge, LIButton, LICard, LICollapsible, LIInput, LIText } from '@/components/ui';
+import { timing, useMotion } from '@/theme/motion';
 import {
   composeSchemeFor,
   fieldsFor,
@@ -66,7 +68,22 @@ interface Draft {
 function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlockRowProps) {
   const tokens = useThemeTokens();
   const units = useUnits();
+  const { reduced } = useMotion();
   const [open, setOpen] = useState(false);
+
+  // One chevron that turns over, rather than two that swap. A swap is a
+  // different glyph on the next frame, which is the same cut the panel used
+  // to make — and the two cuts did not even land together.
+  const caret = useSharedValue(0);
+
+  useEffect(() => {
+    const target = open ? 1 : 0;
+    caret.value = reduced ? target : withTiming(target, timing.base);
+  }, [caret, open, reduced]);
+
+  const caretStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${caret.value * 180}deg` }],
+  }));
 
   const fields = fieldsFor(block.measure);
   const parsed = parseScheme(block.scheme);
@@ -143,7 +160,11 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
       : block.scheme;
 
   return (
-    <LICard className="gap-3 px-4 py-3" testID={`builder-block-${block.id}`}>
+    // No `gap` on the card: the collapsed panel is a real child of zero
+    // height, and a gap would still be laid out around it — the row would sit
+    // twelve pixels taller closed than it used to. The spacing it used to get
+    // from the gap is on the panel itself instead.
+    <LICard className="px-4 py-3" testID={`builder-block-${block.id}`}>
       <View className="flex-row items-center gap-3">
         {/*
           Decoration, not a control: drag-to-reorder is not built, so the handle
@@ -175,11 +196,9 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
           variant="ghost"
           size="sm"
           icon={
-            open ? (
-              <ChevronUp color={tokens.violet} size={18} />
-            ) : (
+            <Animated.View style={caretStyle}>
               <ChevronDown color={tokens.violet} size={18} />
-            )
+            </Animated.View>
           }
           accessibilityLabel={open ? `Hide ${block.name} fields` : `Edit ${block.name}`}
           className="h-9 w-9 gap-0 px-0"
@@ -198,8 +217,8 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
         />
       </View>
 
-      {open ? (
-        <View className="gap-2 border-t border-border pt-3">
+      <LICollapsible open={open} testID={`builder-fields-${block.id}`}>
+        <View className="mt-3 gap-2 border-t border-border pt-3">
           {/*
             Wrapping, because a measure asking for four fields on a narrow
             phone is four boxes too cramped to type into otherwise.
@@ -296,7 +315,7 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
             className="font-geist"
           />
         </View>
-      ) : null}
+      </LICollapsible>
     </LICard>
   );
 }

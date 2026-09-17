@@ -1,8 +1,18 @@
 import { Check } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { useEffect } from 'react';
 
 import { cn } from '@/lib/utils';
+import { spring, timing, useMotion } from '@/theme/motion';
 import { useThemeTokens } from '@/theme/tokens';
+
+import { LIPressable } from './LIPressable';
 
 export interface LICheckboxProps {
   readonly checked: boolean;
@@ -34,8 +44,29 @@ export function LICheckbox({
   testID,
 }: LICheckboxProps) {
   const tokens = useThemeTokens();
+  const { reduced } = useMotion();
+
+  // The tick springs in rather than appearing. It is the smallest mark on the
+  // screen and often the only thing that changes when a whole row is tapped,
+  // so a cut is easy to miss and easy to doubt.
+  const tick = useSharedValue(checked ? 1 : 0);
+
+  useEffect(() => {
+    const target = checked ? 1 : 0;
+    if (reduced) {
+      tick.value = target;
+      return;
+    }
+    tick.value = checked ? withSpring(1, spring.settle) : withTiming(0, timing.leaving);
+  }, [checked, reduced, tick]);
+
+  const tickStyle = useAnimatedStyle(() => ({
+    opacity: tick.value,
+    transform: [{ scale: tick.value }],
+  }));
+
   return (
-    <Pressable
+    <LIPressable
       onPress={() => onChange(!checked)}
       disabled={disabled}
       accessibilityRole="checkbox"
@@ -50,7 +81,9 @@ export function LICheckbox({
       )}
       testID={testID}
     >
-      {checked ? <Check color={tokens.inverse} size={16} strokeWidth={3} /> : <View />}
-    </Pressable>
+      <Animated.View style={tickStyle}>
+        {checked ? <Check color={tokens.inverse} size={16} strokeWidth={3} /> : <View />}
+      </Animated.View>
+    </LIPressable>
   );
 }

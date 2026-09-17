@@ -1,8 +1,10 @@
 import { cva } from 'class-variance-authority';
 import type { ReactNode } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Text } from 'react-native';
 
 import { cn } from '@/lib/utils';
+
+import { LIPressable } from './LIPressable';
 
 const chip = cva('flex-row items-center gap-2 rounded-pill border px-4 py-2', {
   variants: {
@@ -37,15 +39,15 @@ export interface LIChipProps {
 /** Multi-select pill — several chips can be selected at once. */
 export function LIChip({ label, selected, onPress, leading, className, testID }: LIChipProps) {
   return (
-    <Pressable
+    <LIPressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      className={cn(chip({ selected }), 'active:opacity-80', className)}
+      className={cn(chip({ selected }), className)}
       testID={testID}
     >
       {leading}
       <Text className={chipLabel({ selected })}>{label}</Text>
-    </Pressable>
+    </LIPressable>
   );
 }

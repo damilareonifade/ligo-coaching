@@ -1,7 +1,9 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { cn } from '@/lib/utils';
+
+import { LIPressable } from './LIPressable';
 
 const badge = cva('self-start rounded-pill px-3 py-1', {
   variants: {
@@ -56,16 +58,16 @@ export function LIBadge({
 
   if (onPress) {
     return (
-      <Pressable
+      <LIPressable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={label}
         hitSlop={8}
-        className={cn(badge({ tone }), 'active:opacity-70', className)}
+        className={cn(badge({ tone }), className)}
         testID={testID}
       >
         {body}
-      </Pressable>
+      </LIPressable>
     );
   }
 

@@ -136,6 +136,16 @@ are legacy tokens (see **Legacy Palette** below); don't reach for them in new wo
   resolved by name through `src/theme/labelColors.ts` (a `label.color` is a token name, not a hex),
   and they are the one place a component may pass a raw color through `style` — NativeWind cannot
   build a class name from runtime data.
+- **Every surface follows the theme, the splash included.** Where a surface carries the wordmark it
+  picks the cut that suits its field — `SetTrack-wordmark-white.png` on violet or on the dark
+  palette's `background`, `SetTrack-wordmark-violet.png` where the field is the other way round.
+- The **splash is the one place a color is duplicated outside `colors.js`**, and it cannot be
+  helped: the native splash is configured in `app.json`, which is JSON and cannot require a module.
+  `expo-splash-screen`'s `backgroundColor` / `dark.backgroundColor` must stay equal to
+  `light.violet` and `dark.background`, or the handover from the native splash to `SplashOverlay`
+  flashes. `SplashOverlay` reads its side from the palette so only one of the pair can drift, and
+  it picks its palette from `Appearance` frozen at mount rather than from the app's theme setting —
+  the OS drew the native splash before any JavaScript ran, and matching it is the whole point.
 - `LIButton`, `LIBadge`, `LIInput`, and `LIAvatar` all accept an optional `labelClassName` prop for
   overriding their inner text color without touching the shared defaults every other screen relies on.
 - `LIText`'s inline link (`link`/`linkValue`/`linkHref`) is styled via a `linkColor` prop (raw hex,

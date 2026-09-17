@@ -35,7 +35,11 @@
           "image": "./assets/brand/SetTrack-wordmark-white.png",
           "imageWidth": 260,
           "resizeMode": "contain",
-          "backgroundColor": "#8B5CF6"
+          "backgroundColor": "#8B5CF6",
+          "dark": {
+            "image": "./assets/brand/SetTrack-wordmark-violet.png",
+            "backgroundColor": "#0B0B0F"
+          }
         }
       ],
       [

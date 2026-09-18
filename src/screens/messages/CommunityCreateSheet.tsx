@@ -3,8 +3,7 @@ import { BarChart3, MessagesSquare } from 'lucide-react-native';
 import { useCallback, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { LIModal } from '@/components/LIModal';
-import { LIText } from '@/components/ui';
+import { LIDialog, LIText } from '@/components/ui';
 import { useThemeTokens } from '@/theme/tokens';
 
 interface CommunityCreateSheetProps {
@@ -45,6 +44,13 @@ function Choice({ icon, title, body, onPress, testID }: ChoiceProps) {
  * clients whether they want to be part of something.
  *
  * Each line says what it costs the client, not what it gives the coach.
+ *
+ * Drawn through `LIDialog` rather than `LIModal`, for the reason `LeaveSheet`
+ * already gives in the same words: the bottom sheet measures its own content
+ * to decide its height and can present at zero, which is how "Detach coach"
+ * came to do nothing at all. This was the same nothing — the `+` opened a
+ * sheet that was already there and nought pixels tall, with no error anywhere
+ * to say so.
  */
 export default function CommunityCreateSheet({ visible, onClose }: CommunityCreateSheetProps) {
   const tokens = useThemeTokens();
@@ -61,7 +67,7 @@ export default function CommunityCreateSheet({ visible, onClose }: CommunityCrea
   }, [onClose, router]);
 
   return (
-    <LIModal visible={visible} onClose={onClose} title="Start something">
+    <LIDialog visible={visible} onClose={onClose} title="Start something">
       <View className="gap-3">
         <Choice
           icon={<MessagesSquare color={tokens.violet} size={20} />}
@@ -85,6 +91,6 @@ export default function CommunityCreateSheet({ visible, onClose }: CommunityCrea
           className="px-1 font-geist"
         />
       </View>
-    </LIModal>
+    </LIDialog>
   );
 }

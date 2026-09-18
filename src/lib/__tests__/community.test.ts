@@ -7,6 +7,8 @@ import {
   GROUP_INVITE_NOTE,
   boardInviteLine,
   boardMetricLabel,
+  boardValueLabel,
+  formatBoardDuration,
   communityRowValue,
   deltaTone,
   deriveBoardStats,
@@ -277,9 +279,9 @@ describe('the board metrics', () => {
     // find the id, so a metric added to the union but not to the options
     // would not fail — it would quietly label a PR board as a volume one.
     for (const option of BOARD_METRIC_OPTIONS) {
-      expect(boardMetricLabel(option.id, 'This month')).toBe(
-        `${option.label} · This month · updates hourly`,
-      );
+      // No "· updates hourly" any more: that promised a scheduled recompute
+      // which does not exist. The ranking is counted when it is asked for.
+      expect(boardMetricLabel(option.id, 'This month')).toBe(`${option.label} · This month`);
     }
   });
 
@@ -299,5 +301,38 @@ describe('the board metrics', () => {
     const streak = BOARD_METRIC_OPTIONS.find((option) => option.id === 'streak');
 
     expect(streak?.desc).toBe('Consecutive weeks with a finished session');
+  });
+});
+
+describe('boardValueLabel', () => {
+  it('speaks the reader’s own unit, which is why it is not composed in SQL', () => {
+    expect(boardValueLabel('volume', 42180, 'kg')).toContain('kg');
+    expect(boardValueLabel('volume', 42180, 'lb')).toContain('lb');
+  });
+
+  it('counts in the words of the thing counted', () => {
+    expect(boardValueLabel('sessions', 14, 'kg')).toBe('14 sessions');
+    expect(boardValueLabel('sessions', 1, 'kg')).toBe('1 session');
+    expect(boardValueLabel('prs', 3, 'kg')).toBe('3 PRs');
+    expect(boardValueLabel('check-ins', 1, 'kg')).toBe('1 check-in');
+  });
+
+  it('reads a streak and a consistency score in weeks', () => {
+    // Both count weeks, which is what makes "six sessions crammed into one"
+    // lose to "six weeks with one each".
+    expect(boardValueLabel('streak', 4, 'kg')).toBe('4 weeks');
+    expect(boardValueLabel('consistency', 1, 'kg')).toBe('1 week');
+  });
+
+  it('gives distance one decimal, and time no seconds', () => {
+    // Three decimals would be surveying; none would rank 5.0/5.0/5.0.
+    expect(boardValueLabel('distance', 5.04, 'kg')).toBe('5.0 km');
+    expect(boardValueLabel('time', 12_000, 'kg')).toBe('3h 20m');
+    expect(boardValueLabel('time', 2_700, 'kg')).toBe('45m');
+  });
+
+  it('rounds a total to the minute rather than showing 0m for a short one', () => {
+    expect(formatBoardDuration(90)).toBe('2m');
+    expect(formatBoardDuration(0)).toBe('0m');
   });
 });

@@ -9,6 +9,7 @@ import type {
   BoardWindow,
   CommunityIdentity,
 } from '@/api/types';
+import { formatVolume, formatWeight, type WeightUnit } from '@/lib/units';
 
 /* ------------------------------------------------------------------ *
  * Community helpers.
@@ -189,10 +190,18 @@ export function boardWindowLabel(window: BoardWindow, from: string, to: string):
   }
 }
 
-/** "Total volume lifted · This month · updates hourly" — the board's subtitle. */
+/**
+ * "Total volume lifted · This month" — the board's subtitle.
+ *
+ * It used to end "· updates hourly", which was a promise about a scheduled
+ * recompute that does not exist. `board_standings` counts when it is asked,
+ * so the ranking is never an hour old — and a label claiming less than the
+ * truth still has to be kept, which is the reason to drop it rather than
+ * change the number.
+ */
 export function boardMetricLabel(metric: BoardMetric, windowLabel: string): string {
   const option = BOARD_METRIC_OPTIONS.find((candidate) => candidate.id === metric);
-  return `${option?.label ?? 'Total volume lifted'} · ${windowLabel} · updates hourly`;
+  return `${option?.label ?? 'Total volume lifted'} · ${windowLabel}`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -406,4 +415,60 @@ export function inviteSummaryLine(selectedCount: number, kind: 'group' | 'board'
   }
 
   return `${selectedCount} client${selectedCount === 1 ? '' : 's'} will be invited to ${target}.`;
+}
+
+/* ------------------------------------------------------------------ *
+ * Board values.
+ *
+ * `board_standings` returns a number and this turns it into the string
+ * on the row. Composed on the phone rather than in SQL because two of
+ * these depend on whether the reader chose kilograms or pounds, and a
+ * server that formatted them would hand every reader the same unit.
+ * ------------------------------------------------------------------ */
+
+/** "3h 20m", "45m", "0m" — a total, not a clock, so it never shows seconds. */
+export function formatBoardDuration(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds / 60));
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
+}
+
+/**
+ * The value as it reads on the row, for one metric.
+ *
+ * `formatWeight` and `formatVolume` take the reader's own unit, which is why
+ * this is here and not in SQL.
+ */
+export function boardValueLabel(
+  metric: BoardMetric,
+  value: number,
+  unit: WeightUnit,
+): string {
+  switch (metric) {
+    case 'volume':
+      return formatVolume(value, unit);
+    case 'weight-lifted':
+      return formatWeight(value, unit);
+    case 'distance':
+      // One decimal: a leaderboard of 5.0 / 5.0 / 5.0 tells nobody anything,
+      // and three would be surveying rather than training.
+      return `${value.toFixed(1)} km`;
+    case 'time':
+      return formatBoardDuration(value);
+    case 'sessions':
+      return plural(value, 'session');
+    case 'prs':
+      return plural(value, 'PR');
+    case 'check-ins':
+      return plural(value, 'check-in');
+    case 'streak':
+    case 'consistency':
+    default:
+      return plural(value, 'week');
+  }
 }

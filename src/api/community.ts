@@ -7,10 +7,19 @@ import {
 } from '@tanstack/react-query';
 
 import { env } from '@/lib/env';
-import { GROUP_HIDDEN_ALWAYS, GROUP_VISIBLE_TO_MEMBERS } from '@/lib/community';
+import {
+  BOARD_METRIC_OPTIONS,
+  boardMetricLabel,
+  boardValueLabel,
+  boardWindowLabel,
+  deriveBoardStats,
+  GROUP_HIDDEN_ALWAYS,
+  GROUP_VISIBLE_TO_MEMBERS,
+} from '@/lib/community';
+import { useSettingsStore } from '@/store/settingsStore';
 import { formatChatStamp, initials } from '@/lib/format';
 
-import { ApiError, client } from './client';
+import { ApiError } from './client';
 import {
   mockAcceptInvite,
   mockCoachGroups,
@@ -34,6 +43,7 @@ import type {
   ApiCommunityBoard,
   ApiCommunityGroup,
   BoardMetric,
+  BoardWindow,
   CommunityIdentity,
 } from './types';
 
@@ -159,8 +169,69 @@ async function fetchBoard(id: string): Promise<ApiCommunityBoard> {
     if (!board) throw new ApiError('That leaderboard is no longer available.', 404);
     return mockDelay(board);
   }
-  const { data } = await client.get<ApiCommunityBoard>(`/community/boards/${id}`);
-  return data;
+  const [me, groupRows] = await Promise.all([
+    currentUserId(),
+    supabase.rpc('my_groups').then(unwrap),
+  ]);
+
+  const group = groupRows.find((row) => row.group_id === id);
+  if (!group) throw new ApiError('That leaderboard is no longer available.', 404);
+
+  const [standings, notOptedIn, config] = await Promise.all([
+    supabase.rpc('board_standings', { p_group_id: id }).then(unwrap),
+    supabase.rpc('board_not_opted_in', { p_group_id: id }).then(unwrap),
+    supabase
+      .from('groups')
+      .select('board_metric, board_window, board_from, board_to')
+      .eq('id', id)
+      .single()
+      .then(unwrap),
+  ]);
+
+  const metric = (config.board_metric ?? 'volume') as BoardMetric;
+  const windowLabel = boardWindowLabel(
+    (config.board_window ?? 'month') as BoardWindow,
+    config.board_from ?? '',
+    config.board_to ?? '',
+  );
+  // Read from the store rather than `useUnits`, which is a hook and cannot be
+  // called here. Same as `clientProfile.ts` does for the settings sync.
+  const unit = useSettingsStore.getState().unit;
+  const mine = standings.find((row) => row.user_id === me);
+
+  const rows = standings.map((row) => ({
+    rank: row.rank ?? 0,
+    displayName: row.display_name ?? '',
+    initials: initials(row.display_name ?? ''),
+    value: boardValueLabel(metric, Number(row.value ?? 0), unit),
+    // The count behind the headline number is only meaningful for the metrics
+    // that are not already counts. Blank beats inventing one.
+    sub: '',
+    // Nothing to compare against: the ranking is computed when it is asked
+    // for rather than snapshotted, so there is no "last update" to have moved
+    // since. A dash is what `deltaTone` reads as held.
+    delta: '—',
+    isMe: row.user_id === me,
+  }));
+
+  return {
+    id,
+    name: group.name ?? '',
+    ownerName: group.owner_name ?? '',
+    metricLabel: boardMetricLabel(metric, windowLabel),
+    windowLabel,
+    optedIn: Boolean(mine),
+    myIdentity: 'first' as CommunityIdentity,
+    stats: deriveBoardStats(rows),
+    rows,
+    invitedNotOptedIn: notOptedIn ?? 0,
+    facts: [
+      { label: 'Metric', value: BOARD_METRIC_OPTIONS.find((o) => o.id === metric)?.label ?? '' },
+      { label: 'Window', value: windowLabel },
+      { label: 'Visible to', value: `${group.member_count ?? 0} members` },
+      { label: 'Updates', value: 'Live' },
+    ],
+  };
 }
 
 export function useBoardQuery(id: string): UseQueryResult<ApiCommunityBoard, Error> {
@@ -372,7 +443,13 @@ async function postJoinBoard({ boardId, identity, handle }: JoinBoardInput): Pro
     await mockDelay(undefined, 400);
     return;
   }
-  await client.post(`/community/boards/${boardId}/join`, { identity, handle });
+  assertOk(
+    await supabase.rpc('join_board', {
+      p_group_id: boardId,
+      p_identity: identity,
+      p_handle: handle.trim().length > 0 ? handle.trim() : undefined,
+    }),
+  );
 }
 
 /**
@@ -399,7 +476,10 @@ async function deleteBoardMembership(boardId: string): Promise<void> {
     await mockDelay(undefined, 300);
     return;
   }
-  await client.delete(`/community/boards/${boardId}/me`);
+  const me = await currentUserId();
+  assertOk(
+    await supabase.from('board_members').delete().eq('group_id', boardId).eq('user_id', me),
+  );
 }
 
 /** Leaving takes the row off the board and touches nothing else. */
@@ -498,12 +578,29 @@ async function postCreateBoard(input: CreateBoardInput): Promise<void> {
     await mockDelay(undefined, 450);
     return;
   }
-  await client.post('/coach/community/boards', {
-    name: input.name.trim(),
-    metric: input.metric,
-    window: input.windowLabel,
-    invite: input.clientIds,
-  });
+  // A board is a group's, so making one makes a group. The two creation
+  // flows in `CommunityCreateSheet` now produce the same kind of thing, one
+  // of them with a ranking configured — they probably want merging into
+  // "new group, with or without a board", which is a screen decision.
+  const groupId = await supabase
+    .rpc('create_group', { p_name: input.name.trim(), p_identity: 'first' })
+    .then(unwrap);
+
+  assertOk(
+    await supabase
+      .from('groups')
+      .update({ board_metric: input.metric })
+      .eq('id', groupId),
+  );
+
+  if (input.clientIds.length > 0) {
+    assertOk(
+      await supabase.rpc('invite_to_group', {
+        p_group_id: groupId,
+        p_user_ids: [...input.clientIds],
+      }),
+    );
+  }
 }
 
 export function useCreateBoardMutation(): UseMutationResult<void, Error, CreateBoardInput> {

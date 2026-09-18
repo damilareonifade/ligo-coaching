@@ -1699,6 +1699,10 @@ export type Database = {
         Args: { p_client_id: string; p_domain: string };
         Returns: string;
       };
+      community_display_name: {
+        Args: { p_identity: string; p_full_name: string; p_handle: string };
+        Returns: string;
+      };
       complete_password_reset_request: {
         Args: Record<string, never>;
         Returns: undefined;
@@ -1744,6 +1748,21 @@ export type Database = {
           secondary_muscles: string[];
           instructions: string[];
           difficulty: string;
+        }[];
+      };
+      group_members: {
+        Args: { p_group_id: string };
+        Returns: { user_id: string; display_name: string; is_admin: boolean; is_coach: boolean }[];
+      };
+      group_messages: {
+        Args: { p_group_id: string };
+        Returns: {
+          id: string;
+          sender_id: string;
+          sender_name: string;
+          is_coach: boolean;
+          body: string;
+          created_at: string;
         }[];
       };
       guess_exercise_measure: {
@@ -1824,6 +1843,23 @@ export type Database = {
           body_fat_pct: number;
           note: string;
           logged_by_client: boolean;
+        }[];
+      };
+      my_groups: {
+        Args: Record<string, never>;
+        Returns: {
+          group_id: string;
+          thread_id: string;
+          name: string;
+          join_code: string;
+          owner_name: string;
+          member_count: number;
+          is_admin: boolean;
+          my_identity: string;
+          my_display_name: string;
+          last_body: string;
+          last_at: string;
+          unread: boolean;
         }[];
       };
       my_threads: {

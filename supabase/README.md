@@ -122,6 +122,14 @@ is load-bearing: raising aborts the function, which rolls back the ledger row it
 just wrote, so every wrong guess would erase its own evidence and the rate limit
 would count nothing. `lookup_coach` returns empty for the same reason.
 
+Display names are resolved in SQL and not in the app, and that is the whole
+reason `my_groups`, `group_members` and `group_messages` exist rather than the
+app reading the tables. `resolveDisplayName` takes the real name as an
+argument; doing that against a server would mean sending every member's real
+name to every other member's phone so each phone could decide to render a
+handle instead. Somebody who picked "Ironsmith" precisely so that no part of
+their real name is shown would have shipped it to the whole group. Check 212.
+
 The last admin leaving deletes the group. A group nobody can rename, admit to or
 remove from is not a group, it is a room with a jammed door — `would_orphan_group`
 is what the warning before it is built on.
@@ -184,6 +192,10 @@ function exists only so that many rows land together or not at all.
 | `remove_group_member(group, user)` | Marks them left. Their messages stay. |
 | `would_orphan_group(group)` | Whether leaving would delete it — what the warning is built on. |
 | `leave_group(group)` | Leaves, and returns true if that deleted the group. |
+| `community_display_name(identity, name, handle)` | How somebody is named in one group. **Resolved here so the real name never leaves.** |
+| `my_groups()` | Every group the caller is in, with names already resolved and the unread mark. |
+| `group_members(group)` | Members of one group. Empty to an outsider rather than an error. |
+| `group_messages(group)` | One group's turns, each named through the sender's own choice. |
 | `client_stats(client)` | Sessions finished, the current unbroken week streak, and PRs. |
 | `client_weekly_history(client, weeks)` | One row per week in the window, empty weeks included — a chart that drops them tells the opposite of the truth. |
 | `monthly_check_ins(client, months)` | One row per month, the latest in each. A check-in **is** a `body_measurements` row — no separate table. |
@@ -205,7 +217,7 @@ the tab layout reads as a gate. Before that column was read, nothing held
 anyone in the flow — and because this project requires email confirmation,
 signup returns no session and the route into onboarding was never taken at all.
 
-Behaviour is covered by `supabase/verify/01_checks.sql` — 208 checks, run with
+Behaviour is covered by `supabase/verify/01_checks.sql` — 215 checks, run with
 `./scripts/verify-schema.sh` against a throwaway local Postgres.
 
 Two things a Laravel-shaped starter schema would include are deliberately

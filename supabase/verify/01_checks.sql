@@ -2130,3 +2130,60 @@ select count(*) as still_a_member from public.thread_members tm
  where t.group_id = :'survivor' and tm.left_at is null;
 update public.coach_clients set status = 'active', accepted_at = now()
  where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 209. a name is resolved three ways (expect Maya Andersson / Maya A. / Ironsmith) ==='
+reset role;
+reset request.jwt.claims;
+select
+  public.community_display_name('real', 'Maya Andersson', null) as real_name,
+  public.community_display_name('first', 'Maya Andersson', null) as first_only,
+  public.community_display_name('handle', 'Maya Andersson', 'Ironsmith') as handle_only;
+
+\echo ''
+\echo '=== 210. a handle never falls back to the real name (expect blank) ==='
+-- The app refuses this fallback in the same words; so does this.
+select '[' || public.community_display_name('handle', 'Maya Andersson', '') || ']' as empty_handle;
+select '[' || public.community_display_name('first', 'Cher', null) || ']' as one_word_name;
+
+\echo ''
+\echo '=== 211. a group lists its members by their own choice, and by nobody else''s ==='
+\echo '=== (expect Maya A. as admin, Ironsmith as member) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.create_group('Reading test', 'first') as g \gset
+reset role;
+select join_code as gcode from public.groups where id = :'g' \gset
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.join_group(:'gcode', 'handle', 'Ironsmith');
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select display_name, is_admin from public.group_members(:'g');
+
+\echo ''
+\echo '=== 212. the real name of somebody using a handle is never returned ==='
+\echo '=== (expect 0) ==='
+-- The reason these functions exist. Resolving in the app would mean shipping
+-- every real name to every member so each phone could decide to hide it.
+select count(*) as real_name_leaked from public.group_members(:'g')
+ where display_name ilike '%stranger%' or display_name ilike '%example%';
+
+\echo ''
+\echo '=== 213. an outsider gets an empty group, not an error (expect 0 / 0) ==='
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select count(*) as members_visible from public.group_members(:'g');
+select count(*) as groups_listed from public.my_groups() where group_id = :'g';
+
+\echo ''
+\echo '=== 214. a group message carries the sender''s chosen name (expect Ironsmith) ==='
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+insert into public.messages (thread_id, sender_id, body)
+select t.id, auth.uid(), 'Tuesday works.' from public.threads t where t.group_id = :'g';
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select sender_name, body from public.group_messages(:'g');
+
+\echo ''
+\echo '=== 215. my_groups names the group, its owner and the unread mark ==='
+\echo '=== (expect Maya A. owner, 2 members, unread true) ==='
+select name, owner_name, member_count, is_admin, unread
+  from public.my_groups() where group_id = :'g';

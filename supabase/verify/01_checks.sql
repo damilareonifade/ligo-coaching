@@ -1954,3 +1954,68 @@ update public.thread_members set role = 'admin' where user_id = auth.uid();
 \echo '=== 191. nobody opens a thread by hand (expect ERROR) ==='
 insert into public.threads (kind, coach_id, client_id)
 values ('direct', '11111111-1111-1111-1111-111111111111', auth.uid());
+
+\echo ''
+\echo '=== 192. the inbox names the other side, both ways (expect Maya / Sam) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select client_name as coach_sees_client from public.my_threads()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select coach_name as client_sees_coach from public.my_threads();
+
+\echo ''
+\echo '=== 193. and still names them once detached (expect Sam, archived) ==='
+-- The reason this function is `security definer`. A client may read their
+-- coach''s user row only while the link is active, and a detached thread is
+-- exactly the one whose history has to stay readable.
+reset role;
+update public.coach_clients set status = 'ended', ended_at = now()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select coach_name, archived from public.my_threads();
+reset role;
+update public.coach_clients set status = 'active', accepted_at = now()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 194. an outsider''s inbox is empty of other people (expect 0) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select count(*) as mayas_threads_visible from public.my_threads()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 195. unread is the other person speaking, not yourself ==='
+\echo '=== (expect coach unread = true, Maya unread = false) ==='
+-- Maya sent the only message back at check 184.
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select unread as coach_has_unread from public.my_threads()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select unread as own_message_is_not_unread from public.my_threads();
+
+\echo ''
+\echo '=== 196. reading it clears the mark (expect false) ==='
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select public.mark_thread_read(thread_id) from public.my_threads()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+select unread as cleared from public.my_threads()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 197. nobody marks somebody else''s thread read (expect unchanged) ==='
+-- `mark_thread_read` is invoker, so the row policy still decides: the update
+-- matches nothing rather than reaching into a thread the caller is not in.
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+reset role;
+select id as mayas_thread_again from public.threads
+ where client_id = '22222222-2222-2222-2222-222222222222' \gset
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.mark_thread_read(:'mayas_thread_again');
+reset role;
+select count(*) as stranger_left_no_mark from public.thread_members
+ where thread_id = :'mayas_thread_again'
+   and user_id = '33333333-3333-3333-3333-333333333333';

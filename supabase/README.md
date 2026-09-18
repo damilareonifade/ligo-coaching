@@ -72,6 +72,16 @@ the insert policy does. Verified both ways in checks 188–189.
 membership-shaped RLS and Postgres would report "infinite recursion detected in
 policy" from a query that looks nothing like the cause.
 
+Messages themselves are read straight off the table — `messages_select_in_my_threads`
+already answers "may I read this", and a function wrapping that would be a second
+copy of a rule already written down. `my_threads` exists for everything *around*
+them, and is `security definer` for one reason: a client may read their coach's
+`users` row only through `is_linked_to`, which requires `status = 'active'`.
+Detaching ends that — and a detached thread is exactly the one whose history has
+to stay readable, since a history attributed to nobody is not readable. The
+function authorizes on `thread_members` instead, which is the caller's own row.
+Check 193 holds it.
+
 Messages carry no update or delete grant at all. A message somebody has already
 read is a thing that was said, and an app where it can be rewritten afterwards
 is one where neither person can rely on what is on the screen.
@@ -125,6 +135,8 @@ function exists only so that many rows land together or not at all.
 | `has_client_permission(client, domain)` | The one answer to "may this coach see that". Read by every training policy. |
 | `is_thread_member(thread)` | Whether the caller is in a conversation. `security definer`, to keep the message policies out of RLS recursion. |
 | `is_thread_open(thread)` | False once a thread is closed. Reads ignore it; writes do not. |
+| `my_threads()` | Every thread the caller is in, with the other side named, what they share, and the unread mark. `security definer` — see below. |
+| `mark_thread_read(thread)` | Moves the caller's read mark to the database's clock, not the phone's. |
 | `client_stats(client)` | Sessions finished, the current unbroken week streak, and PRs. |
 | `client_weekly_history(client, weeks)` | One row per week in the window, empty weeks included — a chart that drops them tells the opposite of the truth. |
 | `monthly_check_ins(client, months)` | One row per month, the latest in each. A check-in **is** a `body_measurements` row — no separate table. |
@@ -146,7 +158,7 @@ the tab layout reads as a gate. Before that column was read, nothing held
 anyone in the flow — and because this project requires email confirmation,
 signup returns no session and the route into onboarding was never taken at all.
 
-Behaviour is covered by `supabase/verify/01_checks.sql` — 191 checks, run with
+Behaviour is covered by `supabase/verify/01_checks.sql` — 197 checks, run with
 `./scripts/verify-schema.sh` against a throwaway local Postgres.
 
 Two things a Laravel-shaped starter schema would include are deliberately

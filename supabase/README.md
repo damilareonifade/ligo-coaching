@@ -25,6 +25,7 @@ app creates or alters tables — see **Why the app cannot migrate** below.
 | `public.thread_members` | Who is in a thread, and how far each of them has read. |
 | `public.messages` | One turn in a conversation. Never edited, never deleted. |
 | `public.groups` | A named conversation belonging to whoever made it. Joined with a code. |
+| `public.group_invites` | A question put to somebody. Answering it is the only thing that adds them. |
 
 ### Coach ↔ client
 
@@ -111,6 +112,18 @@ coach"); that is a front-end correction, not a schema one.
 **Detaching removes nobody from any group.** `coach_clients` says who may read
 whose training; membership here says who is in a conversation. Check 208.
 
+There are two doors and they are not alternatives. A **code** reaches the people
+you cannot name — a client's training partners appear in no list this app can
+show them — and an **invitation** reaches the people you can, arriving on their
+screen instead of over WhatsApp. `invite_to_group` only accepts somebody
+`is_linked_to` the caller, and that is the account-checker guard rather than a
+courtesy: without it the function takes a list of user ids and reports which
+ones exist. Ids that fail are skipped silently for the same reason.
+
+Nothing adds a member except their own answer. `src/api/community.ts` states the
+rule in its own header — "there is no endpoint in this module through which a
+coach can add a person to anything" — and the schema now holds it.
+
 Joining is by code, because there is no list to pick from: a coach has a roster,
 a client has nobody they can enumerate, and a box that looked somebody up by
 email would be the account checker this schema refuses elsewhere. The code is
@@ -196,6 +209,10 @@ function exists only so that many rows land together or not at all.
 | `my_groups()` | Every group the caller is in, with names already resolved and the unread mark. |
 | `group_members(group)` | Members of one group. Empty to an outsider rather than an error. |
 | `group_messages(group)` | One group's turns, each named through the sender's own choice. |
+| `invite_to_group(group, users[])` | Asks people you are **linked to**. Adds nobody. |
+| `respond_to_group_invite(invite, accept, identity, handle?)` | Answering. Accepting is what adds the member. |
+| `my_group_invites()` | Unanswered questions for the caller. |
+| `group_invited_not_joined(group)` | How many were asked and are not in. A count only. |
 | `client_stats(client)` | Sessions finished, the current unbroken week streak, and PRs. |
 | `client_weekly_history(client, weeks)` | One row per week in the window, empty weeks included — a chart that drops them tells the opposite of the truth. |
 | `monthly_check_ins(client, months)` | One row per month, the latest in each. A check-in **is** a `body_measurements` row — no separate table. |
@@ -217,7 +234,7 @@ the tab layout reads as a gate. Before that column was read, nothing held
 anyone in the flow — and because this project requires email confirmation,
 signup returns no session and the route into onboarding was never taken at all.
 
-Behaviour is covered by `supabase/verify/01_checks.sql` — 215 checks, run with
+Behaviour is covered by `supabase/verify/01_checks.sql` — 223 checks, run with
 `./scripts/verify-schema.sh` against a throwaway local Postgres.
 
 Two things a Laravel-shaped starter schema would include are deliberately

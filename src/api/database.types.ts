@@ -563,6 +563,58 @@ export type Database = {
           },
         ];
       };
+      group_invites: {
+        Row: {
+          id: string;
+          group_id: string;
+          invitee_id: string;
+          invited_by: string | null;
+          created_at: string;
+          responded_at: string | null;
+          accepted: boolean | null;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          invitee_id: string;
+          invited_by?: string | null;
+          created_at?: string;
+          responded_at?: string | null;
+          accepted?: boolean | null;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          invitee_id?: string;
+          invited_by?: string | null;
+          created_at?: string;
+          responded_at?: string | null;
+          accepted?: boolean | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'group_invites_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'group_invites_invited_by_fkey';
+            columns: ['invited_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'group_invites_invitee_id_fkey';
+            columns: ['invitee_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       groups: {
         Row: {
           id: string;
@@ -1750,6 +1802,10 @@ export type Database = {
           difficulty: string;
         }[];
       };
+      group_invited_not_joined: {
+        Args: { p_group_id: string };
+        Returns: number;
+      };
       group_members: {
         Args: { p_group_id: string };
         Returns: { user_id: string; display_name: string; is_admin: boolean; is_coach: boolean }[];
@@ -1772,6 +1828,10 @@ export type Database = {
       has_client_permission: {
         Args: { p_client_id: string; p_domain: string };
         Returns: boolean;
+      };
+      invite_to_group: {
+        Args: { p_group_id: string; p_user_ids: string[] };
+        Returns: number;
       };
       is_group_admin: {
         Args: { p_group_id: string };
@@ -1843,6 +1903,16 @@ export type Database = {
           body_fat_pct: number;
           note: string;
           logged_by_client: boolean;
+        }[];
+      };
+      my_group_invites: {
+        Args: Record<string, never>;
+        Returns: {
+          invite_id: string;
+          group_id: string;
+          group_name: string;
+          invited_by_name: string;
+          member_count: number;
         }[];
       };
       my_groups: {
@@ -1941,6 +2011,15 @@ export type Database = {
       };
       request_access: {
         Args: { p_client_id: string; p_domain: string };
+        Returns: string;
+      };
+      respond_to_group_invite: {
+        Args: {
+          p_invite_id: string;
+          p_accept: boolean;
+          p_identity?: string | null;
+          p_handle?: string | null;
+        };
         Returns: string;
       };
       save_check_in: {

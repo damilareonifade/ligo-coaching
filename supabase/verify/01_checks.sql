@@ -2187,3 +2187,78 @@ select sender_name, body from public.group_messages(:'g');
 \echo '=== (expect Maya A. owner, 2 members, unread true) ==='
 select name, owner_name, member_count, is_admin, unread
   from public.my_groups() where group_id = :'g';
+
+\echo ''
+\echo '=== 216. an invite is a question, not a membership (expect 1 asked, 2 members) ==='
+-- Sam coaches Maya (check 10), so they are linked and may ask each other.
+reset role;
+reset request.jwt.claims;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.create_group('Invite test', 'first') as ig \gset
+select public.invite_to_group(:'ig', array['11111111-1111-1111-1111-111111111111']::uuid[]) as asked;
+reset role;
+select count(*) as members_before_answering from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id where t.group_id = :'ig';
+
+\echo ''
+\echo '=== 217. you cannot invite somebody you are not linked to (expect 0 asked) ==='
+-- Silently skipped, not refused: an error naming the rejected id would answer
+-- "is this a real account" one id at a time.
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.invite_to_group(:'ig', array['00000000-0000-0000-0000-0000000000ff']::uuid[]) as asked_a_stranger;
+
+\echo ''
+\echo '=== 218. only an admin may ask (expect ERROR) ==='
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.invite_to_group(:'ig', array['11111111-1111-1111-1111-111111111111']::uuid[]);
+
+\echo ''
+\echo '=== 219. the invitee sees the question, named by the asker''s own choice ==='
+\echo '=== (expect Invite test / Maya A.) ==='
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select group_name, invited_by_name, member_count from public.my_group_invites()
+ where group_id = :'ig';
+
+\echo ''
+\echo '=== 220. accepting is what adds them, with the name they picked ==='
+\echo '=== (expect 2 members, Sam O.) ==='
+select invite_id as inv from public.my_group_invites() where group_id = :'ig' \gset
+select public.respond_to_group_invite(:'inv', true, 'first') as joined;
+reset role;
+select count(*) as members_after from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id where t.group_id = :'ig';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select display_name from public.group_members(:'ig') order by display_name;
+
+\echo ''
+\echo '=== 221. an invitation is answered once (expect ERROR) ==='
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select public.respond_to_group_invite(:'inv', true, 'first');
+
+\echo ''
+\echo '=== 222. somebody else''s invitation is not yours to answer (expect ERROR) ==='
+-- Maya is linked only to Sam, who is already in — so the next invitation has
+-- to come from Sam. Not to the third account, whose link he ended back at
+-- check 17; to the fourth, which is still active. `is_linked_to` requires
+-- that, which is the whole point of it.
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.set_group_admin(:'ig', '11111111-1111-1111-1111-111111111111', true);
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select public.invite_to_group(:'ig', array['77777777-7777-7777-7777-777777777777']::uuid[]) as sam_asked;
+reset role;
+select id as other_inv from public.group_invites
+ where group_id = :'ig' and invitee_id = '77777777-7777-7777-7777-777777777777' \gset
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.respond_to_group_invite(:'other_inv', true, 'first');
+
+\echo ''
+\echo '=== 223. who has not appeared is a count, never a list ==='
+\echo '=== (expect 1 to an admin, 0 to somebody outside) ==='
+select public.group_invited_not_joined(:'ig') as admin_sees_a_count;
+-- The one who was asked, and not yet a member: still a count of nothing.
+set request.jwt.claims = '{"sub":"77777777-7777-7777-7777-777777777777"}';
+select public.group_invited_not_joined(:'ig') as outsider_sees_nothing;

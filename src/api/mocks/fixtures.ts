@@ -3618,8 +3618,7 @@ const initialInvites: readonly ApiCommunityInvite[] = [
     ownerName: 'Sam Okafor',
     summary: 'Sam Okafor is inviting you to a group chat with 6 other clients he coaches.',
     visible: [
-      'Your display name and messages you send',
-      'That you are coached by Sam',
+      'Your display name and the messages you send',
       'When you are active in the group',
     ],
     hidden: [

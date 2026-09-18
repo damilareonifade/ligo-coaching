@@ -61,6 +61,30 @@ export function resolveDisplayName(
   }
 }
 
+/**
+ * What joining a group does and does not show, in the two lists the consent
+ * screen reads out.
+ *
+ * Composed here with every other promise the app makes about visibility, for
+ * the reason given at the top of this file: it belongs somewhere a test can
+ * hold it to its exact words.
+ *
+ * "That you are coached by X" used to be on the visible list. It is gone
+ * twice over — it is false of a group two clients made between themselves,
+ * and nothing in the schema tells one member who coaches another. `is_coach`
+ * says whether somebody is a coach, never whose.
+ */
+export const GROUP_VISIBLE_TO_MEMBERS: readonly string[] = [
+  'Your display name and the messages you send',
+  'When you are active in the group',
+];
+
+export const GROUP_HIDDEN_ALWAYS: readonly string[] = [
+  'Your workouts, meals and measurements',
+  'Your check-ins and photos',
+  'Your real name, unless you choose it',
+];
+
 /** Whether a chosen identity is complete enough to join with. */
 export function isIdentityReady(identity: CommunityIdentity, handle: string): boolean {
   return resolveDisplayName(identity, 'Placeholder Name', handle).length > 0;

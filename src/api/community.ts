@@ -7,6 +7,8 @@ import {
 } from '@tanstack/react-query';
 
 import { env } from '@/lib/env';
+import { GROUP_HIDDEN_ALWAYS, GROUP_VISIBLE_TO_MEMBERS } from '@/lib/community';
+import { formatChatStamp, initials } from '@/lib/format';
 
 import { ApiError, client } from './client';
 import {
@@ -25,6 +27,7 @@ import {
   mockSendGroupMessage,
 } from './mocks';
 import { queryKeys } from './queryKeys';
+import { assertOk, currentUserId, supabase, unwrap } from './supabase';
 import type {
   ApiCoachGroupSummary,
   ApiCommunity,
@@ -50,8 +53,40 @@ async function fetchCommunity(): Promise<ApiCommunity> {
   if (env.useMocks) {
     return mockDelay(mockCommunity());
   }
-  const { data } = await client.get<ApiCommunity>('/community');
-  return data;
+
+  const now = new Date();
+  const [groupRows, inviteRows] = await Promise.all([
+    supabase.rpc('my_groups').then(unwrap),
+    supabase.rpc('my_group_invites').then(unwrap),
+  ]);
+
+  return {
+    invites: inviteRows.map((row) => ({
+      id: row.invite_id ?? '',
+      kind: 'group' as const,
+      targetId: row.group_id ?? '',
+      name: row.group_name ?? '',
+      ownerName: row.invited_by_name ?? '',
+      summary: `${row.member_count ?? 0} members`,
+      // Composed here rather than sent: these are the app's promises about
+      // its own behaviour, and they belong where a test can hold them to
+      // their exact words — see the note at the top of lib/community.ts.
+      visible: GROUP_VISIBLE_TO_MEMBERS,
+      hidden: GROUP_HIDDEN_ALWAYS,
+    })),
+    groups: groupRows.map((row) => ({
+      id: row.group_id ?? '',
+      name: row.name ?? '',
+      ownerName: row.owner_name ?? '',
+      memberCount: row.member_count ?? 0,
+      preview: row.last_body ?? '',
+      when: row.last_at ? formatChatStamp(row.last_at, now) : '',
+    })),
+    // Boards arrive with their own migration. Empty rather than an error:
+    // the index is a list of memberships and having none of one kind is an
+    // ordinary answer, which is what `communityRowValue` already renders.
+    boards: [],
+  };
 }
 
 /** The client's index: what they are in, and what they have been asked to. */
@@ -65,8 +100,43 @@ async function fetchGroup(id: string): Promise<ApiCommunityGroup> {
     if (!group) throw new ApiError('That group is no longer available.', 404);
     return mockDelay(group);
   }
-  const { data } = await client.get<ApiCommunityGroup>(`/community/groups/${id}`);
-  return data;
+  const [me, groupRows, memberRows, messageRows] = await Promise.all([
+    currentUserId(),
+    supabase.rpc('my_groups').then(unwrap),
+    supabase.rpc('group_members', { p_group_id: id }).then(unwrap),
+    supabase.rpc('group_messages', { p_group_id: id }).then(unwrap),
+  ]);
+
+  const group = groupRows.find((row) => row.group_id === id);
+  if (!group) throw new ApiError('That group is no longer available.', 404);
+
+  const now = new Date();
+
+  return {
+    id,
+    name: group.name ?? '',
+    ownerName: group.owner_name ?? '',
+    myIdentity: (group.my_identity ?? 'first') as CommunityIdentity,
+    myDisplayName: group.my_display_name ?? '',
+    members: memberRows.map((row) => ({
+      clientId: row.user_id ?? '',
+      // Already resolved through that member's own choice, server-side. The
+      // real name is not in this payload and must not be — see
+      // `community_display_name`.
+      displayName: row.display_name ?? '',
+      initials: initials(row.display_name ?? ''),
+      isCoach: row.is_coach ?? false,
+    })),
+    messages: messageRows.map((row) => ({
+      id: row.id ?? '',
+      senderId: row.sender_id ?? '',
+      senderName: row.sender_name ?? '',
+      isCoach: row.is_coach ?? false,
+      text: row.body ?? '',
+      when: formatChatStamp(row.created_at ?? '', now),
+      from: row.sender_id === me ? ('me' as const) : ('them' as const),
+    })),
+  };
 }
 
 /**
@@ -105,8 +175,20 @@ async function fetchCoachGroups(): Promise<readonly ApiCoachGroupSummary[]> {
   if (env.useMocks) {
     return mockDelay(mockCoachGroups());
   }
-  const { data } = await client.get<readonly ApiCoachGroupSummary[]>('/coach/community/groups');
-  return data;
+  const now = new Date();
+  const rows = await supabase.rpc('my_groups').then(unwrap);
+
+  // Every group they are in, not only the ones they run. A coach invited into
+  // a client's group is in that conversation and should see it where they see
+  // their others; "runs" is `is_admin`, and it decides what they may do rather
+  // than what they may read.
+  return rows.map((row) => ({
+    id: row.group_id ?? '',
+    name: row.name ?? '',
+    memberCount: row.member_count ?? 0,
+    preview: row.last_body ?? '',
+    when: row.last_at ? formatChatStamp(row.last_at, now) : '',
+  }));
 }
 
 /** The groups a coach runs, listed above their 1:1 threads in the inbox. */
@@ -132,7 +214,19 @@ async function postGroupMessage({ groupId, text }: SendGroupMessageInput): Promi
     await mockDelay(undefined, 250);
     return;
   }
-  await client.post(`/community/groups/${groupId}/messages`, { text });
+  const [me, rows] = await Promise.all([
+    currentUserId(),
+    supabase.rpc('my_groups').then(unwrap),
+  ]);
+
+  const group = rows.find((row) => row.group_id === groupId);
+  if (!group) throw new ApiError('That group is no longer available.', 404);
+
+  assertOk(
+    await supabase
+      .from('messages')
+      .insert({ thread_id: group.thread_id, sender_id: me, body: text.trim() }),
+  );
 }
 
 /**
@@ -208,7 +302,18 @@ async function postAcceptInvite(inviteId: string): Promise<void> {
     await mockDelay(undefined, 300);
     return;
   }
-  await client.post(`/community/invites/${inviteId}/accept`);
+  // 'first' — a first name and a last initial — because the group invite
+  // screen has no identity step; only the board one does. It is the least
+  // exposing option that still shows a person, but it is the app choosing,
+  // and the design is explicit that the choice is per group and not
+  // inherited. That screen wants an identity step, as boards have.
+  assertOk(
+    await supabase.rpc('respond_to_group_invite', {
+      p_invite_id: inviteId,
+      p_accept: true,
+      p_identity: 'first',
+    }),
+  );
 }
 
 export function useAcceptInviteMutation(): UseMutationResult<void, Error, string> {
@@ -229,7 +334,12 @@ async function postDeclineInvite(inviteId: string): Promise<void> {
     await mockDelay(undefined, 300);
     return;
   }
-  await client.post(`/community/invites/${inviteId}/decline`);
+  assertOk(
+    await supabase.rpc('respond_to_group_invite', {
+      p_invite_id: inviteId,
+      p_accept: false,
+    }),
+  );
 }
 
 /**
@@ -312,7 +422,7 @@ async function deleteGroupMembership(groupId: string): Promise<void> {
     await mockDelay(undefined, 300);
     return;
   }
-  await client.delete(`/community/groups/${groupId}/me`);
+  assertOk(await supabase.rpc('leave_group', { p_group_id: groupId }));
 }
 
 export function useLeaveGroupMutation(): UseMutationResult<void, Error, string> {
@@ -345,7 +455,22 @@ async function postCreateGroup({ name, clientIds }: CreateGroupInput): Promise<v
     await mockDelay(undefined, 450);
     return;
   }
-  await client.post('/coach/community/groups', { name: name.trim(), invite: clientIds });
+  const groupId = await supabase
+    .rpc('create_group', { p_name: name.trim(), p_identity: 'first' })
+    .then(unwrap);
+
+  // Two statements rather than one, and in this order on purpose: the group
+  // exists whether or not anybody answers, and a create that rolled back
+  // because an invitation could not be sent would lose a group its maker is
+  // already in.
+  if (clientIds.length > 0) {
+    assertOk(
+      await supabase.rpc('invite_to_group', {
+        p_group_id: groupId,
+        p_user_ids: [...clientIds],
+      }),
+    );
+  }
 }
 
 export function useCreateGroupMutation(): UseMutationResult<void, Error, CreateGroupInput> {

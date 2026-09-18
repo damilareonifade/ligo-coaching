@@ -133,6 +133,10 @@ SCALARS = {
     "bigint": "number",
     "integer": "number",
     "timestamp with time zone": "string",
+    # A calendar day with no clock and no zone — `groups.board_from`. It
+    # crosses the wire as "2026-09-30", the same as a timestamp does, so the
+    # TypeScript side is a string either way.
+    "date": "string",
     "inet": "string",
     "numeric": "number",
     "text[]": "string[]",
@@ -140,6 +144,7 @@ SCALARS = {
 
 ARG_TYPES = {
     "text": "string",
+    "date": "string",
     "uuid": "string",
     "boolean": "boolean",
     "uuid[]": "string[]",

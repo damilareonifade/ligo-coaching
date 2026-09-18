@@ -56,6 +56,45 @@ export type Database = {
           },
         ];
       };
+      board_members: {
+        Row: {
+          group_id: string;
+          user_id: string;
+          identity: string;
+          handle: string | null;
+          opted_in_at: string;
+        };
+        Insert: {
+          group_id: string;
+          user_id: string;
+          identity?: string;
+          handle?: string | null;
+          opted_in_at?: string;
+        };
+        Update: {
+          group_id?: string;
+          user_id?: string;
+          identity?: string;
+          handle?: string | null;
+          opted_in_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'board_members_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       body_measurements: {
         Row: {
           id: string;
@@ -623,6 +662,10 @@ export type Database = {
           join_code: string;
           created_at: string;
           updated_at: string;
+          board_metric: string;
+          board_window: string;
+          board_from: string | null;
+          board_to: string | null;
         };
         Insert: {
           id?: string;
@@ -631,6 +674,10 @@ export type Database = {
           join_code: string;
           created_at?: string;
           updated_at?: string;
+          board_metric?: string;
+          board_window?: string;
+          board_from?: string | null;
+          board_to?: string | null;
         };
         Update: {
           id?: string;
@@ -639,6 +686,10 @@ export type Database = {
           join_code?: string;
           created_at?: string;
           updated_at?: string;
+          board_metric?: string;
+          board_window?: string;
+          board_from?: string | null;
+          board_to?: string | null;
         };
         Relationships: [
           {
@@ -1731,6 +1782,18 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
+      board_not_opted_in: {
+        Args: { p_group_id: string };
+        Returns: number;
+      };
+      board_standings: {
+        Args: { p_group_id: string };
+        Returns: { user_id: string; display_name: string; value: number; rank: number }[];
+      };
+      board_window_bounds: {
+        Args: { p_window: string; p_from: string; p_to: string };
+        Returns: { starts: string; ends: string }[];
+      };
       can_log_for: {
         Args: { p_client_id: string };
         Returns: boolean;
@@ -1848,6 +1911,10 @@ export type Database = {
       is_thread_open: {
         Args: { p_thread_id: string };
         Returns: boolean;
+      };
+      join_board: {
+        Args: { p_group_id: string; p_identity?: string | null; p_handle?: string | null };
+        Returns: undefined;
       };
       join_group: {
         Args: { p_code: string; p_identity?: string | null; p_handle?: string | null };

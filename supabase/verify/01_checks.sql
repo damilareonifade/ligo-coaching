@@ -2262,3 +2262,89 @@ select public.group_invited_not_joined(:'ig') as admin_sees_a_count;
 -- The one who was asked, and not yet a member: still a count of nothing.
 set request.jwt.claims = '{"sub":"77777777-7777-7777-7777-777777777777"}';
 select public.group_invited_not_joined(:'ig') as outsider_sees_nothing;
+
+\echo ''
+\echo '=== 224. being in a group is not being on its board (expect 2 members, 0 ranked) ==='
+reset role;
+reset request.jwt.claims;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.create_group('Board test', 'first') as bg \gset
+reset role;
+select join_code as bcode from public.groups where id = :'bg' \gset
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.join_group(:'bcode', 'first');
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select count(*) as in_the_group from public.group_members(:'bg');
+select count(*) as on_the_board from public.board_standings(:'bg');
+
+\echo ''
+\echo '=== 225. and how many have not opted in is a count (expect 2) ==='
+select public.board_not_opted_in(:'bg') as not_ranked;
+
+\echo ''
+\echo '=== 226. opting in puts you on it, under a name chosen for it alone ==='
+\echo '=== (expect Maya A. in the group, Anon Ox on the board) ==='
+select public.join_board(:'bg', 'handle', 'Anon Ox');
+select display_name as in_conversation from public.group_members(:'bg')
+ where user_id = '22222222-2222-2222-2222-222222222222';
+select display_name as on_ranking from public.board_standings(:'bg')
+ where user_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 227. the board counts finished work only (expect +1, not +2) ==='
+-- Asserted as a delta. Maya has finished sessions from the training checks
+-- above, so an absolute count here would be a number about those rather than
+-- about this.
+reset role;
+update public.groups set board_metric = 'sessions' where id = :'bg';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select value as before_count from public.board_standings(:'bg')
+ where user_id = '22222222-2222-2222-2222-222222222222' \gset
+reset role;
+-- One finished, one still running. The unfinished one counts for nothing —
+-- "a workout nobody finished has not been done".
+insert into public.workout_sessions (client_id, title, started_at, finished_at)
+values ('22222222-2222-2222-2222-222222222222', 'Push', now() - interval '2 days',
+        now() - interval '2 days'),
+       ('22222222-2222-2222-2222-222222222222', 'Left open', now(), null);
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select value - :'before_count'::numeric as went_up_by from public.board_standings(:'bg')
+ where user_id = '22222222-2222-2222-2222-222222222222';
+
+\echo '=== 228. consistency cannot be crammed (expect 1 week, not 3 sessions) ==='
+reset role;
+update public.groups set board_metric = 'consistency' where id = :'bg';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select value as distinct_weeks from public.board_standings(:'bg')
+ where user_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 229. a tie is a tie — dense ranks, nobody pushed to third (expect 1 and 1) ==='
+reset role;
+insert into public.board_members (group_id, user_id, identity)
+values (:'bg', '33333333-3333-3333-3333-333333333333', 'first');
+insert into public.workout_sessions (client_id, title, started_at, finished_at)
+values ('33333333-3333-3333-3333-333333333333', 'Push', now() - interval '2 days',
+        now() - interval '2 days');
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select rank from public.board_standings(:'bg') order by rank;
+
+\echo ''
+\echo '=== 230. an outsider sees no ranking at all (expect 0) ==='
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select count(*) as outsider_sees from public.board_standings(:'bg');
+select public.board_not_opted_in(:'bg') as outsider_count;
+
+\echo ''
+\echo '=== 231. leaving a board is your own to do, and nobody else''s (expect ERROR-free, 1 left) ==='
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+delete from public.board_members where group_id = :'bg' and user_id = '22222222-2222-2222-2222-222222222222';
+reset role;
+select count(*) as maya_still_on_it from public.board_members
+ where group_id = :'bg' and user_id = '22222222-2222-2222-2222-222222222222';

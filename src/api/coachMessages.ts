@@ -8,12 +8,22 @@ import {
 } from '@tanstack/react-query';
 
 import { env } from '@/lib/env';
-import { appendOwnMessage } from '@/lib/messages';
+import { formatChatStamp, initials } from '@/lib/format';
+import { appendOwnMessage, filterInbox } from '@/lib/messages';
+import { accessLabel, deriveAccess } from '@/lib/roster';
 
-import { ApiError, client } from './client';
+import { ApiError } from './client';
 import { mockCoachThread, mockDelay, mockInbox, mockSendCoachMessage } from './mocks';
 import { queryKeys } from './queryKeys';
-import type { ApiCoachThread, ApiInboxEntry } from './types';
+import { toChatMessages } from './rows';
+import { assertOk, currentUserId, supabase, unwrap } from './supabase';
+import type { ApiCoachThread, ApiInboxEntry, ApiSharePermissions } from './types';
+
+/** Every direct thread this coach is in, newest first — `my_threads` orders it. */
+async function coachThreads() {
+  const rows = await supabase.rpc('my_threads').then(unwrap);
+  return rows.filter((row) => row.kind === 'direct');
+}
 
 /* ------------------------------------------------------------------ *
  * The coach's side of messaging. The client's single thread lives in
@@ -25,10 +35,29 @@ async function fetchInbox(query: string): Promise<readonly ApiInboxEntry[]> {
   if (env.useMocks) {
     return mockDelay(mockInbox(query));
   }
-  const { data } = await client.get<readonly ApiInboxEntry[]>('/coach/messages', {
-    params: query.length > 0 ? { q: query } : undefined,
+
+  const now = new Date();
+  const entries: readonly ApiInboxEntry[] = (await coachThreads()).map((row) => {
+    const name = row.client_name ?? '';
+    const permissions = (row.permissions ?? {}) as ApiSharePermissions;
+
+    return {
+      clientId: row.client_id ?? '',
+      name,
+      initials: initials(name),
+      // A thread nobody has spoken in yet. Blank rather than invented: the
+      // row still belongs on the list, because the conversation exists.
+      preview: row.last_body ?? '',
+      when: row.last_at ? formatChatStamp(row.last_at, now) : '',
+      unread: row.unread ?? false,
+      accessLabel: accessLabel[deriveAccess(permissions)],
+    };
   });
-  return data;
+
+  // Filtered here rather than in SQL, and it is the same function the screen
+  // uses over its own cached rows — so a search matches identically whether it
+  // runs against the server or against what is already on the phone.
+  return filterInbox(entries, query);
 }
 
 /**
@@ -56,8 +85,28 @@ async function fetchCoachThread(clientId: string): Promise<ApiCoachThread> {
     if (!thread) throw new ApiError('That conversation is no longer available.', 404);
     return mockDelay(thread);
   }
-  const { data } = await client.get<ApiCoachThread>(`/coach/messages/${clientId}`);
-  return data;
+  const [me, threads] = await Promise.all([currentUserId(), coachThreads()]);
+  const thread = threads.find((row) => row.client_id === clientId);
+  if (!thread) throw new ApiError('That conversation is no longer available.', 404);
+
+  const rows = await supabase
+    .from('messages')
+    .select('id, body, created_at, sender_id')
+    .eq('thread_id', thread.thread_id)
+    .order('created_at')
+    .then(unwrap);
+
+  const name = thread.client_name ?? '';
+  const permissions = (thread.permissions ?? {}) as ApiSharePermissions;
+
+  return {
+    clientId,
+    name,
+    initials: initials(name),
+    accessLabel: accessLabel[deriveAccess(permissions)],
+    archived: thread.archived ?? false,
+    messages: toChatMessages(rows, me),
+  };
 }
 
 export function useCoachThreadQuery(clientId: string): UseQueryResult<ApiCoachThread, Error> {
@@ -79,7 +128,15 @@ async function postCoachMessage({ clientId, text }: SendCoachMessageInput): Prom
     await mockDelay(undefined, 250);
     return;
   }
-  await client.post(`/coach/messages/${clientId}`, { text });
+  const [me, threads] = await Promise.all([currentUserId(), coachThreads()]);
+  const thread = threads.find((row) => row.client_id === clientId);
+  if (!thread) throw new ApiError('That conversation is no longer available.', 404);
+
+  assertOk(
+    await supabase
+      .from('messages')
+      .insert({ thread_id: thread.thread_id, sender_id: me, body: text.trim() }),
+  );
 }
 
 /**

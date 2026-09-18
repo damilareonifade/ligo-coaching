@@ -68,6 +68,33 @@ export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+/**
+ * The stamp beside a message: "09:12" today, "Mon 09:12" this week, "4 Mar"
+ * before that.
+ *
+ * Three shapes rather than one, because a thread is read from the bottom and
+ * the question changes as you scroll up it. At the foot it is "how long ago",
+ * where a weekday is noise; a screen higher it is "which day", where the clock
+ * is; further back neither matters and the date is the only useful answer.
+ */
+export function formatChatStamp(iso: string, now: Date = new Date()): string {
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return '';
+
+  const startOfDay = (d: Date): number =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startOfDay(now) - startOfDay(then)) / 86_400_000);
+
+  if (days === 0) return formatTime(iso);
+  // Six, not seven: at seven days "Mon" is this Monday or last Monday and the
+  // reader cannot tell which.
+  if (days > 0 && days < 7) {
+    return `${then.toLocaleDateString(undefined, { weekday: 'short' })} ${formatTime(iso)}`;
+  }
+
+  return then.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+}
+
 /** Avatar fallback: "Ada Lovelace" → "AL". */
 export function initials(name: string): string {
   return name

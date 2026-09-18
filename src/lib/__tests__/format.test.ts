@@ -1,6 +1,8 @@
 import {
+  formatChatStamp,
   formatPercent,
   formatSessionDay,
+  formatTime,
   initials,
   relativeTime,
 } from '@/lib/format';
@@ -58,5 +60,29 @@ describe('relativeTime', () => {
 
   it('does not throw on a value that is not a date', () => {
     expect(relativeTime('not-a-date', now)).toBe('unknown');
+  });
+});
+
+describe('formatChatStamp', () => {
+  const now = new Date('2026-03-12T15:00:00Z');
+
+  it('gives the clock for today, where the day is noise', () => {
+    expect(formatChatStamp('2026-03-12T09:12:00Z', now)).toBe(formatTime('2026-03-12T09:12:00Z'));
+  });
+
+  it('adds the weekday within the week, where the day is the question', () => {
+    const stamp = formatChatStamp('2026-03-09T09:12:00Z', now);
+    expect(stamp).toContain(formatTime('2026-03-09T09:12:00Z'));
+    expect(stamp.split(' ')[0]).toHaveLength(3);
+  });
+
+  it('drops to a date once a weekday is ambiguous', () => {
+    // Seven days back is the same weekday as today: "Thu" would read as
+    // today to anyone scrolling quickly.
+    expect(formatChatStamp('2026-03-05T09:12:00Z', now)).not.toContain(':');
+  });
+
+  it('says nothing rather than "Invalid Date"', () => {
+    expect(formatChatStamp('not a date', now)).toBe('');
   });
 });

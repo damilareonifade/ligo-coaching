@@ -73,7 +73,7 @@ The skeleton is complete and runs; these are deliberately left as next steps:
   optimistic-update path. A real set-entry sheet is the next piece.
 - **Session reminders** — `expo-notifications` is installed and configured, and the settings
   toggle persists, but nothing schedules a notification yet
-- **Student messaging / form cues** — cues exist on exercises but aren't sendable
+- **Form cues** — a coach's cue shows on the lift (`coachNote`) but nothing lets them write one
 - **Passkey sign-in** — the button is built and wired to a handler, but no relying party is
   configured, so it surfaces a "not connected yet" toast. Email + password and Google both work.
 - **Remote sign-out** — `public.sessions` records devices and `revokeDeviceSession` marks one

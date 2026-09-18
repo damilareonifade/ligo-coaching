@@ -607,6 +607,48 @@ export type Database = {
           },
         ];
       };
+      messages: {
+        Row: {
+          id: string;
+          thread_id: string;
+          sender_id: string | null;
+          body: string;
+          attachment_path: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          thread_id: string;
+          sender_id?: string | null;
+          body: string;
+          attachment_path?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          thread_id?: string;
+          sender_id?: string | null;
+          body?: string;
+          attachment_path?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'messages_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       notifications: {
         Row: {
           id: string;
@@ -1242,6 +1284,90 @@ export type Database = {
           },
         ];
       };
+      thread_members: {
+        Row: {
+          thread_id: string;
+          user_id: string;
+          role: string;
+          last_read_at: string | null;
+          joined_at: string;
+          left_at: string | null;
+        };
+        Insert: {
+          thread_id: string;
+          user_id: string;
+          role?: string;
+          last_read_at?: string | null;
+          joined_at?: string;
+          left_at?: string | null;
+        };
+        Update: {
+          thread_id?: string;
+          user_id?: string;
+          role?: string;
+          last_read_at?: string | null;
+          joined_at?: string;
+          left_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'thread_members_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'threads';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'thread_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      threads: {
+        Row: {
+          id: string;
+          kind: string;
+          coach_id: string | null;
+          client_id: string | null;
+          closed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          kind?: string;
+          coach_id?: string | null;
+          client_id?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          kind?: string;
+          coach_id?: string | null;
+          client_id?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'threads_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'threads_coach_id_fkey';
+            columns: ['coach_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       users: {
         Row: {
           id: string;
@@ -1565,12 +1691,24 @@ export type Database = {
           difficulty: string;
         }[];
       };
+      guess_exercise_measure: {
+        Args: { p_name: string; p_body_part: string; p_equipment: string };
+        Returns: string;
+      };
       has_client_permission: {
         Args: { p_client_id: string; p_domain: string };
         Returns: boolean;
       };
       is_linked_to: {
         Args: { p_user_id: string };
+        Returns: boolean;
+      };
+      is_thread_member: {
+        Args: { p_thread_id: string };
+        Returns: boolean;
+      };
+      is_thread_open: {
+        Args: { p_thread_id: string };
         Returns: boolean;
       };
       lookup_coach: {
@@ -1587,6 +1725,10 @@ export type Database = {
       };
       mark_notification_read: {
         Args: { p_id: string };
+        Returns: undefined;
+      };
+      mark_thread_read: {
+        Args: { p_thread_id: string };
         Returns: undefined;
       };
       measure_for_block: {
@@ -1615,6 +1757,24 @@ export type Database = {
           body_fat_pct: number;
           note: string;
           logged_by_client: boolean;
+        }[];
+      };
+      my_threads: {
+        Args: Record<string, never>;
+        Returns: {
+          thread_id: string;
+          kind: string;
+          coach_id: string;
+          client_id: string;
+          coach_name: string;
+          client_name: string;
+          coach_gym: string;
+          coach_specialties: string[];
+          permissions: Json;
+          archived: boolean;
+          last_body: string;
+          last_at: string;
+          unread: boolean;
         }[];
       };
       name_initials: {

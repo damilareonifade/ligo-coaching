@@ -12,6 +12,7 @@
  * of quietly handing a screen `undefined`.
  */
 import { exerciseGifUrl } from '@/lib/exerciseGif';
+import { formatChatStamp } from '@/lib/format';
 import { parseDestination } from '@/lib/notifications';
 import { toMeasure } from '@/lib/measures';
 import { assignedLabel, programMeta, programStatusLabel } from '@/lib/programs';
@@ -19,6 +20,7 @@ import { assignedLabel, programMeta, programStatusLabel } from '@/lib/programs';
 import { ApiError } from './client';
 import type { Database } from './database.types';
 import type {
+  ApiChatMessage,
   ApiClientSession,
   ApiExerciseOption,
   ApiNotification,
@@ -403,4 +405,41 @@ export function toNotificationGroups(
   }
 
   return groups;
+}
+
+/* ------------------------------------------------------------------ *
+ * Messages.
+ * ------------------------------------------------------------------ */
+
+interface MessageRow {
+  readonly id: string;
+  readonly body: string;
+  readonly created_at: string;
+  readonly sender_id: string | null;
+}
+
+/**
+ * One thread's turns, told from one seat.
+ *
+ * `from` is resolved here rather than stored, because it has no value on the
+ * row: the same message is 'me' to the person who wrote it and 'them' to the
+ * person who read it. Storing a side would mean storing it twice and picking
+ * the right copy per reader, which is this comparison with extra steps.
+ *
+ * A NULL sender is somebody who deleted their account. It reads as 'them',
+ * which is what it is to whoever is left — the message still happened, and a
+ * thread that dropped half its turns would rewrite a conversation the other
+ * person remembers having.
+ */
+export function toChatMessages(
+  rows: readonly MessageRow[],
+  readerId: string,
+  now: Date = new Date(),
+): readonly ApiChatMessage[] {
+  return rows.map((row) => ({
+    id: row.id,
+    text: row.body,
+    when: formatChatStamp(row.created_at, now),
+    from: row.sender_id === readerId ? 'me' : 'them',
+  }));
 }

@@ -1851,3 +1851,106 @@ select
   -- A rope on a cable stack is not a battling rope.
   public.guess_exercise_measure('Cable rope overhead triceps extension',
     'upper arms', 'cable') as cable_rope;
+
+\echo ''
+\echo '=== 182. attaching opens a thread, with both of them in it (expect 1 / 2) ==='
+-- The coach↔Maya link was made active back at check 10, so the trigger has
+-- already run by the time anything here looks.
+reset role;
+reset request.jwt.claims;
+select count(*) as direct_threads from public.threads
+ where kind = 'direct'
+   and coach_id = '11111111-1111-1111-1111-111111111111'
+   and client_id = '22222222-2222-2222-2222-222222222222';
+select count(*) as members from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id
+ where t.client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 183. both seats read the thread, the stranger does not (expect 2 / 1 / 0) ==='
+set role authenticated;
+-- Two, not one: check 15 attached the stranger to this same coach, so the
+-- coach legitimately has a thread with each of them.
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select count(*) as coach_sees from public.threads;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select count(*) as client_sees from public.threads;
+-- Check 15 attached the stranger to the same coach, so they have a thread of
+-- their own — but must not see Maya's.
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select count(*) as stranger_sees_mayas from public.threads
+ where client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 184. a member may send (expect 1 row) ==='
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+insert into public.messages (thread_id, sender_id, body)
+select t.id, auth.uid(), 'Shoulder is still sore.'
+  from public.threads t where t.client_id = '22222222-2222-2222-2222-222222222222';
+select count(*) as sent from public.messages;
+
+\echo ''
+\echo '=== 185. nobody sends as somebody else (expect ERROR) ==='
+insert into public.messages (thread_id, sender_id, body)
+select t.id, '11111111-1111-1111-1111-111111111111', 'Signed by the coach.'
+  from public.threads t where t.client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 186. an outsider cannot post into a thread (expect ERROR) ==='
+-- The id is fetched as the owner and pasted in as a literal on purpose. Left
+-- as a sub-select the outsider''s own read policy hides the thread, the insert
+-- gets zero rows and succeeds vacuously — which proves the select policy over
+-- again and never reaches the one under test.
+reset role;
+select id as mayas_thread from public.threads
+ where client_id = '22222222-2222-2222-2222-222222222222' \gset
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+insert into public.messages (thread_id, sender_id, body)
+values (:'mayas_thread', auth.uid(), 'Butting in.');
+
+\echo ''
+\echo '=== 187. what was said cannot be unsaid or rewritten (expect 2 ERRORs) ==='
+-- Refused by the grant rather than by a policy — `authenticated` holds only
+-- select and insert on this table — so it fails outright instead of quietly
+-- matching no rows. The harder of the two failures, and the right one.
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+update public.messages set body = 'Never mind.';
+delete from public.messages;
+
+\echo ''
+\echo '=== 188. detach closes the thread: history stays, the composer goes ==='
+\echo '=== (expect still readable = 1, then ERROR on send) ==='
+reset role;
+update public.coach_clients set status = 'ended', ended_at = now()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select count(*) as history_still_readable from public.messages;
+insert into public.messages (thread_id, sender_id, body)
+select t.id, auth.uid(), 'One more thing.'
+  from public.threads t where t.client_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 189. re-attaching reopens the same thread, history intact (expect 1 / 1) ==='
+reset role;
+update public.coach_clients set status = 'active', accepted_at = now()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+select count(*) as still_one_thread from public.threads
+ where client_id = '22222222-2222-2222-2222-222222222222';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select count(*) as old_messages_kept from public.messages;
+
+\echo ''
+\echo '=== 190. a member marks their place but cannot promote themselves ==='
+\echo '=== (expect read mark set, then ERROR) ==='
+update public.thread_members set last_read_at = now() where user_id = auth.uid();
+select count(*) as read_marked from public.thread_members
+ where user_id = auth.uid() and last_read_at is not null;
+update public.thread_members set role = 'admin' where user_id = auth.uid();
+
+\echo ''
+\echo '=== 191. nobody opens a thread by hand (expect ERROR) ==='
+insert into public.threads (kind, coach_id, client_id)
+values ('direct', '11111111-1111-1111-1111-111111111111', auth.uid());

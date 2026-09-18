@@ -21,6 +21,9 @@ app creates or alters tables — see **Why the app cannot migrate** below.
 | `public.coach_live_sessions` *(view)* | Clients with a workout open right now, and whether this coach may change it. |
 | `public.roster_clients` *(view)* | One row per active client with what the roster card shows. `security_invoker`, so training activity appears only where the client shared it. |
 | `public.body_measurements` | One row per logging moment — weight and measurements, every column nullable. Check-ins will read these rather than copy them. |
+| `public.threads` | One conversation. Two members when direct, many when it belongs to a group. |
+| `public.thread_members` | Who is in a thread, and how far each of them has read. |
+| `public.messages` | One turn in a conversation. Never edited, never deleted. |
 
 ### Coach ↔ client
 
@@ -42,6 +45,36 @@ could ask for two domains the client had no screen to grant.
 Detaching sets `status = 'ended'` rather than deleting: `invited_at` and
 `accepted_at` are the history a re-attach is judged against, and the delete
 policy stays with the client for a genuine erasure.
+
+### Messaging
+
+One spine for every conversation. A coach↔client thread and a community group
+chat are the same thing with a different number of people in it — which the app
+has always assumed, since every message it renders carries `from: 'me' | 'them'`
+and is "side-neutral on purpose. One thread is rendered from two seats."
+Building them separately would mean writing membership, unread counts, ordering
+and realtime twice.
+
+Threads are not opened by the app. `sync_direct_thread` opens one when
+`coach_clients` goes `active` and closes it when the pair part, because that
+table is already the authority on who may talk to whom and a second authority
+is a second thing to disagree. Re-attaching reopens the same thread rather than
+starting a clean one: the history is what makes a returning client a returning
+client.
+
+**Detaching closes a thread; it does not end it.** `src/lib/detach.ts` promises,
+on the screen where the client decides, that "history stays readable, but
+nothing new can be sent" — so the select policies do not mention `closed_at` and
+the insert policy does. Verified both ways in checks 188–189.
+
+`is_thread_member` is `security definer` and that is load-bearing: a policy on
+`messages` that read `thread_members` directly would hit that table's own
+membership-shaped RLS and Postgres would report "infinite recursion detected in
+policy" from a query that looks nothing like the cause.
+
+Messages carry no update or delete grant at all. A message somebody has already
+read is a thing that was said, and an app where it can be rewritten afterwards
+is one where neither person can rely on what is on the screen.
 
 ### Training
 
@@ -90,6 +123,8 @@ function exists only so that many rows land together or not at all.
 | `add_session_exercise(…)` | Adds a lift and its opening sets to a running workout. |
 | `weekly_progress(client)` | Sessions finished since Monday, and the target: the coach's program, else the client's own answer, else 3. Monday-based to match `startOfWeek`. |
 | `has_client_permission(client, domain)` | The one answer to "may this coach see that". Read by every training policy. |
+| `is_thread_member(thread)` | Whether the caller is in a conversation. `security definer`, to keep the message policies out of RLS recursion. |
+| `is_thread_open(thread)` | False once a thread is closed. Reads ignore it; writes do not. |
 | `client_stats(client)` | Sessions finished, the current unbroken week streak, and PRs. |
 | `client_weekly_history(client, weeks)` | One row per week in the window, empty weeks included — a chart that drops them tells the opposite of the truth. |
 | `monthly_check_ins(client, months)` | One row per month, the latest in each. A check-in **is** a `body_measurements` row — no separate table. |
@@ -111,7 +146,7 @@ the tab layout reads as a gate. Before that column was read, nothing held
 anyone in the flow — and because this project requires email confirmation,
 signup returns no session and the route into onboarding was never taken at all.
 
-Behaviour is covered by `supabase/verify/01_checks.sql` — 135 checks, run with
+Behaviour is covered by `supabase/verify/01_checks.sql` — 191 checks, run with
 `./scripts/verify-schema.sh` against a throwaway local Postgres.
 
 Two things a Laravel-shaped starter schema would include are deliberately

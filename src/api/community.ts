@@ -122,11 +122,12 @@ async function fetchGroup(id: string): Promise<ApiCommunityGroup> {
     if (!group) throw new ApiError('That group is no longer available.', 404);
     return mockDelay(group);
   }
-  const [me, groupRows, memberRows, messageRows] = await Promise.all([
+  const [me, groupRows, memberRows, messageRows, boardRows] = await Promise.all([
     currentUserId(),
     supabase.rpc('my_groups').then(unwrap),
     supabase.rpc('group_members', { p_group_id: id }).then(unwrap),
     supabase.rpc('group_messages', { p_group_id: id }).then(unwrap),
+    supabase.rpc('my_boards').then(unwrap),
   ]);
 
   const group = groupRows.find((row) => row.group_id === id);
@@ -137,6 +138,20 @@ async function fetchGroup(id: string): Promise<ApiCommunityGroup> {
   return {
     id,
     name: group.name ?? '',
+    joinCode: group.join_code ?? '',
+    isAdmin: group.is_admin ?? false,
+    boards: boardRows
+      .filter((row) => row.group_id === id)
+      .map((row) => {
+        const metric = (row.metric ?? 'volume') as BoardMetric;
+        return {
+          id: row.board_id ?? '',
+          metric,
+          label: BOARD_METRIC_OPTIONS.find((o) => o.id === metric)?.label ?? '',
+          optedIn: row.opted_in ?? false,
+          rankedCount: row.member_count ?? 0,
+        };
+      }),
     ownerName: group.owner_name ?? '',
     myIdentity: (group.my_identity ?? 'first') as CommunityIdentity,
     myDisplayName: group.my_display_name ?? '',
@@ -148,6 +163,7 @@ async function fetchGroup(id: string): Promise<ApiCommunityGroup> {
       displayName: row.display_name ?? '',
       initials: initials(row.display_name ?? ''),
       isCoach: row.is_coach ?? false,
+      isAdmin: row.is_admin ?? false,
     })),
     messages: messageRows.map((row) => ({
       id: row.id ?? '',
@@ -625,4 +641,108 @@ export function useCreateBoardMutation(): UseMutationResult<void, Error, CreateB
       void queryClient.invalidateQueries({ queryKey: queryKeys.community.coachGroups });
     },
   });
+}
+
+/* ------------------------------------------------------------------ *
+ * Running a group.
+ *
+ * Every one of these has existed in the database since groups did and
+ * had no caller at all — which is why a group could be made and then
+ * never changed: no ranking added, nobody promoted, nobody removed.
+ *
+ * None is optimistic. Each changes what other people can see or do,
+ * and a change of that kind that appears to have landed and then rolls
+ * back is worse than a button that takes a moment.
+ * ------------------------------------------------------------------ */
+
+function useGroupMutation<TInput>(
+  mutationFn: (input: TInput) => Promise<void>,
+  groupId: (input: TInput) => string,
+): UseMutationResult<void, Error, TInput> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn,
+    onSuccess: (_data, input) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.community.group(groupId(input)) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.community.overview });
+    },
+  });
+}
+
+export interface AddGroupBoardInput {
+  readonly groupId: string;
+  readonly metric: BoardMetric;
+}
+
+export function useAddGroupBoardMutation(): UseMutationResult<void, Error, AddGroupBoardInput> {
+  return useGroupMutation(async ({ groupId, metric }) => {
+    if (env.useMocks) {
+      await mockDelay(undefined, 300);
+      return;
+    }
+    assertOk(await supabase.rpc('add_group_board', { p_group_id: groupId, p_metric: metric }));
+  }, (input) => input.groupId);
+}
+
+export interface RemoveGroupBoardInput {
+  readonly groupId: string;
+  readonly boardId: string;
+}
+
+export function useRemoveGroupBoardMutation(): UseMutationResult<
+  void,
+  Error,
+  RemoveGroupBoardInput
+> {
+  return useGroupMutation(async ({ boardId }) => {
+    if (env.useMocks) {
+      await mockDelay(undefined, 300);
+      return;
+    }
+    assertOk(await supabase.rpc('remove_group_board', { p_board_id: boardId }));
+  }, (input) => input.groupId);
+}
+
+export interface SetGroupAdminInput {
+  readonly groupId: string;
+  readonly userId: string;
+  readonly admin: boolean;
+}
+
+export function useSetGroupAdminMutation(): UseMutationResult<void, Error, SetGroupAdminInput> {
+  return useGroupMutation(async ({ groupId, userId, admin }) => {
+    if (env.useMocks) {
+      await mockDelay(undefined, 300);
+      return;
+    }
+    assertOk(
+      await supabase.rpc('set_group_admin', {
+        p_group_id: groupId,
+        p_user_id: userId,
+        p_admin: admin,
+      }),
+    );
+  }, (input) => input.groupId);
+}
+
+export interface RemoveGroupMemberInput {
+  readonly groupId: string;
+  readonly userId: string;
+}
+
+export function useRemoveGroupMemberMutation(): UseMutationResult<
+  void,
+  Error,
+  RemoveGroupMemberInput
+> {
+  return useGroupMutation(async ({ groupId, userId }) => {
+    if (env.useMocks) {
+      await mockDelay(undefined, 300);
+      return;
+    }
+    assertOk(
+      await supabase.rpc('remove_group_member', { p_group_id: groupId, p_user_id: userId }),
+    );
+  }, (input) => input.groupId);
 }

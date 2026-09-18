@@ -3415,18 +3415,18 @@ interface GroupRecord {
 }
 
 const SUMMER_MEMBERS: readonly ApiCommunityMember[] = [
-  { clientId: COACH_MEMBER_ID, displayName: 'Sam Okafor', initials: 'SO', isCoach: true },
-  { clientId: CLIENT_MEMBER_ID, displayName: 'Maya A.', initials: 'MA', isCoach: false },
-  { clientId: 'cm-priya', displayName: 'Priya B.', initials: 'PB', isCoach: false },
-  { clientId: 'cm-tomas', displayName: 'Tomas L.', initials: 'TL', isCoach: false },
-  { clientId: 'cm-sofia', displayName: 'Sofia N.', initials: 'SN', isCoach: false },
-  { clientId: 'cm-rafa', displayName: 'Rafa M.', initials: 'RM', isCoach: false },
-  { clientId: 'cm-hana', displayName: 'Hana W.', initials: 'HW', isCoach: false },
+  { clientId: COACH_MEMBER_ID, displayName: 'Sam Okafor', initials: 'SO', isCoach: true, isAdmin: true },
+  { clientId: CLIENT_MEMBER_ID, displayName: 'Maya A.', initials: 'MA', isCoach: false, isAdmin: false },
+  { clientId: 'cm-priya', displayName: 'Priya B.', initials: 'PB', isCoach: false, isAdmin: false },
+  { clientId: 'cm-tomas', displayName: 'Tomas L.', initials: 'TL', isCoach: false, isAdmin: false },
+  { clientId: 'cm-sofia', displayName: 'Sofia N.', initials: 'SN', isCoach: false, isAdmin: false },
+  { clientId: 'cm-rafa', displayName: 'Rafa M.', initials: 'RM', isCoach: false, isAdmin: false },
+  { clientId: 'cm-hana', displayName: 'Hana W.', initials: 'HW', isCoach: false, isAdmin: false },
 ];
 
 const WINTER_MEMBERS: readonly ApiCommunityMember[] = [
   ...SUMMER_MEMBERS,
-  { clientId: 'cm-dara', displayName: 'Dara O.', initials: 'DO', isCoach: false },
+  { clientId: 'cm-dara', displayName: 'Dara O.', initials: 'DO', isCoach: false, isAdmin: false },
 ];
 
 const initialGroups: readonly GroupRecord[] = [
@@ -3697,6 +3697,11 @@ export function mockCommunityGroup(id: string): ApiCommunityGroup | null {
   return {
     id: record.id,
     name: record.name,
+    // Fixed, because a mock has no database to allocate one from. The shape is
+    // what matters here: six characters with no O/0 or I/1 in them.
+    joinCode: 'KX7F2M',
+    isAdmin: me?.isAdmin ?? false,
+    boards: [],
     ownerName: record.ownerName,
     members: record.members,
     myIdentity: viewer === COACH_MEMBER_ID ? 'real' : record.myIdentity,
@@ -3852,6 +3857,8 @@ export function mockCreateGroup({ name, clientIds }: MockCreateGroupInput): void
     displayName: 'Sam Okafor',
     initials: 'SO',
     isCoach: true,
+    // Whoever makes a group is its first admin.
+    isAdmin: true,
   };
 
   groupState = [

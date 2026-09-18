@@ -990,6 +990,19 @@ export interface ApiCommunityMember {
   readonly displayName: string;
   readonly initials: string;
   readonly isCoach: boolean;
+  /** Runs the group: can invite, promote, remove, and change what it ranks. */
+  readonly isAdmin: boolean;
+}
+
+/** One ranked metric inside a group, as the group's own screen lists it. */
+export interface ApiGroupBoard {
+  readonly id: string;
+  readonly metric: BoardMetric;
+  /** "Total volume lifted" — the metric's own name, not the board's. */
+  readonly label: string;
+  /** Whether the reader has agreed to appear on this one. Answered per ranking. */
+  readonly optedIn: boolean;
+  readonly rankedCount: number;
 }
 
 export interface ApiGroupMessage {
@@ -1006,6 +1019,15 @@ export interface ApiGroupMessage {
 export interface ApiCommunityGroup {
   readonly id: string;
   readonly name: string;
+  /**
+   * The door. Shown to every member so any of them can bring somebody in —
+   * it admits people, it does not promote them.
+   */
+  readonly joinCode: string;
+  /** Whether the reader runs this group. Decides what the manage screen offers. */
+  readonly isAdmin: boolean;
+  /** What this group ranks. Empty until an admin adds one. */
+  readonly boards: readonly ApiGroupBoard[];
   readonly ownerName: string;
   readonly members: readonly ApiCommunityMember[];
   readonly myIdentity: CommunityIdentity;

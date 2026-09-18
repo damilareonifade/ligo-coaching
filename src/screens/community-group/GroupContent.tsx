@@ -57,6 +57,11 @@ export default function GroupContent({ group }: GroupContentProps) {
     [group.id, group.myDisplayName, isCoach, send],
   );
 
+  const openManage = useCallback(
+    () => router.push(`/community/group/${group.id}/manage`),
+    [group.id, router],
+  );
+
   const confirmLeave = useCallback(() => {
     leave.mutate(group.id, {
       onSuccess: () => {
@@ -108,6 +113,7 @@ export default function GroupContent({ group }: GroupContentProps) {
     >
       <View className="gap-3 px-4 pt-2">
         <GroupHeaderCard
+        onManage={openManage}
           members={group.members}
           context={context}
           onLeave={isCoach ? undefined : () => setLeaving(true)}

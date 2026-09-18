@@ -7,6 +7,8 @@ import GroupFaces from './GroupFaces';
 
 interface GroupHeaderCardProps {
   readonly members: readonly ApiCommunityMember[];
+  /** Opens the members-and-rankings screen. */
+  readonly onManage?: () => void;
   /** Already worded for the seat reading it — see `GroupContent`. */
   readonly context: string;
   /** Omitted for the coach, who runs the group rather than belongs to it. */
@@ -20,18 +22,28 @@ interface GroupHeaderCardProps {
  * settings screen: a client scrolling their own group should never have to go
  * looking for the answer to "wait, what name are they seeing?".
  */
-export default function GroupHeaderCard({ members, context, onLeave }: GroupHeaderCardProps) {
+export default function GroupHeaderCard({
+  members,
+  context,
+  onLeave,
+  onManage,
+}: GroupHeaderCardProps) {
   return (
     <LICard className="gap-3">
       <View className="flex-row items-center gap-3">
         <GroupFaces members={members} />
 
         <View className="flex-1 gap-0.5">
+          {/* The count is the way in to the list. "How many" is the question
+              the faces answer; "who" is the one people actually ask, and it
+              needs somewhere to go. */}
           <LIText
             size="h5"
-            color="primary"
+            color={onManage ? 'accent' : 'primary'}
             text={`${members.length} members`}
+            handleClick={onManage}
             className="font-geist-semibold"
+            testID="group-manage"
           />
           <LIText size="caption" color="muted" text={context} className="font-geist" />
         </View>

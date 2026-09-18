@@ -162,7 +162,13 @@ export default function RootLayout() {
                     {/* Titled "Group" here and narrowed to the group's own name by
                     the screen once the fetch lands — the layout cannot know it
                     before then. */}
-                    <Stack.Screen name="community/group/[id]" />
+                    <Stack.Screen name="community/group/[id]/index" />
+                    {/* Who is in it, what it ranks, and who runs it. A route
+                      off the group rather than a sheet on it: every action
+                      here changes what other people can see or do, and those
+                      belong somewhere with a back button rather than
+                      somewhere a stray swipe dismisses. */}
+                    <Stack.Screen name="community/group/[id]/manage" />
                     <Stack.Screen name="community/board/[id]/index" />
                     <Stack.Screen name="community/board/[id]/opt-in" />
                     <Stack.Screen name="community/new-group" />

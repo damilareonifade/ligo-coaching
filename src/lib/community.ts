@@ -102,22 +102,38 @@ export function identityOptions(realName: string): readonly ApiIdentityOption[] 
 }
 
 /**
- * What a coach can rank people on. Body weight is the one entry that can hurt
- * someone to publish — a ranking of who is heaviest, shown to everyone they
- * train with — so it carries a flag rather than relying on a screen to
- * remember to treat it differently.
+ * What a board can rank people on.
+ *
+ * Every one of these is counted from what the app itself watched happen — a
+ * finished session, a logged set, a check-in written. Nothing here comes from
+ * a device or another service, which is what makes a ranking answerable: two
+ * people on the same board were measured the same way.
+ *
+ * Body weight was here and is deliberately gone. A ranking of who is heaviest,
+ * shown to everyone you train with, can hurt somebody — and percentage change
+ * cannot even be ordered honestly, because the person cutting and the person
+ * bulking are both succeeding while moving opposite ways. It became less
+ * defensible still once a group could be made by anyone: the people on that
+ * board are no longer necessarily a coach's own clients.
+ *
+ * The four at the end rank what somebody *did in this window* rather than how
+ * strong they already were. Volume and best-lift are close to fixed on the day
+ * you join, so the same person wins every month and everybody else learns
+ * their place; consistency, PRs and check-ins are winnable by a beginner.
  */
 export const BOARD_METRIC_OPTIONS: readonly ApiBoardMetricOption[] = [
   { id: 'volume', label: 'Total volume lifted', desc: 'Sum of weight × reps' },
   { id: 'sessions', label: 'Sessions completed', desc: 'Count of finished workouts' },
-  { id: 'streak', label: 'Longest streak', desc: 'Consecutive weeks on plan' },
+  // Not "weeks on plan". That needs an assigned routine to be on, so somebody
+  // training on their own could never rank — and a group of self-coached
+  // friends would have a board nobody can appear on.
+  { id: 'streak', label: 'Longest streak', desc: 'Consecutive weeks with a finished session' },
   { id: 'weight-lifted', label: 'Best single lift', desc: 'Heaviest set logged' },
-  {
-    id: 'bodyweight',
-    label: 'Body weight change',
-    desc: 'Percentage change over the window',
-    sensitive: true,
-  },
+  { id: 'distance', label: 'Distance covered', desc: 'Total distance logged' },
+  { id: 'time', label: 'Time trained', desc: 'Total time logged' },
+  { id: 'prs', label: 'Personal bests set', desc: 'Count of PRs in the window' },
+  { id: 'consistency', label: 'Most consistent', desc: 'Sessions per week, evenly spread' },
+  { id: 'check-ins', label: 'Check-ins completed', desc: 'Count of check-ins logged' },
 ];
 
 export interface BoardWindowOption {

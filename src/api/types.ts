@@ -959,7 +959,16 @@ export interface ApiCoachThread {
 /** How a client chooses to be named in one group or on one board. */
 export type CommunityIdentity = 'real' | 'first' | 'handle';
 
-export type BoardMetric = 'volume' | 'sessions' | 'streak' | 'weight-lifted' | 'bodyweight';
+export type BoardMetric =
+  | 'volume'
+  | 'sessions'
+  | 'streak'
+  | 'weight-lifted'
+  | 'distance'
+  | 'time'
+  | 'prs'
+  | 'consistency'
+  | 'check-ins';
 
 export type BoardWindow = 'week' | 'month' | 'quarter' | 'custom';
 
@@ -1096,11 +1105,6 @@ export interface ApiBoardMetricOption {
   readonly id: BoardMetric;
   readonly label: string;
   readonly desc: string;
-  /**
-   * Body weight is the one metric that can hurt someone to publish, so it
-   * is flagged in the data rather than special-cased in a screen.
-   */
-  readonly sensitive?: boolean;
 }
 
 /* ------------------------------------------------------------------ *

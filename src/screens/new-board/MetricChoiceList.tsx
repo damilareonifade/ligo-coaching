@@ -1,7 +1,7 @@
 import { Pressable, View } from 'react-native';
 
 import type { ApiBoardMetricOption, BoardMetric } from '@/api/types';
-import { LIBadge, LIRadio, LIText } from '@/components/ui';
+import { LIRadio, LIText } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface MetricChoiceListProps {
@@ -39,11 +39,7 @@ export default function MetricChoiceList({ options, value, onChange }: MetricCho
               onPress={() => onChange(option.id)}
               accessibilityRole="radio"
               accessibilityState={{ selected }}
-              accessibilityLabel={
-                option.sensitive
-                  ? `${option.label}. ${option.desc}. Sensitive.`
-                  : `${option.label}. ${option.desc}`
-              }
+              accessibilityLabel={`${option.label}. ${option.desc}`}
               className={cn(
                 'flex-row items-start gap-3 py-3 active:opacity-70',
                 index > 0 && 'border-t border-border',
@@ -55,24 +51,13 @@ export default function MetricChoiceList({ options, value, onChange }: MetricCho
               </View>
 
               <View className="flex-1 gap-0.5">
-                <View className="flex-row items-center gap-2">
-                  <LIText
-                    size="p"
-                    color="primary"
-                    text={option.label}
-                    numberOfLines={1}
-                    className="shrink font-geist-medium"
-                  />
-                  {option.sensitive ? (
-                    <LIBadge
-                      tone="warning"
-                      label="Sensitive"
-                      className="px-2 py-0.5"
-                      labelClassName="font-geist-medium"
-                      testID="metric-sensitive-badge"
-                    />
-                  ) : null}
-                </View>
+                <LIText
+                  size="p"
+                  color="primary"
+                  text={option.label}
+                  numberOfLines={1}
+                  className="shrink font-geist-medium"
+                />
                 <LIText size="caption" color="muted" text={option.desc} className="font-geist" />
               </View>
             </Pressable>

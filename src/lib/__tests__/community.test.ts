@@ -1,10 +1,12 @@
 import type { ApiBoardRow, ApiCommunity, ApiGroupMessage } from '@/api/types';
 import {
   BOARD_CONSENT_LABEL,
+  BOARD_METRIC_OPTIONS,
   BOARD_INVITE_NOTE,
   BOARD_SHARE_NOTE,
   GROUP_INVITE_NOTE,
   boardInviteLine,
+  boardMetricLabel,
   communityRowValue,
   deltaTone,
   deriveBoardStats,
@@ -262,5 +264,36 @@ describe('inviteSummaryLine', () => {
     expect(inviteSummaryLine(0, 'group')).toBe('Nobody selected yet. Pick who to invite to the group.');
     expect(inviteSummaryLine(1, 'group')).toBe('1 client will be invited to the group.');
     expect(inviteSummaryLine(6, 'board')).toBe('6 clients will be invited to the leaderboard.');
+  });
+});
+
+describe('the board metrics', () => {
+  it('labels every metric it offers', () => {
+    // `boardMetricLabel` falls back to "Total volume lifted" when it cannot
+    // find the id, so a metric added to the union but not to the options
+    // would not fail — it would quietly label a PR board as a volume one.
+    for (const option of BOARD_METRIC_OPTIONS) {
+      expect(boardMetricLabel(option.id, 'This month')).toBe(
+        `${option.label} · This month · updates hourly`,
+      );
+    }
+  });
+
+  it('ranks nobody on their body weight', () => {
+    // Removed deliberately: a ranking of who is heaviest, shown to everyone
+    // you train with, can hurt somebody — and percentage change cannot be
+    // ordered honestly when the person cutting and the person bulking are
+    // both succeeding in opposite directions.
+    const ids = BOARD_METRIC_OPTIONS.map((option) => option.id);
+
+    expect(ids).not.toContain('bodyweight');
+  });
+
+  it('asks a streak for a finished session, never for a plan', () => {
+    // "Weeks on plan" needs an assigned routine, which somebody training on
+    // their own does not have — and groups can be made by anyone.
+    const streak = BOARD_METRIC_OPTIONS.find((option) => option.id === 'streak');
+
+    expect(streak?.desc).toBe('Consecutive weeks with a finished session');
   });
 });

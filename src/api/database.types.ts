@@ -58,32 +58,32 @@ export type Database = {
       };
       board_members: {
         Row: {
-          group_id: string;
           user_id: string;
           identity: string;
           handle: string | null;
           opted_in_at: string;
+          board_id: string;
         };
         Insert: {
-          group_id: string;
           user_id: string;
           identity?: string;
           handle?: string | null;
           opted_in_at?: string;
+          board_id: string;
         };
         Update: {
-          group_id?: string;
           user_id?: string;
           identity?: string;
           handle?: string | null;
           opted_in_at?: string;
+          board_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'board_members_group_id_fkey';
-            columns: ['group_id'];
+            foreignKeyName: 'board_members_board_id_fkey';
+            columns: ['board_id'];
             isOneToOne: false;
-            referencedRelation: 'groups';
+            referencedRelation: 'group_boards';
             referencedColumns: ['id'];
           },
           {
@@ -602,6 +602,35 @@ export type Database = {
           },
         ];
       };
+      group_boards: {
+        Row: {
+          id: string;
+          group_id: string;
+          metric: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          metric: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          metric?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'group_boards_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       group_invites: {
         Row: {
           id: string;
@@ -662,7 +691,6 @@ export type Database = {
           join_code: string;
           created_at: string;
           updated_at: string;
-          board_metric: string;
           board_window: string;
           board_from: string | null;
           board_to: string | null;
@@ -674,7 +702,6 @@ export type Database = {
           join_code: string;
           created_at?: string;
           updated_at?: string;
-          board_metric?: string;
           board_window?: string;
           board_from?: string | null;
           board_to?: string | null;
@@ -686,7 +713,6 @@ export type Database = {
           join_code?: string;
           created_at?: string;
           updated_at?: string;
-          board_metric?: string;
           board_window?: string;
           board_from?: string | null;
           board_to?: string | null;
@@ -1748,6 +1774,10 @@ export type Database = {
         Args: { p_first: string; p_kind: string; p_domain: string };
         Returns: string;
       };
+      add_group_board: {
+        Args: { p_group_id: string; p_metric: string };
+        Returns: string;
+      };
       add_session_exercise: {
         Args: {
           p_workout_session_id: string;
@@ -1783,11 +1813,11 @@ export type Database = {
         Returns: number;
       };
       board_not_opted_in: {
-        Args: { p_group_id: string };
+        Args: { p_board_id: string };
         Returns: number;
       };
       board_standings: {
-        Args: { p_group_id: string };
+        Args: { p_board_id: string };
         Returns: { user_id: string; display_name: string; value: number; rank: number }[];
       };
       board_window_bounds: {
@@ -1913,7 +1943,7 @@ export type Database = {
         Returns: boolean;
       };
       join_board: {
-        Args: { p_group_id: string; p_identity?: string | null; p_handle?: string | null };
+        Args: { p_board_id: string; p_identity?: string | null; p_handle?: string | null };
         Returns: undefined;
       };
       join_group: {
@@ -1970,6 +2000,17 @@ export type Database = {
           body_fat_pct: number;
           note: string;
           logged_by_client: boolean;
+        }[];
+      };
+      my_boards: {
+        Args: Record<string, never>;
+        Returns: {
+          board_id: string;
+          group_id: string;
+          group_name: string;
+          metric: string;
+          opted_in: boolean;
+          member_count: number;
         }[];
       };
       my_group_invites: {
@@ -2071,6 +2112,10 @@ export type Database = {
       regenerate_invite_code: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      remove_group_board: {
+        Args: { p_board_id: string };
+        Returns: undefined;
       };
       remove_group_member: {
         Args: { p_group_id: string; p_user_id: string };

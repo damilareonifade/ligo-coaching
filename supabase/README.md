@@ -26,7 +26,8 @@ app creates or alters tables — see **Why the app cannot migrate** below.
 | `public.messages` | One turn in a conversation. Never edited, never deleted. |
 | `public.groups` | A named conversation belonging to whoever made it. Joined with a code. |
 | `public.group_invites` | A question put to somebody. Answering it is the only thing that adds them. |
-| `public.board_members` | Who has agreed to appear on a group's ranking. Being in the group is not enough. |
+| `public.group_boards` | One ranked metric inside a group. A group may have none, one, or all of them. |
+| `public.board_members` | Who has agreed to appear on **one ranking**. Answered per ranking, not per group. |
 
 ### Coach ↔ client
 
@@ -146,7 +147,18 @@ their real name is shown would have shipped it to the whole group. Check 212.
 
 #### Leaderboards
 
-Every group has one and nobody is on it until they say so — two decisions, kept
+A ranking lives inside a group and has nowhere else to be, and a group may rank
+one thing or all nine — so a board is a row in `group_boards`, not a column on
+the group. The window stays on the group: one period it competes over, rather
+than nine that can disagree about what "this month" means on one screen.
+
+Opting in is answered **per ranking**. Somebody may be happy to appear on
+"sessions completed", which is effort and which anyone can win, and not on "best
+single lift", which is how strong they already are — different disclosures, so
+different answers. It also makes the design's own sentence true as written: an
+identity is "chosen per board and per group, never once per client".
+
+Nobody is on any of them until they say so — two decisions, kept
 apart. Joining a group is choosing to talk to people; appearing on its board is
 publishing what you lifted to those same people, which the app asks for in its
 own words. So `board_members` is its own table with its own identity: somebody
@@ -235,9 +247,11 @@ function exists only so that many rows land together or not at all.
 | `respond_to_group_invite(invite, accept, identity, handle?)` | Answering. Accepting is what adds the member. |
 | `my_group_invites()` | Unanswered questions for the caller. |
 | `group_invited_not_joined(group)` | How many were asked and are not in. A count only. |
-| `join_board(group, identity, handle?)` | Agrees to appear on the ranking, under a name chosen for it alone. |
-| `board_standings(group)` | The ranking. Values are **numbers** — the unit is the reader's to choose. |
-| `board_not_opted_in(group)` | How many of the group are not on it. A count only. |
+| `join_board(board, identity, handle?)` | Agrees to appear on the ranking, under a name chosen for it alone. |
+| `board_standings(board)` | The ranking. Values are **numbers** — the unit is the reader's to choose. |
+| `board_not_opted_in(board)` | How many of the group are not on this ranking. A count only. |
+| `add_group_board(group, metric)` / `remove_group_board(board)` | An admin's, like the group's name. |
+| `my_boards()` | Every ranking inside every group the caller is in, and whether they are on it. |
 | `client_stats(client)` | Sessions finished, the current unbroken week streak, and PRs. |
 | `client_weekly_history(client, weeks)` | One row per week in the window, empty weeks included — a chart that drops them tells the opposite of the truth. |
 | `monthly_check_ins(client, months)` | One row per month, the latest in each. A check-in **is** a `body_measurements` row — no separate table. |
@@ -259,7 +273,7 @@ the tab layout reads as a gate. Before that column was read, nothing held
 anyone in the flow — and because this project requires email confirmation,
 signup returns no session and the route into onboarding was never taken at all.
 
-Behaviour is covered by `supabase/verify/01_checks.sql` — 231 checks, run with
+Behaviour is covered by `supabase/verify/01_checks.sql` — 234 checks, run with
 `./scripts/verify-schema.sh` against a throwaway local Postgres.
 
 Two things a Laravel-shaped starter schema would include are deliberately

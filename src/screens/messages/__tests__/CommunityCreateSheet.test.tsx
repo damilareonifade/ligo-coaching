@@ -22,27 +22,32 @@ beforeEach(() => jest.clearAllMocks());
  * `LIDialog` is React Native's own `Modal`, which the platform draws and which
  * has no measuring step to get wrong. So what is asserted here is not the
  * height, which Jest cannot see, but that the choices are in the tree at all —
- * the sheet renders nothing when it is closed and both options when it is
- * open, and neither of those was true of the version that shipped.
+ * the sheet renders nothing when it is closed and its choice when it is open,
+ * and neither of those was true of the version that shipped.
  */
 describe('CommunityCreateSheet', () => {
   it('shows nothing until it is opened', async () => {
     await render(<CommunityCreateSheet visible={false} onClose={jest.fn()} />);
 
     expect(screen.queryByTestId('create-group')).toBeNull();
-    expect(screen.queryByTestId('create-board')).toBeNull();
   });
 
-  it('offers both, and says what neither of them does', async () => {
+  it('offers a group, and says what making one does not do', async () => {
     await render(<CommunityCreateSheet visible onClose={jest.fn()} />);
 
     expect(screen.getByTestId('create-group')).toBeTruthy();
-    expect(screen.getByTestId('create-board')).toBeTruthy();
-    // The promise under the two choices, which is the whole consent model of
-    // this feature in one line.
+    // The promise under it, which is the whole consent model in one line.
     expect(
-      screen.getByText('Either way you are sending invitations. Nobody is added to anything.'),
+      screen.getByText('You are sending invitations. Nobody is added to anything.'),
     ).toBeTruthy();
+  });
+
+  it('does not offer a leaderboard as a thing beside a group', async () => {
+    // A ranking lives inside a group and has nowhere else to be — and a group
+    // can rank several things at once, so it was never one choice either.
+    await render(<CommunityCreateSheet visible onClose={jest.fn()} />);
+
+    expect(screen.queryByTestId('create-board')).toBeNull();
   });
 
   it('closes itself on the way out, so it is not behind the screen it opened', async () => {
@@ -55,11 +60,10 @@ describe('CommunityCreateSheet', () => {
     expect(mockPush).toHaveBeenCalledWith('/community/new-group');
   });
 
-  it('opens the leaderboard creator from the other choice', async () => {
+  it('shows nothing of a board route any more', async () => {
     await render(<CommunityCreateSheet visible onClose={jest.fn()} />);
+    await fireEvent.press(screen.getByTestId('create-group'));
 
-    await fireEvent.press(screen.getByTestId('create-board'));
-
-    expect(mockPush).toHaveBeenCalledWith('/community/new-board');
+    expect(mockPush).not.toHaveBeenCalledWith('/community/new-board');
   });
 });

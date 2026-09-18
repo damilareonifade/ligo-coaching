@@ -65,9 +65,10 @@ async function fetchCommunity(): Promise<ApiCommunity> {
   }
 
   const now = new Date();
-  const [groupRows, inviteRows] = await Promise.all([
+  const [groupRows, inviteRows, boardRows] = await Promise.all([
     supabase.rpc('my_groups').then(unwrap),
     supabase.rpc('my_group_invites').then(unwrap),
+    supabase.rpc('my_boards').then(unwrap),
   ]);
 
   return {
@@ -92,10 +93,21 @@ async function fetchCommunity(): Promise<ApiCommunity> {
       preview: row.last_body ?? '',
       when: row.last_at ? formatChatStamp(row.last_at, now) : '',
     })),
-    // Boards arrive with their own migration. Empty rather than an error:
-    // the index is a list of memberships and having none of one kind is an
-    // ordinary answer, which is what `communityRowValue` already renders.
-    boards: [],
+    boards: boardRows.map((row) => {
+      const metric = (row.metric ?? 'volume') as BoardMetric;
+      return {
+        id: row.board_id ?? '',
+        // Named for its group, since a ranking has no name of its own.
+        name: row.group_name ?? '',
+        ownerName:
+          groupRows.find((g) => g.group_id === row.group_id)?.owner_name ?? '',
+        metricLabel: BOARD_METRIC_OPTIONS.find((o) => o.id === metric)?.label ?? '',
+        optedIn: row.opted_in ?? false,
+        standing: row.opted_in
+          ? `${row.member_count ?? 0} ranked`
+          : 'Not on this one',
+      };
+    }),
   };
 }
 
@@ -169,30 +181,35 @@ async function fetchBoard(id: string): Promise<ApiCommunityBoard> {
     if (!board) throw new ApiError('That leaderboard is no longer available.', 404);
     return mockDelay(board);
   }
-  const [me, groupRows] = await Promise.all([
+  const [me, boardRows, groupRows] = await Promise.all([
     currentUserId(),
+    supabase.rpc('my_boards').then(unwrap),
     supabase.rpc('my_groups').then(unwrap),
   ]);
 
-  const group = groupRows.find((row) => row.group_id === id);
-  if (!group) throw new ApiError('That leaderboard is no longer available.', 404);
+  // `id` is a ranking's id, not a group's. A group holds one row per metric it
+  // ranks, and each is its own board with its own people on it.
+  const board = boardRows.find((row) => row.board_id === id);
+  if (!board) throw new ApiError('That leaderboard is no longer available.', 404);
 
-  const [standings, notOptedIn, config] = await Promise.all([
-    supabase.rpc('board_standings', { p_group_id: id }).then(unwrap),
-    supabase.rpc('board_not_opted_in', { p_group_id: id }).then(unwrap),
+  const group = groupRows.find((row) => row.group_id === board.group_id);
+
+  const [standings, notOptedIn, window] = await Promise.all([
+    supabase.rpc('board_standings', { p_board_id: id }).then(unwrap),
+    supabase.rpc('board_not_opted_in', { p_board_id: id }).then(unwrap),
     supabase
       .from('groups')
-      .select('board_metric, board_window, board_from, board_to')
-      .eq('id', id)
+      .select('board_window, board_from, board_to')
+      .eq('id', board.group_id ?? '')
       .single()
       .then(unwrap),
   ]);
 
-  const metric = (config.board_metric ?? 'volume') as BoardMetric;
+  const metric = (board.metric ?? 'volume') as BoardMetric;
   const windowLabel = boardWindowLabel(
-    (config.board_window ?? 'month') as BoardWindow,
-    config.board_from ?? '',
-    config.board_to ?? '',
+    (window.board_window ?? 'month') as BoardWindow,
+    window.board_from ?? '',
+    window.board_to ?? '',
   );
   // Read from the store rather than `useUnits`, which is a hook and cannot be
   // called here. Same as `clientProfile.ts` does for the settings sync.
@@ -204,8 +221,6 @@ async function fetchBoard(id: string): Promise<ApiCommunityBoard> {
     displayName: row.display_name ?? '',
     initials: initials(row.display_name ?? ''),
     value: boardValueLabel(metric, Number(row.value ?? 0), unit),
-    // The count behind the headline number is only meaningful for the metrics
-    // that are not already counts. Blank beats inventing one.
     sub: '',
     // Nothing to compare against: the ranking is computed when it is asked
     // for rather than snapshotted, so there is no "last update" to have moved
@@ -216,8 +231,10 @@ async function fetchBoard(id: string): Promise<ApiCommunityBoard> {
 
   return {
     id,
-    name: group.name ?? '',
-    ownerName: group.owner_name ?? '',
+    // The group's name, because a ranking has none of its own — what it ranks
+    // is the metric label under it.
+    name: board.group_name ?? '',
+    ownerName: group?.owner_name ?? '',
     metricLabel: boardMetricLabel(metric, windowLabel),
     windowLabel,
     optedIn: Boolean(mine),
@@ -228,7 +245,7 @@ async function fetchBoard(id: string): Promise<ApiCommunityBoard> {
     facts: [
       { label: 'Metric', value: BOARD_METRIC_OPTIONS.find((o) => o.id === metric)?.label ?? '' },
       { label: 'Window', value: windowLabel },
-      { label: 'Visible to', value: `${group.member_count ?? 0} members` },
+      { label: 'Visible to', value: `${group?.member_count ?? 0} members` },
       { label: 'Updates', value: 'Live' },
     ],
   };
@@ -445,7 +462,7 @@ async function postJoinBoard({ boardId, identity, handle }: JoinBoardInput): Pro
   }
   assertOk(
     await supabase.rpc('join_board', {
-      p_group_id: boardId,
+      p_board_id: boardId,
       p_identity: identity,
       p_handle: handle.trim().length > 0 ? handle.trim() : undefined,
     }),
@@ -478,7 +495,7 @@ async function deleteBoardMembership(boardId: string): Promise<void> {
   }
   const me = await currentUserId();
   assertOk(
-    await supabase.from('board_members').delete().eq('group_id', boardId).eq('user_id', me),
+    await supabase.from('board_members').delete().eq('board_id', boardId).eq('user_id', me),
   );
 }
 
@@ -578,19 +595,15 @@ async function postCreateBoard(input: CreateBoardInput): Promise<void> {
     await mockDelay(undefined, 450);
     return;
   }
-  // A board is a group's, so making one makes a group. The two creation
-  // flows in `CommunityCreateSheet` now produce the same kind of thing, one
-  // of them with a ranking configured — they probably want merging into
-  // "new group, with or without a board", which is a screen decision.
+  // A ranking lives inside a group, so this makes the group and adds one to
+  // it. `CommunityCreateSheet` should really not offer this as a second kind
+  // of thing to create — that is a screen change, not an API one.
   const groupId = await supabase
     .rpc('create_group', { p_name: input.name.trim(), p_identity: 'first' })
     .then(unwrap);
 
   assertOk(
-    await supabase
-      .from('groups')
-      .update({ board_metric: input.metric })
-      .eq('id', groupId),
+    await supabase.rpc('add_group_board', { p_group_id: groupId, p_metric: input.metric }),
   );
 
   if (input.clientIds.length > 0) {

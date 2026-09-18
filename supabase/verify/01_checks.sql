@@ -2264,7 +2264,7 @@ set request.jwt.claims = '{"sub":"77777777-7777-7777-7777-777777777777"}';
 select public.group_invited_not_joined(:'ig') as outsider_sees_nothing;
 
 \echo ''
-\echo '=== 224. being in a group is not being on its board (expect 2 members, 0 ranked) ==='
+\echo '=== 224. a group ranks nothing until somebody adds a ranking (expect 0) ==='
 reset role;
 reset request.jwt.claims;
 set role authenticated;
@@ -2276,75 +2276,92 @@ set role authenticated;
 set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
 select public.join_group(:'bcode', 'first');
 set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
-select count(*) as in_the_group from public.group_members(:'bg');
-select count(*) as on_the_board from public.board_standings(:'bg');
+select count(*) as rankings from public.my_boards() where group_id = :'bg';
 
 \echo ''
-\echo '=== 225. and how many have not opted in is a count (expect 2) ==='
-select public.board_not_opted_in(:'bg') as not_ranked;
+\echo '=== 225. a group may rank several things at once (expect 2) ==='
+select public.add_group_board(:'bg', 'sessions') as sessions_board \gset
+select public.add_group_board(:'bg', 'volume') as volume_board \gset
+select count(*) as rankings from public.my_boards() where group_id = :'bg';
 
 \echo ''
-\echo '=== 226. opting in puts you on it, under a name chosen for it alone ==='
-\echo '=== (expect Maya A. in the group, Anon Ox on the board) ==='
-select public.join_board(:'bg', 'handle', 'Anon Ox');
+\echo '=== 226. being in the group is not being on any of them (expect 0 / 2) ==='
+select count(*) as on_the_board from public.board_standings(:'sessions_board');
+select public.board_not_opted_in(:'sessions_board') as not_ranked;
+
+\echo ''
+\echo '=== 227. opting in is answered per ranking, not per group ==='
+\echo '=== (expect on sessions, still absent from volume) ==='
+-- The whole reason `board_members` is keyed on the board. Somebody may be
+-- happy to appear on effort and not on how strong they already are.
+select public.join_board(:'sessions_board', 'handle', 'Anon Ox');
+select count(*) as on_sessions from public.board_standings(:'sessions_board')
+ where user_id = '22222222-2222-2222-2222-222222222222';
+select count(*) as on_volume from public.board_standings(:'volume_board')
+ where user_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 228. and under a name chosen for that ranking alone (expect Maya A. / Anon Ox) ==='
 select display_name as in_conversation from public.group_members(:'bg')
  where user_id = '22222222-2222-2222-2222-222222222222';
-select display_name as on_ranking from public.board_standings(:'bg')
+select display_name as on_ranking from public.board_standings(:'sessions_board')
  where user_id = '22222222-2222-2222-2222-222222222222';
 
 \echo ''
-\echo '=== 227. the board counts finished work only (expect +1, not +2) ==='
--- Asserted as a delta. Maya has finished sessions from the training checks
--- above, so an absolute count here would be a number about those rather than
--- about this.
-reset role;
-update public.groups set board_metric = 'sessions' where id = :'bg';
-set role authenticated;
-set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
-select value as before_count from public.board_standings(:'bg')
+\echo '=== 229. the board counts finished work only (expect +1, not +2) ==='
+-- A delta: Maya has finished sessions from the training checks above, so an
+-- absolute count here would be a number about those rather than about this.
+select value as before_count from public.board_standings(:'sessions_board')
  where user_id = '22222222-2222-2222-2222-222222222222' \gset
 reset role;
--- One finished, one still running. The unfinished one counts for nothing —
--- "a workout nobody finished has not been done".
 insert into public.workout_sessions (client_id, title, started_at, finished_at)
 values ('22222222-2222-2222-2222-222222222222', 'Push', now() - interval '2 days',
         now() - interval '2 days'),
        ('22222222-2222-2222-2222-222222222222', 'Left open', now(), null);
 set role authenticated;
 set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
-select value - :'before_count'::numeric as went_up_by from public.board_standings(:'bg')
- where user_id = '22222222-2222-2222-2222-222222222222';
-
-\echo '=== 228. consistency cannot be crammed (expect 1 week, not 3 sessions) ==='
-reset role;
-update public.groups set board_metric = 'consistency' where id = :'bg';
-set role authenticated;
-set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
-select value as distinct_weeks from public.board_standings(:'bg')
+select value - :'before_count'::numeric as went_up_by from public.board_standings(:'sessions_board')
  where user_id = '22222222-2222-2222-2222-222222222222';
 
 \echo ''
-\echo '=== 229. a tie is a tie — dense ranks, nobody pushed to third (expect 1 and 1) ==='
-reset role;
-insert into public.board_members (group_id, user_id, identity)
-values (:'bg', '33333333-3333-3333-3333-333333333333', 'first');
-insert into public.workout_sessions (client_id, title, started_at, finished_at)
-values ('33333333-3333-3333-3333-333333333333', 'Push', now() - interval '2 days',
-        now() - interval '2 days');
-set role authenticated;
-set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
-select rank from public.board_standings(:'bg') order by rank;
-
-\echo ''
-\echo '=== 230. an outsider sees no ranking at all (expect 0) ==='
-set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
-select count(*) as outsider_sees from public.board_standings(:'bg');
-select public.board_not_opted_in(:'bg') as outsider_count;
-
-\echo ''
-\echo '=== 231. leaving a board is your own to do, and nobody else''s (expect ERROR-free, 1 left) ==='
+\echo '=== 230. a tie is a tie — dense ranks, nobody pushed to third (expect 1 and 1) ==='
 set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
-delete from public.board_members where group_id = :'bg' and user_id = '22222222-2222-2222-2222-222222222222';
+select public.join_board(:'sessions_board', 'first');
+reset role;
+insert into public.workout_sessions (client_id, title, started_at, finished_at)
+select '33333333-3333-3333-3333-333333333333', 'Push', s.finished_at, s.finished_at
+  from public.workout_sessions s
+ where s.client_id = '22222222-2222-2222-2222-222222222222' and s.finished_at is not null;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select rank from public.board_standings(:'sessions_board') order by rank;
+
+\echo ''
+\echo '=== 231. an outsider sees no ranking at all (expect 0 / 0 / 0) ==='
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select count(*) as outsider_sees from public.board_standings(:'sessions_board');
+select public.board_not_opted_in(:'sessions_board') as outsider_count;
+select count(*) as outsider_lists from public.my_boards() where group_id = :'bg';
+
+\echo ''
+\echo '=== 232. leaving a ranking is your own, and nobody else''s (expect 1 left) ==='
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+delete from public.board_members
+ where board_id = :'sessions_board' and user_id = '22222222-2222-2222-2222-222222222222';
 reset role;
 select count(*) as maya_still_on_it from public.board_members
- where group_id = :'bg' and user_id = '22222222-2222-2222-2222-222222222222';
+ where board_id = :'sessions_board' and user_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 233. only an admin adds or removes a ranking (expect 2 ERRORs) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.add_group_board(:'bg', 'streak');
+select public.remove_group_board(:'volume_board');
+
+\echo ''
+\echo '=== 234. removing a ranking takes its opt-ins with it (expect 0) ==='
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.remove_group_board(:'sessions_board');
+reset role;
+select count(*) as opt_ins_left from public.board_members where board_id = :'sessions_board';

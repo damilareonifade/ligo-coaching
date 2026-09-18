@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { BarChart3, MessagesSquare } from 'lucide-react-native';
+import { MessagesSquare } from 'lucide-react-native';
 import { useCallback, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -38,12 +38,16 @@ function Choice({ icon, title, body, onPress, testID }: ChoiceProps) {
 }
 
 /**
- * Both creators, from the tab where a coach already thinks about talking to
- * people. A group is a conversation and belongs here plainly; a leaderboard is
- * here because it is the same act from the coach's side — asking a set of
- * clients whether they want to be part of something.
+ * Making a group, from the tab where a coach already thinks about talking to
+ * people.
  *
- * Each line says what it costs the client, not what it gives the coach.
+ * It used to offer a leaderboard as a second thing to create, beside a group.
+ * That was wrong twice over: a ranking lives *inside* a group and has nowhere
+ * else to be, and a group can rank several things at once — so "new
+ * leaderboard" was neither a peer of "new group" nor a single choice. Rankings
+ * are added from inside the group they belong to.
+ *
+ * The line says what it costs the client, not what it gives the coach.
  *
  * Drawn through `LIDialog` rather than `LIModal`, for the reason `LeaveSheet`
  * already gives in the same words: the bottom sheet measures its own content
@@ -61,33 +65,20 @@ export default function CommunityCreateSheet({ visible, onClose }: CommunityCrea
     router.push('/community/new-group');
   }, [onClose, router]);
 
-  const openBoard = useCallback(() => {
-    onClose();
-    router.push('/community/new-board');
-  }, [onClose, router]);
-
   return (
-    <LIDialog visible={visible} onClose={onClose} title="Start something">
+    <LIDialog visible={visible} onClose={onClose} title="New group">
       <View className="gap-3">
         <Choice
           icon={<MessagesSquare color={tokens.violet} size={20} />}
           title="New group"
-          body="One thread for several clients. They see each other’s messages and nothing else."
+          body="One thread for several people. They see each other’s messages and nothing else. Rankings are added inside it."
           onPress={openGroup}
           testID="create-group"
         />
-        <Choice
-          icon={<BarChart3 color={tokens.violet} size={20} />}
-          title="New leaderboard"
-          body="One ranked metric. Each client picks a display name before they appear."
-          onPress={openBoard}
-          testID="create-board"
-        />
-
         <LIText
           size="caption"
           color="muted"
-          text="Either way you are sending invitations. Nobody is added to anything."
+          text="You are sending invitations. Nobody is added to anything."
           className="px-1 font-geist"
         />
       </View>

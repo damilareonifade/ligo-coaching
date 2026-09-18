@@ -5,7 +5,8 @@
       "Read(//Users/nonsobarn/Developer/**)",
       "Bash(npx tsc *)",
       "Bash(npm test *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(./scripts/gen-types.sh)"
     ]
   },
   "enabledPlugins": {

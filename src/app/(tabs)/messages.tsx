@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 
 import { useCoachGroupsQuery } from '@/api/community';
 import { useInboxQuery } from '@/api/coachMessages';
+import { queryKeys } from '@/api/queryKeys';
+import { useLiveMessages } from '@/hooks/useLiveMessages';
 import { LIErrorState, LISafeArea } from '@/components/ui';
 import ScreenHeader from '@/components/chrome/ScreenHeader';
 import CommunityCreateSheet from '@/screens/messages/CommunityCreateSheet';
@@ -26,6 +28,15 @@ export default function MessagesScreen() {
   const [creating, setCreating] = useState(false);
   const { data, isPending, error, refetch, isRefetching } = useInboxQuery(query);
   const groups = useCoachGroupsQuery();
+
+  // No filter: every message this coach is allowed to see, which is every
+  // thread they are in. The scoping is `messages_select_in_my_threads`, not
+  // this call — Postgres Changes runs each event through RLS before it is
+  // delivered, so there is nothing here to get wrong.
+  useLiveMessages({
+    key: 'inbox',
+    invalidate: [queryKeys.coachMessages.inboxAll],
+  });
 
   const refresh = useCallback(() => {
     void refetch();

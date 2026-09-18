@@ -61,6 +61,7 @@ describe('unreadInboxCount', () => {
 
 describe('appendOwnMessage', () => {
   const thread: ApiCoachThread = {
+    threadId: 'thread-rc-maya',
     clientId: 'rc-maya',
     name: 'Maya Andersson',
     initials: 'MA',

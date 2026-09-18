@@ -72,6 +72,15 @@ the insert policy does. Verified both ways in checks 188–189.
 membership-shaped RLS and Postgres would report "infinite recursion detected in
 policy" from a query that looks nothing like the cause.
 
+Messages arrive without being asked for: `public.messages` is in the
+`supabase_realtime` publication, and the app subscribes to INSERT. Postgres
+Changes rather than Broadcast, because it runs every event through RLS — so
+`messages_select_in_my_threads` decides who *hears* about a message exactly as
+it decides who may read one, instead of that rule having a second
+implementation in JavaScript where nothing tests it. Its ceiling is subscriber
+count rather than write rate (Supabase suggests Broadcast past ~3,000 on the
+same rows); a coach has forty clients.
+
 Messages themselves are read straight off the table — `messages_select_in_my_threads`
 already answers "may I read this", and a function wrapping that would be a second
 copy of a rule already written down. `my_threads` exists for everything *around*

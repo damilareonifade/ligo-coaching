@@ -61,6 +61,7 @@ async function fetchClientChat(): Promise<ApiClientChat> {
   const permissions = (thread.permissions ?? {}) as ApiSharePermissions;
 
   return {
+    threadId: thread.thread_id,
     coachName,
     coachInitials: initials(coachName),
     context: coachContext(thread.coach_specialties, thread.coach_gym),

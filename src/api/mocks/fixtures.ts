@@ -1345,6 +1345,9 @@ export function mockToggleHealthShare(shared: boolean): void {
  * ------------------------------------------------------------------ */
 
 const initialChat: ApiClientChat = {
+  // Mocks never subscribe — `useLiveMessages` is a no-op under them — so this
+  // only has to be present and stable, not real.
+  threadId: 'thread-mock-client',
   coachName: 'Sam Okafor',
   coachInitials: 'SO',
   context: 'Strength coach · replies most days',
@@ -3263,6 +3266,7 @@ let inboxState: readonly ApiInboxEntry[] = inboxSeeds.map((seed) => ({
  */
 const initialThreads: readonly ApiCoachThread[] = [
   {
+    threadId: 'thread-rc-maya',
     clientId: 'rc-maya',
     name: 'Maya Andersson',
     initials: 'MA',
@@ -3283,6 +3287,7 @@ const initialThreads: readonly ApiCoachThread[] = [
     ],
   },
   {
+    threadId: 'thread-rc-priya',
     clientId: 'rc-priya',
     name: 'Priya Bhatt',
     initials: 'PB',
@@ -3298,6 +3303,7 @@ const initialThreads: readonly ApiCoachThread[] = [
     ],
   },
   {
+    threadId: 'thread-rc-tomas',
     clientId: 'rc-tomas',
     name: 'Tomas Lindqvist',
     initials: 'TL',
@@ -3310,6 +3316,7 @@ const initialThreads: readonly ApiCoachThread[] = [
     ],
   },
   {
+    threadId: 'thread-rc-dara',
     clientId: 'rc-dara',
     name: 'Dara Owusu',
     initials: 'DO',
@@ -3322,6 +3329,7 @@ const initialThreads: readonly ApiCoachThread[] = [
     ],
   },
   {
+    threadId: 'thread-rc-ben',
     clientId: 'rc-ben',
     name: 'Ben Jarvis',
     initials: 'BJ',

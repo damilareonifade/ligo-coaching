@@ -698,6 +698,8 @@ export interface ApiChatMessage {
 }
 
 export interface ApiClientChat {
+  /** What a live subscription listens to. Not shown anywhere. */
+  readonly threadId: string;
   readonly coachName: string;
   readonly coachInitials: string;
   /** e.g. "Strength coach · replies most days" */
@@ -933,6 +935,8 @@ export interface ApiInboxEntry {
 }
 
 export interface ApiCoachThread {
+  /** What a live subscription listens to. Not shown anywhere. */
+  readonly threadId: string;
   readonly clientId: string;
   readonly name: string;
   readonly initials: string;

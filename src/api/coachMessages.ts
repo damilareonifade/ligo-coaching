@@ -100,6 +100,7 @@ async function fetchCoachThread(clientId: string): Promise<ApiCoachThread> {
   const permissions = (thread.permissions ?? {}) as ApiSharePermissions;
 
   return {
+    threadId: thread.thread_id,
     clientId,
     name,
     initials: initials(name),

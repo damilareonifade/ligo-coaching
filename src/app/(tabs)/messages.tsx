@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 
+import { useAuthStore } from '@/store/authStore';
+
 import { useCoachGroupsQuery } from '@/api/community';
 import { useInboxQuery } from '@/api/coachMessages';
 import { queryKeys } from '@/api/queryKeys';
@@ -24,6 +26,9 @@ export { LIRouteError as ErrorBoundary } from '@/components/ui';
  * group list is slow is a worse inbox.
  */
 export default function MessagesScreen() {
+  // Not `role === 'client'`: an unknown role must not be handed the coach's
+  // seat, which is the same reasoning the tab layout uses to pick a tab bar.
+  const isClient = useAuthStore((state) => state.user?.role) !== 'coach';
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);
   const { data, isPending, error, refetch, isRefetching } = useInboxQuery(query);
@@ -49,7 +54,7 @@ export default function MessagesScreen() {
   if (isPending) {
     return (
       <LISafeArea>
-        <ScreenHeader title="Messages" eyebrow="Your clients" />
+        <ScreenHeader title="Messages" eyebrow={isClient ? 'Your conversations' : 'Your clients'} />
         <InboxSkeleton />
       </LISafeArea>
     );
@@ -58,7 +63,7 @@ export default function MessagesScreen() {
   if (error || !data) {
     return (
       <LISafeArea>
-        <ScreenHeader title="Messages" eyebrow="Your clients" />
+        <ScreenHeader title="Messages" eyebrow={isClient ? 'Your conversations' : 'Your clients'} />
         <LIErrorState message={error?.message} onRetry={refresh} />
       </LISafeArea>
     );
@@ -67,13 +72,16 @@ export default function MessagesScreen() {
   return (
     <LISafeArea>
       <ScreenHeader
-          title="Messages"
-          eyebrow="Your clients"
-          action={<MessagesNewButton onNew={openCreate} />}
-        />
+        title="Messages"
+        eyebrow={isClient ? 'Your conversations' : 'Your clients'}
+        // Making a group from here is the coach's; a client makes one from
+        // Community, where the rest of their groups already live.
+        action={isClient ? undefined : <MessagesNewButton onNew={openCreate} />}
+      />
       <InboxContent
         entries={data}
         groups={groups.data ?? []}
+        isClient={isClient}
         query={query}
         onQueryChange={setQuery}
         refreshing={isRefetching}

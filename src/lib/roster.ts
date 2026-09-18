@@ -138,6 +138,22 @@ export const accessLabel: Record<RosterAccess, string> = {
   none: 'Messaging only',
 };
 
+/**
+ * The same five switches, read from the other end of the relationship.
+ *
+ * `accessLabel` is written for a coach going down a roster: the subject of
+ * "Full access" is the client whose row it sits on. A client's inbox row
+ * carries those same permissions but is headed by their *coach's* name, so the
+ * coach's wording would read as a claim about the coach — the one person it is
+ * not about. Same fact, with the owner named.
+ */
+export const sharedByYouLabel: Record<RosterAccess, string> = {
+  full: 'You share everything with them',
+  partial: 'You share some of your training',
+  min: 'You share one thing with them',
+  none: 'You share nothing — messages only',
+};
+
 /* ------------------------------------------------------------------ *
  * Filtering, sorting, grouping — all local to the roster screen, all
  * pure, so the screen holds nothing but the three inputs a coach set.

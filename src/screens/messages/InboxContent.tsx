@@ -23,8 +23,14 @@ interface InboxListRow {
 interface InboxContentProps {
   /** Already filtered — the search runs server-side, on the query below. */
   readonly entries: readonly ApiInboxEntry[];
-  /** Groups this coach runs, listed above the 1:1 threads. */
+  /** Groups the reader is in, listed above the 1:1 threads. */
   readonly groups: readonly ApiCoachGroupSummary[];
+  /**
+   * Which seat is reading. A coach has a thread per client and each has its
+   * own route; a client has at most one — their coach — and it has a screen of
+   * its own that predates this list.
+   */
+  readonly isClient: boolean;
   readonly query: string;
   readonly onQueryChange: (query: string) => void;
   readonly refreshing: boolean;
@@ -34,6 +40,7 @@ interface InboxContentProps {
 export default function InboxContent({
   entries,
   groups,
+  isClient,
   query,
   onQueryChange,
   refreshing,
@@ -44,8 +51,8 @@ export default function InboxContent({
   const trimmed = query.trim();
 
   const openThread = useCallback(
-    (clientId: string) => router.push(`/messages/${clientId}`),
-    [router],
+    (clientId: string) => router.push(isClient ? '/coach/chat' : `/messages/${clientId}`),
+    [isClient, router],
   );
 
   const clearSearch = useCallback(() => onQueryChange(''), [onQueryChange]);
@@ -90,10 +97,10 @@ export default function InboxContent({
           trimmed.length > 0 ? (
             <InboxNoResults query={trimmed} onClear={clearSearch} />
           ) : (
-            <InboxEmptyState />
+            <InboxEmptyState isClient={isClient} />
           )
         }
-        ListFooterComponent={rows.length > 0 ? <InboxNote /> : null}
+        ListFooterComponent={rows.length > 0 ? <InboxNote isClient={isClient} /> : null}
         contentContainerClassName="px-4 pb-10 pt-2"
         keyboardShouldPersistTaps="handled"
         refreshControl={

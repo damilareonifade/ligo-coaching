@@ -10,7 +10,7 @@ import {
 import { env } from '@/lib/env';
 import { formatChatStamp, initials } from '@/lib/format';
 import { appendOwnMessage, filterInbox } from '@/lib/messages';
-import { accessLabel, deriveAccess } from '@/lib/roster';
+import { accessLabel, deriveAccess, sharedByYouLabel } from '@/lib/roster';
 
 import { ApiError } from './client';
 import { mockCoachThread, mockDelay, mockInbox, mockSendCoachMessage } from './mocks';
@@ -19,7 +19,7 @@ import { toChatMessages } from './rows';
 import { assertOk, currentUserId, supabase, unwrap } from './supabase';
 import type { ApiCoachThread, ApiInboxEntry, ApiSharePermissions } from './types';
 
-/** Every direct thread this coach is in, newest first — `my_threads` orders it. */
+/** Every direct thread the caller is in, newest first — `my_threads` orders it. */
 async function coachThreads() {
   const rows = await supabase.rpc('my_threads').then(unwrap);
   return rows.filter((row) => row.kind === 'direct');
@@ -37,12 +37,20 @@ async function fetchInbox(query: string): Promise<readonly ApiInboxEntry[]> {
   }
 
   const now = new Date();
-  const entries: readonly ApiInboxEntry[] = (await coachThreads()).map((row) => {
-    const name = row.client_name ?? '';
+  const [me, threads] = await Promise.all([currentUserId(), coachThreads()]);
+
+  const entries: readonly ApiInboxEntry[] = threads.map((row) => {
+    // Whoever is not the reader. One function serves both seats — a coach
+    // reads a list of clients, a client reads the one row that is their coach
+    // — and neither needs a query of its own.
+    const iAmCoach = row.coach_id === me;
+    const other = iAmCoach ? row.client_id : row.coach_id;
+    const name = (iAmCoach ? row.client_name : row.coach_name) ?? '';
     const permissions = (row.permissions ?? {}) as ApiSharePermissions;
+    const access = deriveAccess(permissions);
 
     return {
-      clientId: row.client_id ?? '',
+      clientId: other ?? '',
       name,
       initials: initials(name),
       // A thread nobody has spoken in yet. Blank rather than invented: the
@@ -50,7 +58,9 @@ async function fetchInbox(query: string): Promise<readonly ApiInboxEntry[]> {
       preview: row.last_body ?? '',
       when: row.last_at ? formatChatStamp(row.last_at, now) : '',
       unread: row.unread ?? false,
-      accessLabel: accessLabel[deriveAccess(permissions)],
+      // The permissions on a direct thread are always the client's. Whose row
+      // it is decides who the sentence is about.
+      accessLabel: iAmCoach ? accessLabel[access] : sharedByYouLabel[access],
     };
   });
 

@@ -142,14 +142,17 @@ export default function TabsLayout() {
           tabBarIcon: tabIcon(ClipboardList),
         }}
       />
-      {/* Coach-side only. The client's messaging is one thread reached from
-          their Today card, not a tab — a coach has forty conversations, a
-          client has one. */}
+      {/* Both seats now. It was coach-only, because "a client has one
+          conversation" and one conversation does not want a tab — which was
+          true until a group could belong to anybody. A client can be in any
+          number of them, with other clients and with coaches who are not
+          theirs, and those had nowhere to live but three taps down under
+          Profile. */}
       <Tabs.Screen
         name="messages"
         options={{
           title: 'Messages',
-          href: !isClient && hasFeature('messaging') ? '/messages' : null,
+          href: hasFeature('messaging') ? '/messages' : null,
           tabBarIcon: tabIcon(MessageCircle),
         }}
       />

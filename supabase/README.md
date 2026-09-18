@@ -24,6 +24,7 @@ app creates or alters tables — see **Why the app cannot migrate** below.
 | `public.threads` | One conversation. Two members when direct, many when it belongs to a group. |
 | `public.thread_members` | Who is in a thread, and how far each of them has read. |
 | `public.messages` | One turn in a conversation. Never edited, never deleted. |
+| `public.groups` | A named conversation belonging to whoever made it. Joined with a code. |
 
 ### Coach ↔ client
 
@@ -95,6 +96,36 @@ Messages carry no update or delete grant at all. A message somebody has already
 read is a thing that was said, and an app where it can be rewritten afterwards
 is one where neither person can rely on what is on the screen.
 
+#### Groups
+
+A group is a thread with a name, an owner and more than two people in it, so it
+reuses the spine entirely — `threads.kind` becomes `'group'`,
+`thread_members.role` starts meaning something, and `groups` carries only what a
+direct thread has no use for.
+
+**It belongs to whoever made it, not to a coach.** Clients form them with other
+clients, coaches with their clients, clients with a coach. Nine app-side types
+still carry a `coachName` and three screens make promises with it ("X stays your
+coach"); that is a front-end correction, not a schema one.
+
+**Detaching removes nobody from any group.** `coach_clients` says who may read
+whose training; membership here says who is in a conversation. Check 208.
+
+Joining is by code, because there is no list to pick from: a coach has a roster,
+a client has nobody they can enumerate, and a box that looked somebody up by
+email would be the account checker this schema refuses elsewhere. The code is
+rate-limited on the same ledger as coach codes — one budget for all code
+guessing.
+
+`join_group` returns **NULL** for an unknown code rather than raising, and that
+is load-bearing: raising aborts the function, which rolls back the ledger row it
+just wrote, so every wrong guess would erase its own evidence and the rate limit
+would count nothing. `lookup_coach` returns empty for the same reason.
+
+The last admin leaving deletes the group. A group nobody can rename, admit to or
+remove from is not a group, it is a room with a jammed door — `would_orphan_group`
+is what the warning before it is built on.
+
 ### Training
 
 Program → Routines → Exercises on the coach's side; a copy of each routine on
@@ -146,6 +177,13 @@ function exists only so that many rows land together or not at all.
 | `is_thread_open(thread)` | False once a thread is closed. Reads ignore it; writes do not. |
 | `my_threads()` | Every thread the caller is in, with the other side named, what they share, and the unread mark. `security definer` — see below. |
 | `mark_thread_read(thread)` | Moves the caller's read mark to the database's clock, not the phone's. |
+| `create_group(name, identity, handle?)` | A group, its thread and its first admin, in one statement. |
+| `join_group(code, identity, handle?)` | Joins by code. **NULL means no such code** — raising would roll back the ledger row. |
+| `is_group_admin(group)` | Whether the caller runs this group. |
+| `set_group_admin(group, user, bool)` | Promotes or demotes. Standing yourself down goes through `leave_group`. |
+| `remove_group_member(group, user)` | Marks them left. Their messages stay. |
+| `would_orphan_group(group)` | Whether leaving would delete it — what the warning is built on. |
+| `leave_group(group)` | Leaves, and returns true if that deleted the group. |
 | `client_stats(client)` | Sessions finished, the current unbroken week streak, and PRs. |
 | `client_weekly_history(client, weeks)` | One row per week in the window, empty weeks included — a chart that drops them tells the opposite of the truth. |
 | `monthly_check_ins(client, months)` | One row per month, the latest in each. A check-in **is** a `body_measurements` row — no separate table. |
@@ -167,7 +205,7 @@ the tab layout reads as a gate. Before that column was read, nothing held
 anyone in the flow — and because this project requires email confirmation,
 signup returns no session and the route into onboarding was never taken at all.
 
-Behaviour is covered by `supabase/verify/01_checks.sql` — 197 checks, run with
+Behaviour is covered by `supabase/verify/01_checks.sql` — 208 checks, run with
 `./scripts/verify-schema.sh` against a throwaway local Postgres.
 
 Two things a Laravel-shaped starter schema would include are deliberately

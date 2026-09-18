@@ -2019,3 +2019,114 @@ reset role;
 select count(*) as stranger_left_no_mark from public.thread_members
  where thread_id = :'mayas_thread_again'
    and user_id = '33333333-3333-3333-3333-333333333333';
+
+\echo ''
+\echo '=== 198. a client makes a group and is its first admin (expect 1 / admin) ==='
+-- Group codes are rate-limited on the same ledger as coach codes — one budget
+-- for all code guessing — and the coach-code checks above have spent most of
+-- it. Cleared so these test the group path rather than that budget.
+reset role;
+reset request.jwt.claims;
+delete from public.coach_code_lookups;
+-- Maya, who is a client. Groups belong to whoever made them, not to a coach.
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.create_group('Tuesday crew', 'first') as made \gset
+select count(*) as groups_visible from public.groups where id = :'made';
+select tm.role as founder_role
+  from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id
+ where t.group_id = :'made' and tm.user_id = auth.uid();
+
+\echo ''
+\echo '=== 199. a group is invisible to everybody outside it (expect 0) ==='
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select count(*) as outsider_sees from public.groups where id = :'made';
+
+\echo ''
+\echo '=== 200. the code lets somebody in, and they choose how to appear ==='
+\echo '=== (expect 2 members, handle identity) ==='
+reset role;
+select join_code as code from public.groups where id = :'made' \gset
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.join_group(:'code', 'handle', 'Ironsmith') as joined;
+reset role;
+select count(*) as members from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id where t.group_id = :'made';
+select identity, handle from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id
+ where t.group_id = :'made' and tm.user_id = '33333333-3333-3333-3333-333333333333';
+
+\echo ''
+\echo '=== 201. a blank handle cannot be stored behind the handle identity ==='
+\echo '=== (expect ERROR) ==='
+-- `resolveDisplayName` refuses to fall back to the real name for an empty
+-- handle, so an empty one must not be storable at all.
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.join_group(:'code', 'handle', '   ');
+
+\echo ''
+\echo '=== 202. a wrong code answers NULL and leaves a mark (expect null, then 1) ==='
+-- Not an error: raising would roll back the ledger row inserted a line
+-- earlier, so every wrong guess would erase its own evidence.
+select public.join_group('ZZZZZZ', 'first') as no_such_group;
+reset role;
+select count(*) as ledger_rows from public.coach_code_lookups
+ where code = 'ZZZZZZ' and found = false;
+
+\echo ''
+\echo '=== 203. members talk in the group thread; outsiders cannot (expect 1) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+insert into public.messages (thread_id, sender_id, body)
+select t.id, auth.uid(), 'Same time Tuesday?' from public.threads t where t.group_id = :'made';
+select count(*) as visible_to_the_founder from public.messages m
+  join public.threads t on t.id = m.thread_id where t.group_id = :'made';
+
+\echo ''
+\echo '=== 204. a member cannot promote themselves (expect ERROR) ==='
+select public.set_group_admin(:'made', auth.uid(), true);
+
+\echo ''
+\echo '=== 205. an admin can, and the promoted one can then act (expect admin) ==='
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.set_group_admin(:'made', '33333333-3333-3333-3333-333333333333', true);
+reset role;
+select tm.role as promoted from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id
+ where t.group_id = :'made' and tm.user_id = '33333333-3333-3333-3333-333333333333';
+
+\echo ''
+\echo '=== 206. with two admins, leaving does not take the group (expect f, 1) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.would_orphan_group(:'made') as would_orphan;
+select public.leave_group(:'made') as deleted_it;
+reset role;
+select count(*) as group_still_there from public.groups where id = :'made';
+
+\echo ''
+\echo '=== 207. the last admin leaving takes it with them (expect t, then 0) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.would_orphan_group(:'made') as now_the_only_admin;
+select public.leave_group(:'made') as deleted_it;
+reset role;
+select count(*) as group_gone from public.groups where id = :'made';
+select count(*) as thread_gone from public.threads where group_id = :'made';
+
+\echo ''
+\echo '=== 208. detaching a coach removes nobody from any group (expect 1) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.create_group('Still here', 'first') as survivor \gset
+reset role;
+update public.coach_clients set status = 'ended', ended_at = now()
+ where client_id = '22222222-2222-2222-2222-222222222222';
+select count(*) as still_a_member from public.thread_members tm
+  join public.threads t on t.id = tm.thread_id
+ where t.group_id = :'survivor' and tm.left_at is null;
+update public.coach_clients set status = 'active', accepted_at = now()
+ where client_id = '22222222-2222-2222-2222-222222222222';

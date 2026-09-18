@@ -563,6 +563,41 @@ export type Database = {
           },
         ];
       };
+      groups: {
+        Row: {
+          id: string;
+          name: string;
+          created_by: string | null;
+          join_code: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          created_by?: string | null;
+          join_code: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          created_by?: string | null;
+          join_code?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'groups_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       health_entries: {
         Row: {
           id: string;
@@ -1292,6 +1327,8 @@ export type Database = {
           last_read_at: string | null;
           joined_at: string;
           left_at: string | null;
+          identity: string | null;
+          handle: string | null;
         };
         Insert: {
           thread_id: string;
@@ -1300,6 +1337,8 @@ export type Database = {
           last_read_at?: string | null;
           joined_at?: string;
           left_at?: string | null;
+          identity?: string | null;
+          handle?: string | null;
         };
         Update: {
           thread_id?: string;
@@ -1308,6 +1347,8 @@ export type Database = {
           last_read_at?: string | null;
           joined_at?: string;
           left_at?: string | null;
+          identity?: string | null;
+          handle?: string | null;
         };
         Relationships: [
           {
@@ -1334,6 +1375,7 @@ export type Database = {
           client_id: string | null;
           closed_at: string | null;
           created_at: string;
+          group_id: string | null;
         };
         Insert: {
           id?: string;
@@ -1342,6 +1384,7 @@ export type Database = {
           client_id?: string | null;
           closed_at?: string | null;
           created_at?: string;
+          group_id?: string | null;
         };
         Update: {
           id?: string;
@@ -1350,6 +1393,7 @@ export type Database = {
           client_id?: string | null;
           closed_at?: string | null;
           created_at?: string;
+          group_id?: string | null;
         };
         Relationships: [
           {
@@ -1364,6 +1408,13 @@ export type Database = {
             columns: ['coach_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'threads_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'groups';
             referencedColumns: ['id'];
           },
         ];
@@ -1652,6 +1703,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: undefined;
       };
+      create_group: {
+        Args: { p_name: string; p_identity?: string | null; p_handle?: string | null };
+        Returns: string;
+      };
       deactivate_account: {
         Args: Record<string, never>;
         Returns: undefined;
@@ -1699,6 +1754,10 @@ export type Database = {
         Args: { p_client_id: string; p_domain: string };
         Returns: boolean;
       };
+      is_group_admin: {
+        Args: { p_group_id: string };
+        Returns: boolean;
+      };
       is_linked_to: {
         Args: { p_user_id: string };
         Returns: boolean;
@@ -1709,6 +1768,14 @@ export type Database = {
       };
       is_thread_open: {
         Args: { p_thread_id: string };
+        Returns: boolean;
+      };
+      join_group: {
+        Args: { p_code: string; p_identity?: string | null; p_handle?: string | null };
+        Returns: string;
+      };
+      leave_group: {
+        Args: { p_group_id: string };
         Returns: boolean;
       };
       lookup_coach: {
@@ -1781,6 +1848,10 @@ export type Database = {
         Args: { p_name: string };
         Returns: string;
       };
+      new_group_code: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
       notifications_feed: {
         Args: { p_limit?: number | null };
         Returns: {
@@ -1827,6 +1898,10 @@ export type Database = {
       regenerate_invite_code: {
         Args: Record<string, never>;
         Returns: string;
+      };
+      remove_group_member: {
+        Args: { p_group_id: string; p_user_id: string };
+        Returns: undefined;
       };
       request_access: {
         Args: { p_client_id: string; p_domain: string };
@@ -1882,6 +1957,10 @@ export type Database = {
         Args: { p_domain: string; p_shared: boolean };
         Returns: undefined;
       };
+      set_group_admin: {
+        Args: { p_group_id: string; p_user_id: string; p_admin: boolean };
+        Returns: undefined;
+      };
       set_log_for: {
         Args: { p_allowed: boolean };
         Returns: undefined;
@@ -1905,6 +1984,10 @@ export type Database = {
       weekly_progress: {
         Args: { p_client_id: string };
         Returns: { done: number; target: number }[];
+      };
+      would_orphan_group: {
+        Args: { p_group_id: string };
+        Returns: boolean;
       };
     };
     Enums: {

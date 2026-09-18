@@ -562,11 +562,12 @@ export interface CreateGroupInput {
   readonly clientIds: readonly string[];
 }
 
-async function postCreateGroup({ name, clientIds }: CreateGroupInput): Promise<void> {
+/** Returns the new group's id — the maker is sent to it to find its code. */
+async function postCreateGroup({ name, clientIds }: CreateGroupInput): Promise<string> {
   if (env.useMocks) {
-    mockCreateGroup({ name, clientIds });
+    const id = mockCreateGroup({ name, clientIds });
     await mockDelay(undefined, 450);
-    return;
+    return id;
   }
   const groupId = await supabase
     .rpc('create_group', { p_name: name.trim(), p_identity: 'first' })
@@ -584,15 +585,20 @@ async function postCreateGroup({ name, clientIds }: CreateGroupInput): Promise<v
       }),
     );
   }
+
+  return groupId;
 }
 
-export function useCreateGroupMutation(): UseMutationResult<void, Error, CreateGroupInput> {
+export function useCreateGroupMutation(): UseMutationResult<string, Error, CreateGroupInput> {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: postCreateGroup,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.community.coachGroups });
+      // The client's own list of groups, which this used to leave stale — a
+      // client who made a group went back to Community and did not see it.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.community.overview });
     },
   });
 }

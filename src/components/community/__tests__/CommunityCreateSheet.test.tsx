@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import CommunityCreateSheet from '@/screens/messages/CommunityCreateSheet';
+import CommunityCreateSheet from '@/components/community/CommunityCreateSheet';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({

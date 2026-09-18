@@ -10,6 +10,8 @@ interface InviteSummaryCardProps {
   readonly disabled: boolean;
   readonly loading: boolean;
   readonly onSend: () => void;
+  /** "Send invites" unless there are none to send — see the client's group. */
+  readonly sendLabel?: string;
   readonly testID: string;
 }
 
@@ -28,6 +30,7 @@ export default function InviteSummaryCard({
   disabled,
   loading,
   onSend,
+  sendLabel = 'Send invites',
   testID,
 }: InviteSummaryCardProps) {
   return (
@@ -35,7 +38,7 @@ export default function InviteSummaryCard({
       <LIText size="p" color="primary" text={summary} className="font-geist-medium" />
 
       <LIButton
-        title="Send invites"
+        title={sendLabel}
         fullWidth
         shape="rounded"
         disabled={disabled}

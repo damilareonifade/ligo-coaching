@@ -103,8 +103,20 @@ async function fetchRoster(): Promise<ApiRoster> {
   return { clients, labels: withLabelCounts(labels, clients) };
 }
 
-export function useRosterQuery(): UseQueryResult<ApiRoster, Error> {
-  return useQuery({ queryKey: queryKeys.roster, queryFn: fetchRoster });
+/**
+ * `enabled` exists for one caller: the new-group screen, which both seats use
+ * and only one of which has a roster. A client's roster is empty by
+ * definition — `coach_clients` has no row where they are the coach — so the
+ * query would spend a round trip proving it.
+ */
+export function useRosterQuery(options?: {
+  readonly enabled?: boolean;
+}): UseQueryResult<ApiRoster, Error> {
+  return useQuery({
+    queryKey: queryKeys.roster,
+    queryFn: fetchRoster,
+    enabled: options?.enabled ?? true,
+  });
 }
 
 /* ------------------------------------------------------------------ *

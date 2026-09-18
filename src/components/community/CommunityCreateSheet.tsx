@@ -38,8 +38,13 @@ function Choice({ icon, title, body, onPress, testID }: ChoiceProps) {
 }
 
 /**
- * Making a group, from the tab where a coach already thinks about talking to
- * people.
+ * Making a group, from either screen that lists them.
+ *
+ * It lives here rather than beside the inbox because both seats reach it and
+ * they reach it from different places: a coach from the Messages header, where
+ * their groups sit among their conversations, a client from Community, which
+ * is their groups' home and the only one of the two they can get to from
+ * Profile.
  *
  * It used to offer a leaderboard as a second thing to create, beside a group.
  * That was wrong twice over: a ranking lives *inside* a group and has nowhere

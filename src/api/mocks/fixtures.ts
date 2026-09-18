@@ -3851,7 +3851,7 @@ export interface MockCreateGroupInput {
  * invited client is absent until they accept on their own screen, so a group
  * created here starts with exactly one member.
  */
-export function mockCreateGroup({ name, clientIds }: MockCreateGroupInput): void {
+export function mockCreateGroup({ name, clientIds }: MockCreateGroupInput): string {
   const coach: ApiCommunityMember = {
     clientId: COACH_MEMBER_ID,
     displayName: 'Sam Okafor',
@@ -3861,10 +3861,12 @@ export function mockCreateGroup({ name, clientIds }: MockCreateGroupInput): void
     isAdmin: true,
   };
 
+  const id = `grp-${Date.now()}`;
+
   groupState = [
     ...groupState,
     {
-      id: `grp-${Date.now()}`,
+      id,
       name: name.trim(),
       ownerName: 'Sam Okafor',
       members: [coach],
@@ -3878,6 +3880,8 @@ export function mockCreateGroup({ name, clientIds }: MockCreateGroupInput): void
   // the coach's business; who is in it is everybody's, and only the second is
   // ever rendered.
   void clientIds;
+
+  return id;
 }
 
 export interface MockCreateBoardInput {

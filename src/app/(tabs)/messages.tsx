@@ -8,10 +8,10 @@ import { queryKeys } from '@/api/queryKeys';
 import { useLiveMessages } from '@/hooks/useLiveMessages';
 import { LIErrorState, LISafeArea } from '@/components/ui';
 import ScreenHeader from '@/components/chrome/ScreenHeader';
-import CommunityCreateSheet from '@/screens/messages/CommunityCreateSheet';
+import CommunityCreateSheet from '@/components/community/CommunityCreateSheet';
 import InboxContent from '@/screens/messages/InboxContent';
 import InboxSkeleton from '@/screens/messages/InboxSkeleton';
-import MessagesNewButton from '@/screens/messages/MessagesNewButton';
+import CommunityNewButton from '@/components/community/CommunityNewButton';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
@@ -74,9 +74,10 @@ export default function MessagesScreen() {
       <ScreenHeader
         title="Messages"
         eyebrow={isClient ? 'Your conversations' : 'Your clients'}
-        // Making a group from here is the coach's; a client makes one from
-        // Community, where the rest of their groups already live.
-        action={isClient ? undefined : <MessagesNewButton onNew={openCreate} />}
+        // Both seats: a client's groups are listed in this inbox too, and
+        // sending them to Profile → Community to make one was two taps and a
+        // guess. Community keeps its own, for the seat that starts there.
+        action={<CommunityNewButton onNew={openCreate} />}
       />
       <InboxContent
         entries={data}

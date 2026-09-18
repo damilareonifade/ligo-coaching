@@ -347,6 +347,13 @@ export const BOARD_SHARE_NOTE =
 export const GROUP_INVITE_NOTE =
   'Each client answers on their own consent screen. You are told who accepted, never who declined and why.';
 
+/**
+ * The same screen without an invite list, because a client has no one this app
+ * can list for them. The code is the whole door — see `ManageJoinCode`.
+ */
+export const CLIENT_GROUP_NOTE =
+  'You get a six-character code on the next screen. Anyone you give it to can join, and every member can see it.';
+
 /** The same promise, worded for a board: nobody is on it until they say so. */
 export const BOARD_INVITE_NOTE =
   'The board starts empty. Each client picks a display identity before their row exists.';

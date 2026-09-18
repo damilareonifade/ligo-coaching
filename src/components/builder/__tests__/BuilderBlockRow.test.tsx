@@ -169,6 +169,9 @@ describe('BuilderBlockRow — committing on close', () => {
       // block, so a field left out of the patch is a field cleared.
       targetDistanceKm: null,
       targetDurationSeconds: null,
+      // The cue goes with them, for the same reason: the save replaces the
+      // block, so a note left out of the patch is a note cleared.
+      note: null,
     });
   });
 
@@ -269,6 +272,7 @@ describe('BuilderBlockRow — fields follow the measure', () => {
       targetKg: null,
       targetDistanceKm: 5,
       targetDurationSeconds: 1800,
+      note: null,
     });
   });
 
@@ -289,5 +293,53 @@ describe('BuilderBlockRow — fields follow the measure', () => {
 
     expect(screen.getByText('5 km · 30:00')).toBeTruthy();
     expect(screen.queryByText('5 km · 30:00 · 20 kg')).toBeNull();
+  });
+});
+
+/**
+ * The gap the README called "cues exist on exercises but aren't sendable".
+ *
+ * `routine_blocks.note` has always been copied into
+ * `workout_exercises.coach_note` when a workout starts, and the client has
+ * always been shown it under the lift's name — but nothing anywhere let a
+ * coach write one. The field was read and never written.
+ */
+describe('BuilderBlockRow — the coach’s cue', () => {
+  it('sends what the coach typed', async () => {
+    const onChange = jest.fn();
+    await render(<BuilderBlockRow block={block()} onChange={onChange} onRemove={() => {}} />);
+    await fireEvent.press(screen.getByTestId('builder-edit-blk-1'));
+
+    await fireEvent.changeText(screen.getByTestId('builder-note-blk-1'), 'Chest up');
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      'blk-1',
+      expect.objectContaining({ note: 'Chest up' }),
+    );
+  });
+
+  it('opens with the cue already on the block', async () => {
+    await render(
+      <BuilderBlockRow
+        block={block({ note: 'Pause 1s on chest' })}
+        onChange={() => {}}
+        onRemove={() => {}}
+      />,
+    );
+    await fireEvent.press(screen.getByTestId('builder-edit-blk-1'));
+
+    expect(screen.getByTestId('builder-note-blk-1').props.value).toBe('Pause 1s on chest');
+  });
+
+  it('clears the cue rather than storing a blank one', async () => {
+    const onChange = jest.fn();
+    await render(
+      <BuilderBlockRow block={block({ note: 'Chest up' })} onChange={onChange} onRemove={() => {}} />,
+    );
+    await fireEvent.press(screen.getByTestId('builder-edit-blk-1'));
+
+    await fireEvent.changeText(screen.getByTestId('builder-note-blk-1'), '   ');
+
+    expect(onChange).toHaveBeenLastCalledWith('blk-1', expect.objectContaining({ note: null }));
   });
 });

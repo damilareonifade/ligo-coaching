@@ -28,7 +28,7 @@ import { useThemeTokens } from '@/theme/tokens';
 
 export type BlockPatch = Pick<
   ApiProgramBlock,
-  'scheme' | 'rpe' | 'targetKg' | 'targetDistanceKm' | 'targetDurationSeconds'
+  'scheme' | 'rpe' | 'targetKg' | 'targetDistanceKm' | 'targetDurationSeconds' | 'note'
 >;
 
 interface BuilderBlockRowProps {
@@ -52,6 +52,8 @@ interface Draft {
   readonly rpe: string;
   readonly distance: string;
   readonly duration: string;
+  /** The cue. "Chest up", not a paragraph — see the input's own note. */
+  readonly note: string;
 }
 
 /**
@@ -94,6 +96,7 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
     rpe: parseRpe(block.rpe),
     distance: formatDistanceInput(block.targetDistanceKm),
     duration: formatDurationInput(block.targetDurationSeconds),
+    note: block.note ?? '',
   }));
 
   const remove = useCallback(() => onRemove(block.id), [onRemove, block.id]);
@@ -124,6 +127,9 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
         targetKg: fields.load ? parseTargetKg(next.kg) : null,
         targetDistanceKm: distanceKm,
         targetDurationSeconds: durationSeconds,
+        // An emptied box clears the cue rather than storing a blank one, the
+        // same as every other note in this app.
+        note: next.note.trim().length > 0 ? next.note.trim() : null,
       };
     },
     [block.measure, fields.distance, fields.duration, fields.load, parsed.reps, parsed.sets],
@@ -307,6 +313,29 @@ function BuilderBlockRowBase({ block, onChange, onCommit, onRemove }: BuilderBlo
               />
             ) : null}
           </View>
+
+          {/*
+            The cue, and the reason this row exists at all: `routine_blocks.note`
+            has always been copied into `workout_exercises.coach_note` when a
+            workout starts, and the client has always been shown it under the
+            lift's name — but nothing anywhere let a coach write one. The field
+            was read and never written.
+
+            Full width and last, because it is a sentence among number boxes and
+            sharing a row with them would give it about nine characters.
+          */}
+          <LIInput
+            label="Cue"
+            value={draft.note}
+            onChangeText={edit('note')}
+            placeholder="Chest up"
+            maxLength={80}
+            // Capped short on purpose. It is read mid-set, with a bar in hand,
+            // off one line under the exercise name — `exerciseNoteLines`
+            // renders it as "Coach note: …" and nothing truncates it there.
+            hint="One thing to remember. They see it while they lift."
+            testID={`builder-note-${block.id}`}
+          />
 
           <LIText
             size="caption"

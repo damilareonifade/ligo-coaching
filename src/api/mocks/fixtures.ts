@@ -3406,7 +3406,7 @@ interface GroupMessageSeed {
 interface GroupRecord {
   readonly id: string;
   readonly name: string;
-  readonly coachName: string;
+  readonly ownerName: string;
   readonly members: readonly ApiCommunityMember[];
   readonly myIdentity: CommunityIdentity;
   readonly messages: readonly GroupMessageSeed[];
@@ -3433,7 +3433,7 @@ const initialGroups: readonly GroupRecord[] = [
   {
     id: 'grp-summer',
     name: 'Summer strength group',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     members: SUMMER_MEMBERS,
     myIdentity: 'first',
     clientIsMember: true,
@@ -3493,7 +3493,7 @@ const initialGroups: readonly GroupRecord[] = [
     // invite below is accepted on her own screen.
     id: 'grp-winter',
     name: 'Winter push',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     members: WINTER_MEMBERS,
     myIdentity: 'first',
     clientIsMember: false,
@@ -3507,7 +3507,7 @@ const initialBoards: readonly ApiCommunityBoard[] = [
   {
     id: 'brd-autumn',
     name: 'Autumn volume challenge',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     metricLabel: 'Total volume lifted · 1–30 Sep · updates hourly',
     windowLabel: '1–30 Sep',
     optedIn: true,
@@ -3583,7 +3583,7 @@ const initialBoards: readonly ApiCommunityBoard[] = [
     // point: a board has nobody on it until people put themselves on it.
     id: 'brd-consistency',
     name: 'Winter consistency ladder',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     metricLabel: 'Sessions completed · 1–31 Dec · updates hourly',
     windowLabel: '1–31 Dec',
     optedIn: false,
@@ -3615,7 +3615,7 @@ const initialInvites: readonly ApiCommunityInvite[] = [
     kind: 'group',
     targetId: 'grp-winter',
     name: 'Winter push',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     summary: 'Sam Okafor is inviting you to a group chat with 6 other clients he coaches.',
     visible: [
       'Your display name and messages you send',
@@ -3638,7 +3638,7 @@ function groupSummary(record: GroupRecord): ApiCommunityGroupSummary {
   return {
     id: record.id,
     name: record.name,
-    coachName: record.coachName,
+    ownerName: record.ownerName,
     memberCount: record.members.length,
     preview: last ? last.text : 'No messages yet.',
     when: last ? last.when.split(' ')[0] : '',
@@ -3651,7 +3651,7 @@ function boardSummary(board: ApiCommunityBoard): ApiCommunityBoardSummary {
   return {
     id: board.id,
     name: board.name,
-    coachName: board.coachName,
+    ownerName: board.ownerName,
     metricLabel: board.metricLabel,
     optedIn: board.optedIn,
     standing: mine ? `${ordinal(mine.rank)} of ${board.rows.length}` : 'Open to join',
@@ -3698,7 +3698,7 @@ export function mockCommunityGroup(id: string): ApiCommunityGroup | null {
   return {
     id: record.id,
     name: record.name,
-    coachName: record.coachName,
+    ownerName: record.ownerName,
     members: record.members,
     myIdentity: viewer === COACH_MEMBER_ID ? 'real' : record.myIdentity,
     myDisplayName: me?.displayName ?? '',
@@ -3860,7 +3860,7 @@ export function mockCreateGroup({ name, clientIds }: MockCreateGroupInput): void
     {
       id: `grp-${Date.now()}`,
       name: name.trim(),
-      coachName: 'Sam Okafor',
+      ownerName: 'Sam Okafor',
       members: [coach],
       myIdentity: 'first',
       clientIsMember: false,
@@ -3889,7 +3889,7 @@ export function mockCreateBoard(input: MockCreateBoardInput): void {
     {
       id: `brd-${Date.now()}`,
       name: input.name.trim(),
-      coachName: 'Sam Okafor',
+      ownerName: 'Sam Okafor',
       metricLabel: input.metricLabel,
       windowLabel: input.windowLabel,
       optedIn: false,

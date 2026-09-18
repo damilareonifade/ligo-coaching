@@ -175,15 +175,19 @@ describe('the consent copy', () => {
     );
   });
 
-  it('separates leaving a board from leaving a coach', () => {
-    expect(leaveBoardNote('Sam')).toBe(
-      'Leaving removes you from the ranking immediately. Your training history is untouched, and Sam stays your coach.',
+  it('separates leaving a board from leaving a coach, and names nobody', () => {
+    // It used to end "and Sam stays your coach", which is false of a board in
+    // a group two clients made between themselves.
+    expect(leaveBoardNote()).toBe(
+      'Leaving removes you from the ranking immediately. Your training history is untouched, and nothing about your coaching changes.',
     );
   });
 
   it('opens the opt-in with the invited count and the opt-in rule', () => {
     expect(boardInviteLine('Sam Okafor', 9)).toBe(
-      'Sam Okafor invited 9 clients. Only the ones who opt in appear — including you.',
+      // "people", not "clients": a board belongs to a group, and a group made
+      // by two clients has no clients in it.
+      'Sam Okafor invited 9 people. Only the ones who opt in appear — including you.',
     );
   });
 
@@ -211,7 +215,7 @@ describe('communityRowValue', () => {
   const group = {
     id: 'grp-summer',
     name: 'Summer strength group',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     memberCount: 7,
     preview: 'Good timing.',
     when: 'Tue',
@@ -219,7 +223,7 @@ describe('communityRowValue', () => {
   const board = (optedIn: boolean) => ({
     id: optedIn ? 'brd-autumn' : 'brd-winter',
     name: 'Autumn volume challenge',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     metricLabel: 'Total volume lifted',
     optedIn,
     standing: optedIn ? '2nd of 6' : 'Not joined',
@@ -229,7 +233,7 @@ describe('communityRowValue', () => {
     kind: 'group' as const,
     targetId: 'grp-winter',
     name: 'Winter push',
-    coachName: 'Sam Okafor',
+    ownerName: 'Sam Okafor',
     summary: 'Sam Okafor is inviting you to a group chat.',
     visible: [],
     hidden: [],

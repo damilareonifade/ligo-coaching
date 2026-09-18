@@ -293,13 +293,13 @@ export function notOptedInNotice(count: number): string {
 }
 
 /** What leaving actually costs, said before the confirm rather than after. */
-export function leaveBoardNote(coachName: string): string {
-  return `Leaving removes you from the ranking immediately. Your training history is untouched, and ${coachName} stays your coach.`;
+export function leaveBoardNote(): string {
+  return 'Leaving removes you from the ranking immediately. Your training history is untouched, and nothing about your coaching changes.';
 }
 
 /** The opt-in screen's opening line: the invited number, and the opt-in rule. */
-export function boardInviteLine(coachName: string, invitedCount: number): string {
-  return `${coachName} invited ${invitedCount} clients. Only the ones who opt in appear — including you.`;
+export function boardInviteLine(ownerName: string, invitedCount: number): string {
+  return `${ownerName} invited ${invitedCount} people. Only the ones who opt in appear — including you.`;
 }
 
 /** Ticked by hand, in the client's own words, before the Join button unlocks. */
@@ -355,6 +355,18 @@ export function communityRowValue(community: ApiCommunity): string {
  * name is on the index they arrived from either way.
  */
 const MAX_HEADER_TITLE = 24;
+
+/**
+ * Under the group's name: who started it, and how you appear in it.
+ *
+ * Not "coached by". A group belongs to whoever made it, and two clients who
+ * train together can make one with no coach in it at all — at which point
+ * "coached by" names somebody who is not there.
+ */
+export function groupOwnerLine(ownerName: string, myDisplayName: string): string {
+  const owner = ownerName.trim().length > 0 ? ownerName.trim() : 'someone who has left';
+  return `Started by ${owner} · you appear as ${myDisplayName}`;
+}
 
 export function groupScreenTitle(name: string): string {
   const trimmed = name.trim();

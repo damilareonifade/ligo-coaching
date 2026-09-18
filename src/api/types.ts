@@ -960,6 +960,14 @@ export interface ApiCoachThread {
  * on the group rather than on the client.
  * ------------------------------------------------------------------ */
 
+/**
+ * A group belongs to whoever made it — a client with their training partners,
+ * a coach with their clients, a client with their coach — so the shapes below
+ * say `ownerName` rather than `coachName`. They said `coachName` when a group
+ * could only be a coach's, and the copy built on it promised things like "X
+ * stays your coach", which is false of a group that has no coach in it.
+ */
+
 /** How a client chooses to be named in one group or on one board. */
 export type CommunityIdentity = 'real' | 'first' | 'handle';
 
@@ -998,7 +1006,7 @@ export interface ApiGroupMessage {
 export interface ApiCommunityGroup {
   readonly id: string;
   readonly name: string;
-  readonly coachName: string;
+  readonly ownerName: string;
   readonly members: readonly ApiCommunityMember[];
   readonly myIdentity: CommunityIdentity;
   readonly myDisplayName: string;
@@ -1025,7 +1033,7 @@ export interface ApiBoardStat {
 export interface ApiCommunityBoard {
   readonly id: string;
   readonly name: string;
-  readonly coachName: string;
+  readonly ownerName: string;
   /** e.g. "Total volume lifted · 1–30 Sep · updates hourly" */
   readonly metricLabel: string;
   /** Just the window, for the opt-in facts grid: "1–30 Sep". */
@@ -1050,7 +1058,7 @@ export interface ApiCommunityInvite {
   readonly kind: CommunityInviteKind;
   readonly targetId: string;
   readonly name: string;
-  readonly coachName: string;
+  readonly ownerName: string;
   readonly summary: string;
   /** "If you accept, members can see" */
   readonly visible: readonly string[];
@@ -1064,7 +1072,7 @@ export interface ApiCommunityInvite {
 export interface ApiCommunityGroupSummary {
   readonly id: string;
   readonly name: string;
-  readonly coachName: string;
+  readonly ownerName: string;
   readonly memberCount: number;
   /** Last message in the thread, from any member. */
   readonly preview: string;
@@ -1074,7 +1082,7 @@ export interface ApiCommunityGroupSummary {
 export interface ApiCommunityBoardSummary {
   readonly id: string;
   readonly name: string;
-  readonly coachName: string;
+  readonly ownerName: string;
   readonly metricLabel: string;
   readonly optedIn: boolean;
   /** "2nd of 6" while opted in; an invitation to decide when not. */

@@ -55,11 +55,11 @@ export default function InviteContent({ invite, onAnswered }: InviteContentProps
         // Said on the way out, because it is the thing a client hesitating
         // over Decline actually wants to know: the coach learns who accepted,
         // and a decline leaves no note behind for them to read.
-        showToast(declineNote(invite.coachName), 'info');
+        showToast(declineNote(invite.ownerName), 'info');
       },
       onError: (error: unknown) => showToast(errorMessage(error), 'danger'),
     });
-  }, [decline, invite.id, invite.coachName, onAnswered, router, showToast]);
+  }, [decline, invite.id, invite.ownerName, onAnswered, router, showToast]);
 
   const busy = accept.isPending || decline.isPending;
 
@@ -69,7 +69,7 @@ export default function InviteContent({ invite, onAnswered }: InviteContentProps
 
       <View className="gap-3 rounded-card border border-violet-line bg-violet-weak/40 p-4">
         <View className="flex-row items-center gap-3">
-          <LIAvatar name={invite.coachName} size="md" className="bg-surface" />
+          <LIAvatar name={invite.ownerName} size="md" className="bg-surface" />
           <View className="flex-1 gap-0.5">
             <LIText size="h4" color="primary" text={invite.name} className="font-geist-semibold" />
             <LIText
@@ -113,7 +113,7 @@ export default function InviteContent({ invite, onAnswered }: InviteContentProps
       <LIText
         size="caption"
         color="muted"
-        text={`${invite.coachName} is told who accepted. Nobody is told who declined, or why.`}
+        text={`${invite.ownerName} is told who accepted. Nobody is told who declined, or why.`}
         className="px-1 font-geist"
       />
     </ScrollView>

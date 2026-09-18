@@ -4,7 +4,6 @@ import { LIButton, LIText } from '@/components/ui';
 import { leaveBoardNote, notOptedInNotice, ordinal } from '@/lib/community';
 
 interface BoardActionsProps {
-  readonly coachName: string;
   readonly invitedNotOptedIn: number;
   /** `null` when the reader has no row — then there is no placement to share. */
   readonly myRank: number | null;
@@ -21,7 +20,6 @@ interface BoardActionsProps {
  * like the whole roster until it says otherwise.
  */
 export default function BoardActions({
-  coachName,
   invitedNotOptedIn,
   myRank,
   onShare,
@@ -66,7 +64,7 @@ export default function BoardActions({
       <LIText
         size="caption"
         color="muted"
-        text={leaveBoardNote(coachName)}
+        text={leaveBoardNote()}
         className="px-1 font-geist"
       />
     </View>

@@ -49,7 +49,7 @@ function CommunityGroupRow({ group, onPress, first, last }: CommunityGroupRowPro
           <LIText
             size="caption"
             color="muted"
-            text={`${group.memberCount} members · coached by ${group.coachName}`}
+            text={`${group.memberCount} members · started by ${group.ownerName}`}
             numberOfLines={1}
             className="font-geist"
           />

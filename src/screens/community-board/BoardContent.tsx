@@ -97,10 +97,12 @@ export default function BoardContent({ board, refreshing, onRefresh }: BoardCont
       body: 'Sessions, volume and PRs stay yours.',
     },
     {
-      id: 'coach',
+      id: 'coaching',
       icon: <UserCheck color={tokens['foreground-subtle']} size={18} />,
-      title: `${board.coachName} stays your coach`,
-      body: 'Leaving a board changes nothing about coaching.',
+      // Not "X stays your coach": a board belongs to its group, and a group
+      // may have no coach in it at all.
+      title: 'Your coaching is unaffected',
+      body: 'A leaderboard is separate from who coaches you, in both directions.',
     },
   ];
 
@@ -156,7 +158,6 @@ export default function BoardContent({ board, refreshing, onRefresh }: BoardCont
         ListFooterComponent={
           board.optedIn ? (
             <BoardActions
-              coachName={board.coachName}
               invitedNotOptedIn={board.invitedNotOptedIn}
               myRank={mine ? mine.rank : null}
               onShare={handleShare}

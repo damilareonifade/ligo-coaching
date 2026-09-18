@@ -86,7 +86,7 @@ export default function OptInContent({ board, realName }: OptInContentProps) {
             <LIText
               size="p"
               color="body"
-              text={boardInviteLine(board.coachName, invitedCount)}
+              text={boardInviteLine(board.ownerName, invitedCount)}
               className="font-geist"
             />
           </View>

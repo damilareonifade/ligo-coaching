@@ -6,7 +6,7 @@ import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { errorMessage } from '@/api/client';
 import { useLeaveGroupMutation, useSendGroupMessageMutation } from '@/api/community';
 import type { ApiCommunityGroup } from '@/api/types';
-import { labelGroupMessages } from '@/lib/community';
+import { groupOwnerLine, labelGroupMessages } from '@/lib/community';
 import ChatComposer from '@/components/chat/ChatComposer';
 import ChatThread from '@/components/chat/ChatThread';
 import LeaveSheet, { type LeaveConsequence } from '@/components/community/LeaveSheet';
@@ -84,10 +84,13 @@ export default function GroupContent({ group }: GroupContentProps) {
       body: 'The thread keeps its history for the members still in it.',
     },
     {
-      id: 'coach',
+      id: 'coaching',
       icon: <UserCheck color={tokens['foreground-subtle']} size={18} />,
-      title: `${group.coachName} stays your coach`,
-      body: 'Leaving a group changes nothing about coaching.',
+      // Not "X stays your coach". A group belongs to whoever made it, and two
+      // clients who train together can make one with no coach in it at all —
+      // at which point that sentence names somebody who is not there.
+      title: 'Your coaching is unaffected',
+      body: 'A group is separate from who coaches you, in both directions.',
     },
   ];
 
@@ -95,8 +98,8 @@ export default function GroupContent({ group }: GroupContentProps) {
   // and closing a group are out of scope, so this seat gets no action at all
   // rather than one that half-works.
   const context = isCoach
-    ? `You coach this group · ${group.members.length - 1} clients in it`
-    : `Coached by ${group.coachName} · you appear as ${group.myDisplayName}`;
+    ? `You run this group · ${group.members.length - 1} others in it`
+    : groupOwnerLine(group.ownerName, group.myDisplayName);
 
   return (
     <KeyboardAvoidingView

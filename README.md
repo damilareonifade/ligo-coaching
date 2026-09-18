@@ -12,15 +12,17 @@ engineering conventions this codebase follows.
 
 ```bash
 npm install
-cp .env.example .env.local   # already done once; EXPO_PUBLIC_USE_MOCKS=true by default
+cp .env.example .env         # already done once
 npx expo start               # then press i (iOS) or a (Android)
 ```
 
-The app ships with `EXPO_PUBLIC_USE_MOCKS=true`, so it runs fully without a backend —
-`src/api/mocks/` serves a coach, six students, three programs and today's sessions. Point
-`EXPO_PUBLIC_API_URL` at a real API and set `EXPO_PUBLIC_USE_MOCKS=false` to go live.
+`.env.example` ships `EXPO_PUBLIC_USE_MOCKS=true`, so a fresh checkout runs with no backend
+at all — `src/api/mocks/` serves a coach, six students, three programs and today's sessions,
+and any email plus an 8-character password signs you in.
 
-Any email plus an 8-character password signs you in while mocks are on.
+**The working `.env` in this repo has it `false`**, and has for some time: the app talks to
+Supabase. `.env` is gitignored, so that is a local setting rather than a property of the
+checkout — read the file rather than this paragraph if it matters which you are running.
 
 ## Commands
 
@@ -68,9 +70,6 @@ not `<FlatList>`, `LIImage` not `<Image>`. ESLint enforces this everywhere excep
 
 The skeleton is complete and runs; these are deliberately left as next steps:
 
-- **Program builder** — programs are read-only; there's no create/edit flow
-- **Session logging UI** — "Log a set" posts a placeholder set (8 reps, 0kg) to prove the
-  optimistic-update path. A real set-entry sheet is the next piece.
 - **Session reminders** — `expo-notifications` is installed and configured, and the settings
   toggle persists, but nothing schedules a notification yet
 - **Passkey sign-in** — the button is built and wired to a handler, but no relying party is
@@ -78,6 +77,14 @@ The skeleton is complete and runs; these are deliberately left as next steps:
 - **Remote sign-out** — `public.sessions` records devices and `revokeDeviceSession` marks one
   revoked, which stops pushes, but it cannot invalidate that device's Supabase tokens. Only the
   admin API can, which needs an Edge Function.
-- **Domain tables** — `supabase/migrations` covers auth, devices, cache, resets and the
-  coach↔client link. Programs, sessions and check-ins are still served from `src/api/mocks/`
-  (`EXPO_PUBLIC_USE_MOCKS=true`).
+- **Nutrition** — `src/api/clientNutrition.ts` is one of the two modules still calling
+  `EXPO_PUBLIC_API_URL`, which does not resolve. Hidden behind `EXPO_PUBLIC_FEATURE_FOOD`.
+- **Some of the client profile** — `src/api/clientProfile.ts` is the other. Its integrations
+  half is a fixture: the screen lists Apple Health, Garmin, Whoop and Strava, and the toggle
+  flips a boolean in an array. No SDK, no OAuth, no data has ever moved.
+- **A group invite picks your identity for you** — accepting one sends `identity: 'first'`
+  because that screen has no identity step; only the board opt-in does. The design says the
+  choice is per group and not inherited, so that screen owes it.
+- **Board movement** — every row's `delta` is "—". The ranking is counted when it is asked
+  for rather than snapshotted, so there is nothing for it to have moved since. An arrow needs
+  a snapshot table and something to write it on a schedule.

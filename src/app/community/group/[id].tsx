@@ -11,7 +11,8 @@ import GroupSkeleton from '@/screens/community-group/GroupSkeleton';
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
 /**
- * Composer only — the header owns the top inset, so only the bottom edge here.
+ * Composer only. Both edges — `ScreenHeader` does not own the top inset and
+ * never has, so the eyebrow sat under the status bar.
  *
  * The title is the one navigation option in this feature set here rather than
  * in `_layout.tsx`: it is the group's own name, which the layout cannot know
@@ -28,7 +29,7 @@ export default function CommunityGroupScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={['bottom']}>
+      <LISafeArea edges={['top', 'bottom']}>
         <ScreenHeader
           title="Group"
           eyebrow="Community"
@@ -41,7 +42,7 @@ export default function CommunityGroupScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={['bottom']}>
+      <LISafeArea edges={['top', 'bottom']}>
         <ScreenHeader
           title="Group"
           eyebrow="Community"
@@ -53,7 +54,7 @@ export default function CommunityGroupScreen() {
   }
 
   return (
-    <LISafeArea edges={['bottom']}>
+    <LISafeArea edges={['top', 'bottom']}>
       <ScreenHeader
         title="Group"
         eyebrow="Community"

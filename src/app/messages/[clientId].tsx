@@ -11,7 +11,16 @@ import CoachThreadContent from '@/screens/coach-thread/CoachThreadContent';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — the header owns the top inset, so only the bottom edge here. */
+/**
+ * Composer only.
+ *
+ * Both edges. These three screens used to take only the bottom one, on the
+ * stated belief that "the header owns the top inset" — `ScreenHeader` does
+ * not, and never has: it has no `useSafeAreaInsets` in it and opens with
+ * `pt-2`. So the eyebrow sat under the status bar. It showed up here rather
+ * than anywhere else because every screen with this comment is a messaging or
+ * community one, and those were behind a flag until now.
+ */
 export default function CoachThreadScreen() {
   const { clientId } = useLocalSearchParams<{ clientId: string }>();
   const { data, isPending, error, refetch } = useCoachThreadQuery(clientId ?? '');
@@ -31,7 +40,7 @@ export default function CoachThreadScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={['bottom']}>
+      <LISafeArea edges={['top', 'bottom']}>
         <ScreenHeader
           title="Messages"
           eyebrow="Thread"
@@ -44,7 +53,7 @@ export default function CoachThreadScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={['bottom']}>
+      <LISafeArea edges={['top', 'bottom']}>
         <ScreenHeader
           title="Messages"
           eyebrow="Thread"
@@ -56,7 +65,7 @@ export default function CoachThreadScreen() {
   }
 
   return (
-    <LISafeArea edges={['bottom']}>
+    <LISafeArea edges={['top', 'bottom']}>
       <ScreenHeader
         title="Messages"
         eyebrow="Thread"

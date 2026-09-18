@@ -10,7 +10,16 @@ import ChatContent from '@/screens/coach-chat/ChatContent';
 
 export { LIRouteError as ErrorBoundary } from '@/components/ui';
 
-/** Composer only — ScreenHeader sits inside the safe area, which owns the inset. */
+/**
+ * Composer only.
+ *
+ * Both edges. These three screens used to take only the bottom one, on the
+ * stated belief that "the header owns the top inset" — `ScreenHeader` does
+ * not, and never has: it has no `useSafeAreaInsets` in it and opens with
+ * `pt-2`. So the eyebrow sat under the status bar. It showed up here rather
+ * than anywhere else because every screen with this comment is a messaging or
+ * community one, and those were behind a flag until now.
+ */
 export default function CoachChatScreen() {
   const { data, isPending, error, refetch } = useClientChatQuery();
 
@@ -29,7 +38,7 @@ export default function CoachChatScreen() {
 
   if (isPending) {
     return (
-      <LISafeArea edges={['bottom']}>
+      <LISafeArea edges={['top', 'bottom']}>
         <ScreenHeader
           title="Messages"
           eyebrow="Your coach"
@@ -42,7 +51,7 @@ export default function CoachChatScreen() {
 
   if (error || !data) {
     return (
-      <LISafeArea edges={['bottom']}>
+      <LISafeArea edges={['top', 'bottom']}>
         <ScreenHeader
           title="Messages"
           eyebrow="Your coach"
@@ -54,7 +63,7 @@ export default function CoachChatScreen() {
   }
 
   return (
-    <LISafeArea edges={['bottom']}>
+    <LISafeArea edges={['top', 'bottom']}>
       <ScreenHeader
         title="Messages"
         eyebrow="Your coach"

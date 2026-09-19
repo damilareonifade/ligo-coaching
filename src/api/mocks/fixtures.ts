@@ -3712,6 +3712,11 @@ export function mockCommunityGroup(id: string): ApiCommunityGroup | null {
     // what matters here: six characters with no O/0 or I/1 in them.
     joinCode: 'KX7F2M',
     isAdmin: me?.isAdmin ?? false,
+    // The same question `would_orphan_group` answers: am I the only admin
+    // left? Offline it is worked out from the members at hand.
+    leavingDeletes:
+      (me?.isAdmin ?? false) &&
+      !record.members.some((member) => member.clientId !== viewer && member.isAdmin),
     boards: [],
     ownerName: record.ownerName,
     members: record.members,

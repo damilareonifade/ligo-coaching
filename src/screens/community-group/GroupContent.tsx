@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { MessageSquare, UserCheck, UserMinus } from 'lucide-react-native';
+import { MessageSquare, Trash2, UserCheck, UserMinus } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, View } from 'react-native';
 
@@ -62,46 +62,76 @@ export default function GroupContent({ group }: GroupContentProps) {
     [group.id, router],
   );
 
+  // Leaving and deleting are the same act here, and which one it is depends
+  // on whether anybody is left to run the group. `leave_group` decides that
+  // in the database; this decides what the person is told before it does.
+  const deletes = group.leavingDeletes;
+
   const confirmLeave = useCallback(() => {
     leave.mutate(group.id, {
       onSuccess: () => {
         setLeaving(false);
         router.replace('/community');
+        showToast(deletes ? `${group.name} is gone.` : `You left ${group.name}.`, 'success');
       },
       onError: (error: unknown) => {
         setLeaving(false);
         showToast(errorMessage(error), 'danger');
       },
     });
-  }, [group.id, leave, router, showToast]);
+  }, [deletes, group.id, group.name, leave, router, showToast]);
 
-  const consequences: readonly LeaveConsequence[] = [
-    {
-      id: 'membership',
-      icon: <UserMinus color={tokens.danger} size={18} />,
-      title: 'You leave the conversation',
-      body: 'Immediately. Nothing new reaches you, and you send nothing new.',
-    },
-    {
-      id: 'history',
-      icon: <MessageSquare color={tokens['foreground-subtle']} size={18} />,
-      title: 'Messages you already sent stay',
-      body: 'The thread keeps its history for the members still in it.',
-    },
-    {
-      id: 'coaching',
-      icon: <UserCheck color={tokens['foreground-subtle']} size={18} />,
-      // Not "X stays your coach". A group belongs to whoever made it, and two
-      // clients who train together can make one with no coach in it at all —
-      // at which point that sentence names somebody who is not there.
-      title: 'Your coaching is unaffected',
-      body: 'A group is separate from who coaches you, in both directions.',
-    },
-  ];
+  const consequences: readonly LeaveConsequence[] = deletes
+    ? [
+        {
+          id: 'group',
+          icon: <Trash2 color={tokens.danger} size={18} />,
+          title: 'The group goes, for everyone',
+          body: `All ${group.members.length} of you lose it at once, not just you.`,
+        },
+        {
+          id: 'history',
+          icon: <MessageSquare color={tokens['foreground-subtle']} size={18} />,
+          // The opposite of what this sheet used to say to this person.
+          title: 'Every message goes with it',
+          body: 'The whole thread is deleted. Nobody keeps a copy, and the join code stops working.',
+        },
+        {
+          id: 'handover',
+          icon: <UserCheck color={tokens['foreground-subtle']} size={18} />,
+          title: 'Or hand it over instead',
+          body: 'Make somebody else an admin first and the group carries on without you.',
+        },
+      ]
+    : [
+        {
+          id: 'membership',
+          icon: <UserMinus color={tokens.danger} size={18} />,
+          title: 'You leave the conversation',
+          body: 'Immediately. Nothing new reaches you, and you send nothing new.',
+        },
+        {
+          id: 'history',
+          icon: <MessageSquare color={tokens['foreground-subtle']} size={18} />,
+          title: 'Messages you already sent stay',
+          body: 'The thread keeps its history for the members still in it.',
+        },
+        {
+          id: 'coaching',
+          icon: <UserCheck color={tokens['foreground-subtle']} size={18} />,
+          // Not "X stays your coach". A group belongs to whoever made it, and
+          // two clients who train together can make one with no coach in it at
+          // all — at which point that sentence names somebody who is not there.
+          title: 'Your coaching is unaffected',
+          body: 'A group is separate from who coaches you, in both directions.',
+        },
+      ];
 
-  // A coach reading their own group is not a member who can leave it. Editing
-  // and closing a group are out of scope, so this seat gets no action at all
-  // rather than one that half-works.
+  // A coach is a member of their own group like anybody else — `create_group`
+  // puts its maker in the thread as its first member and first admin — so the
+  // seat that had no way out now leaves by the same door. It was scoped out
+  // while groups were something a coach made for a roster; they are anyone's
+  // now, and a group its maker cannot leave or end is one nobody can.
   const context = isCoach
     ? `You run this group · ${group.members.length - 1} others in it`
     : groupOwnerLine(group.ownerName, group.myDisplayName);
@@ -116,7 +146,8 @@ export default function GroupContent({ group }: GroupContentProps) {
         onManage={openManage}
           members={group.members}
           context={context}
-          onLeave={isCoach ? undefined : () => setLeaving(true)}
+          onLeave={() => setLeaving(true)}
+          leaveLabel={deletes ? 'Delete' : 'Leave'}
         />
         <GroupVisibilityNotice memberCount={group.members.length} />
       </View>
@@ -138,10 +169,14 @@ export default function GroupContent({ group }: GroupContentProps) {
       <LeaveSheet
         visible={leaving}
         onClose={() => setLeaving(false)}
-        title={`Leave ${group.name}?`}
-        body="You can be invited back, but you will not see what was said while you were gone."
+        title={deletes ? `Delete ${group.name}?` : `Leave ${group.name}?`}
+        body={
+          deletes
+            ? 'You are its only admin, so leaving ends it. This cannot be undone.'
+            : 'You can be invited back, but you will not see what was said while you were gone.'
+        }
         consequences={consequences}
-        confirmTitle="Leave group"
+        confirmTitle={deletes ? 'Delete group' : 'Leave group'}
         onConfirm={confirmLeave}
         loading={leave.isPending}
         testID="group-leave-sheet"

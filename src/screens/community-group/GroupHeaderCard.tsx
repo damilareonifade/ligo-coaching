@@ -13,6 +13,12 @@ interface GroupHeaderCardProps {
   readonly context: string;
   /** Omitted for the coach, who runs the group rather than belongs to it. */
   readonly onLeave?: () => void;
+  /**
+   * "Leave", or "Delete" when the reader is the last admin and leaving ends
+   * the group — the same act, and the word has to say which one it is before
+   * it is tapped, not in the sheet behind it.
+   */
+  readonly leaveLabel?: string;
 }
 
 /**
@@ -26,6 +32,7 @@ export default function GroupHeaderCard({
   members,
   context,
   onLeave,
+  leaveLabel = 'Leave',
   onManage,
 }: GroupHeaderCardProps) {
   return (
@@ -52,7 +59,7 @@ export default function GroupHeaderCard({
           <LIText
             size="caption"
             color="danger"
-            text="Leave"
+            text={leaveLabel}
             className="font-geist-medium"
             handleClick={onLeave}
             testID="group-leave"

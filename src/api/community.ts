@@ -122,12 +122,16 @@ async function fetchGroup(id: string): Promise<ApiCommunityGroup> {
     if (!group) throw new ApiError('That group is no longer available.', 404);
     return mockDelay(group);
   }
-  const [me, groupRows, memberRows, messageRows, boardRows] = await Promise.all([
+  const [me, groupRows, memberRows, messageRows, boardRows, orphans] = await Promise.all([
     currentUserId(),
     supabase.rpc('my_groups').then(unwrap),
     supabase.rpc('group_members', { p_group_id: id }).then(unwrap),
     supabase.rpc('group_messages', { p_group_id: id }).then(unwrap),
     supabase.rpc('my_boards').then(unwrap),
+    // In the same round trip as the rest, and until now it had no caller at
+    // all: the leave sheet promised "the thread keeps its history for the
+    // members still in it" to somebody whose leaving was about to delete both.
+    supabase.rpc('would_orphan_group', { p_group_id: id }).then(unwrap),
   ]);
 
   const group = groupRows.find((row) => row.group_id === id);
@@ -140,6 +144,7 @@ async function fetchGroup(id: string): Promise<ApiCommunityGroup> {
     name: group.name ?? '',
     joinCode: group.join_code ?? '',
     isAdmin: group.is_admin ?? false,
+    leavingDeletes: orphans ?? false,
     boards: boardRows
       .filter((row) => row.group_id === id)
       .map((row) => {

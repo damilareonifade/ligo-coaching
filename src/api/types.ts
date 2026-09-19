@@ -1031,6 +1031,16 @@ export interface ApiCommunityGroup {
   readonly joinCode: string;
   /** Whether the reader runs this group. Decides what the manage screen offers. */
   readonly isAdmin: boolean;
+  /**
+   * True when the reader is its last admin, so leaving deletes the group for
+   * everybody. Straight from `would_orphan_group` rather than worked out from
+   * `members` here — the rule about what an orphaned group is belongs next to
+   * the function that acts on it.
+   *
+   * There is no other way a group ends: nothing anywhere deletes one except
+   * the last admin walking out of it.
+   */
+  readonly leavingDeletes: boolean;
   /** What this group ranks. Empty until an admin adds one. */
   readonly boards: readonly ApiGroupBoard[];
   readonly ownerName: string;

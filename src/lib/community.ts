@@ -247,6 +247,25 @@ export function deriveBoardStats(rows: readonly ApiBoardRow[]): readonly ApiBoar
   ];
 }
 
+/**
+ * How far somebody moved since the last weekly snapshot, as the string
+ * `deltaTone` below reads.
+ *
+ * `null` is "there is no earlier week to compare against" — a board in its
+ * first week, somebody who joined it this week, or a project with no schedule
+ * writing snapshots at all. Zero is "did not move". Both render as the dash,
+ * because an arrow invented from no measurement is worse than no arrow, and
+ * "held" and "unknown" look the same to somebody glancing at a row.
+ *
+ * The minus is U+2212, not a hyphen: it is a sign, it sits at the same height
+ * as the plus, and `deltaTone` accepts either so a hyphen from anywhere else
+ * still colours correctly.
+ */
+export function deltaLabel(delta: number | null): string {
+  if (delta === null || delta === 0) return '—';
+  return delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`;
+}
+
 /** `+2` climbs, `−1` falls, `—` held. Anything unrecognised stays quiet. */
 export function deltaTone(delta: string): 'success' | 'danger' | 'muted' {
   if (delta.startsWith('+')) return 'success';

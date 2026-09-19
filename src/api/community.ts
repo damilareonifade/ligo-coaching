@@ -12,6 +12,7 @@ import {
   boardMetricLabel,
   boardValueLabel,
   boardWindowLabel,
+  deltaLabel,
   deriveBoardStats,
   GROUP_HIDDEN_ALWAYS,
   GROUP_VISIBLE_TO_MEMBERS,
@@ -243,10 +244,10 @@ async function fetchBoard(id: string): Promise<ApiCommunityBoard> {
     initials: initials(row.display_name ?? ''),
     value: boardValueLabel(metric, Number(row.value ?? 0), unit),
     sub: '',
-    // Nothing to compare against: the ranking is computed when it is asked
-    // for rather than snapshotted, so there is no "last update" to have moved
-    // since. A dash is what `deltaTone` reads as held.
-    delta: '—',
+    // Where they stood in the newest week older than this one — see
+    // `board_rank_snapshots`, written weekly. Null while there is no earlier
+    // week, which `deltaLabel` renders as the dash this always used to be.
+    delta: deltaLabel(row.delta ?? null),
     isMe: row.user_id === me,
   }));
 
@@ -405,27 +406,43 @@ export function useSendGroupMessageMutation(): UseMutationResult<
  * that takes a moment.
  * ------------------------------------------------------------------ */
 
-async function postAcceptInvite(inviteId: string): Promise<void> {
+export interface AcceptInviteInput {
+  readonly inviteId: string;
+  /**
+   * How they will appear to the other members. Answered on the invite screen
+   * now; it used to be sent as `'first'` whatever they would have said, which
+   * was the app making a per-group privacy choice on somebody's behalf and
+   * then never offering to revisit it — nothing updates a group identity once
+   * it is written.
+   *
+   * Ignored by a board invitation, which leads to its own opt-in and asks
+   * there, against that board's own facts.
+   */
+  readonly identity: CommunityIdentity;
+  readonly handle: string;
+}
+
+async function postAcceptInvite({
+  inviteId,
+  identity,
+  handle,
+}: AcceptInviteInput): Promise<void> {
   if (env.useMocks) {
-    mockAcceptInvite(inviteId);
+    mockAcceptInvite(inviteId, identity, handle);
     await mockDelay(undefined, 300);
     return;
   }
-  // 'first' — a first name and a last initial — because the group invite
-  // screen has no identity step; only the board one does. It is the least
-  // exposing option that still shows a person, but it is the app choosing,
-  // and the design is explicit that the choice is per group and not
-  // inherited. That screen wants an identity step, as boards have.
   assertOk(
     await supabase.rpc('respond_to_group_invite', {
       p_invite_id: inviteId,
       p_accept: true,
-      p_identity: 'first',
+      p_identity: identity,
+      p_handle: handle.trim() === '' ? null : handle.trim(),
     }),
   );
 }
 
-export function useAcceptInviteMutation(): UseMutationResult<void, Error, string> {
+export function useAcceptInviteMutation(): UseMutationResult<void, Error, AcceptInviteInput> {
   const queryClient = useQueryClient();
 
   return useMutation({

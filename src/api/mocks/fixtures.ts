@@ -3763,13 +3763,21 @@ export function mockSendGroupMessage(groupId: string, text: string): void {
  * moment the client becomes a member — before it, the group exists but she is
  * not in it and it is not on her index.
  */
-export function mockAcceptInvite(inviteId: string): void {
+export function mockAcceptInvite(
+  inviteId: string,
+  identity: CommunityIdentity = 'first',
+  handle = '',
+): void {
   const invite = inviteState.find((candidate) => candidate.id === inviteId);
   if (!invite) return;
 
   if (invite.kind === 'group') {
     groupState = groupState.map((record) =>
-      record.id === invite.targetId ? { ...record, clientIsMember: true } : record,
+      record.id === invite.targetId
+        ? // The name they picked on the way in, which is the only time a group
+          // identity is ever written.
+          { ...record, clientIsMember: true, myIdentity: identity, myHandle: handle }
+        : record,
     );
   } else {
     boardsInvitedToMe = boardsInvitedToMe.includes(invite.targetId)

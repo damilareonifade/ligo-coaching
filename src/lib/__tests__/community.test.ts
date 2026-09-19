@@ -10,6 +10,7 @@ import {
   boardValueLabel,
   formatBoardDuration,
   communityRowValue,
+  deltaLabel,
   deltaTone,
   deriveBoardStats,
   groupScreenTitle,
@@ -334,5 +335,30 @@ describe('boardValueLabel', () => {
   it('rounds a total to the minute rather than showing 0m for a short one', () => {
     expect(formatBoardDuration(90)).toBe('2m');
     expect(formatBoardDuration(0)).toBe('0m');
+  });
+});
+
+describe('deltaLabel', () => {
+  it('signs a climb so it reads as one', () => {
+    expect(deltaLabel(2)).toBe('+2');
+  });
+
+  it('uses a minus sign rather than a hyphen for a fall', () => {
+    // U+2212. It sits at the same height as the plus; a hyphen does not.
+    expect(deltaLabel(-1)).toBe('\u22121');
+    expect(deltaTone(deltaLabel(-1))).toBe('danger');
+  });
+
+  it('says nothing when there is no earlier week to compare against', () => {
+    // A board in its first week, somebody who joined this week, or a project
+    // with nothing writing snapshots — the dash this has always shown.
+    expect(deltaLabel(null)).toBe('—');
+    expect(deltaTone(deltaLabel(null))).toBe('muted');
+  });
+
+  it('treats holding your place the same as not knowing', () => {
+    // Both are "no arrow". A "0" on a row would read as a measurement of
+    // nothing rather than as stillness.
+    expect(deltaLabel(0)).toBe('—');
   });
 });

@@ -95,6 +95,45 @@ export type Database = {
           },
         ];
       };
+      board_rank_snapshots: {
+        Row: {
+          board_id: string;
+          user_id: string;
+          period_start: string;
+          rank: number;
+          captured_at: string;
+        };
+        Insert: {
+          board_id: string;
+          user_id: string;
+          period_start: string;
+          rank: number;
+          captured_at?: string;
+        };
+        Update: {
+          board_id?: string;
+          user_id?: string;
+          period_start?: string;
+          rank?: number;
+          captured_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'board_rank_snapshots_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'board_rank_snapshots_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       body_measurements: {
         Row: {
           id: string;
@@ -1816,9 +1855,19 @@ export type Database = {
         Args: { p_board_id: string };
         Returns: number;
       };
+      board_scores: {
+        Args: { p_board_id: string };
+        Returns: { user_id: string; value: number; rank: number }[];
+      };
       board_standings: {
         Args: { p_board_id: string };
-        Returns: { user_id: string; display_name: string; value: number; rank: number }[];
+        Returns: {
+          user_id: string;
+          display_name: string;
+          value: number;
+          rank: number;
+          delta: number;
+        }[];
       };
       board_window_bounds: {
         Args: { p_window: string; p_from: string; p_to: string };
@@ -2191,6 +2240,10 @@ export type Database = {
       set_log_for: {
         Args: { p_allowed: boolean };
         Returns: undefined;
+      };
+      snapshot_board_ranks: {
+        Args: Record<string, never>;
+        Returns: number;
       };
       start_workout: {
         Args: { p_routine_instance_id?: string | null; p_title?: string | null };

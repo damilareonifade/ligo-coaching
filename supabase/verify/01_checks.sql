@@ -2415,3 +2415,57 @@ select count(*) as still_one from public.notifications
 -- a predictable moment is an answer.
 select count(*) as asker_told from public.notifications
  where recipient_id = '22222222-2222-2222-2222-222222222222' and kind = 'group-invite';
+
+\echo ''
+\echo '=== 239. a board with no earlier week reports no movement (expect 2 rows, both null) ==='
+-- The honest answer before there is anything to compare against, and the one
+-- the app has been rendering as a dash since the feature shipped.
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.join_board(:'volume_board', 'first');
+set request.jwt.claims = '{"sub":"33333333-3333-3333-3333-333333333333"}';
+select public.join_board(:'volume_board', 'first');
+reset role;
+select public.snapshot_board_ranks() > 0 as wrote_something;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select count(*) as ranked, count(delta) as with_movement
+  from public.board_standings(:'volume_board');
+
+\echo ''
+\echo '=== 240. a week older than this one becomes the arrow (expect +2 for Maya) ==='
+-- Third then, first now. The delta is the older rank minus the current one,
+-- so a climb is positive.
+reset role;
+update public.board_rank_snapshots
+   set period_start = (date_trunc('week', now()) - interval '1 week')::date,
+       rank = 3
+ where board_id = :'volume_board'
+   and user_id = '22222222-2222-2222-2222-222222222222';
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select delta as maya_moved from public.board_standings(:'volume_board')
+ where user_id = '22222222-2222-2222-2222-222222222222';
+
+\echo ''
+\echo '=== 241. this week''s picture is taken once however often it is asked for ==='
+\echo '=== (expect 0 written the second time) ==='
+-- What makes the capture safe from a schedule, from a hand, and from both at
+-- once. The week is the key, so the second run of it is the first run of it.
+reset role;
+select public.snapshot_board_ranks();
+select public.snapshot_board_ranks() as wrote_again;
+
+\echo ''
+\echo '=== 242. the gate survived being split from the arithmetic (expect 0) ==='
+-- `board_scores` has no membership check at all — it cannot, since the
+-- schedule calls it with no caller to check. `board_standings` is the only
+-- way in from the app, and it still refuses an outsider.
+set role authenticated;
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select count(*) as outsider_sees from public.board_standings(:'volume_board');
+
+\echo ''
+\echo '=== 243. and nobody may reach the numbers or the camera directly (expect 2 ERRORs) ==='
+select public.board_scores(:'volume_board');
+select public.snapshot_board_ranks();

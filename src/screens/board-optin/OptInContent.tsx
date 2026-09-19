@@ -15,10 +15,10 @@ import {
   resolveDisplayName,
 } from '@/lib/community';
 import CommunityEyebrow from '@/components/community/CommunityEyebrow';
+import IdentityChoiceList from '@/components/community/IdentityChoiceList';
 import { useUiStore } from '@/store/uiStore';
 
 import BoardFactsGrid from './BoardFactsGrid';
-import IdentityChoiceList from './IdentityChoiceList';
 
 interface OptInContentProps {
   readonly board: ApiCommunityBoard;

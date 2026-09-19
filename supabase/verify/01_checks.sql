@@ -2365,3 +2365,53 @@ set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
 select public.remove_group_board(:'sessions_board');
 reset role;
 select count(*) as opt_ins_left from public.board_members where board_id = :'sessions_board';
+
+\echo ''
+\echo '=== 235. being asked into a group reaches the bell (expect 1 group-invite) ==='
+-- The gap this closes: `invite_to_group` wrote a row that only the Community
+-- screen ever read, so an invitation waited to be stumbled upon.
+--
+-- Counted by the group in the payload, not by the kind: check 216 asked this
+-- same person into another group, and a total would be a number about both.
+reset role;
+reset request.jwt.claims;
+set role authenticated;
+set request.jwt.claims = '{"sub":"22222222-2222-2222-2222-222222222222"}';
+select public.create_group('Bell test', 'first') as ng \gset
+select public.invite_to_group(:'ng', array['11111111-1111-1111-1111-111111111111']::uuid[]);
+reset role;
+select count(*) as told from public.notifications
+ where recipient_id = '11111111-1111-1111-1111-111111111111'
+   and kind = 'group-invite'
+   and payload ->> 'group_id' = :'ng';
+
+\echo ''
+\echo '=== 236. it says who asked and to what, and opens the decision ==='
+\echo '=== (expect Maya invited you to Bell test / route /community/invite/...) ==='
+set role authenticated;
+set request.jwt.claims = '{"sub":"11111111-1111-1111-1111-111111111111"}';
+select title, body, destination ->> 'route' = '/community/invite/' ||
+       (select i.id::text from public.group_invites i
+         where i.group_id = :'ng'
+           and i.invitee_id = '11111111-1111-1111-1111-111111111111') as points_at_it
+  from public.notifications_feed(50)
+ where kind = 'group-invite' and title like '%Bell test';
+
+\echo ''
+\echo '=== 237. answering does not tell them they were invited again (expect 1) ==='
+-- After insert only. On update, declining would arrive as "you were invited".
+select invite_id as ninv from public.my_group_invites() where group_id = :'ng' \gset
+select public.respond_to_group_invite(:'ninv', false, 'first');
+reset role;
+select count(*) as still_one from public.notifications
+ where recipient_id = '11111111-1111-1111-1111-111111111111'
+   and kind = 'group-invite'
+   and payload ->> 'group_id' = :'ng';
+
+\echo ''
+\echo '=== 238. and the asker is told nothing either way (expect 0) ==='
+-- `GROUP_INVITE_NOTE` promises the inviter hears who accepted and never who
+-- declined. A notification per answer cannot keep that: a silence arriving at
+-- a predictable moment is an answer.
+select count(*) as asker_told from public.notifications
+ where recipient_id = '22222222-2222-2222-2222-222222222222' and kind = 'group-invite';

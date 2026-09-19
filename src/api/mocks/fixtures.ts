@@ -3115,6 +3115,17 @@ const clientNotifications: readonly ApiNotificationGroup[] = [
         // Leaves SetTrack on purpose: the calendar owns this, not us.
         destination: { kind: 'external', url: 'https://cal.ligo.app/e/sat-0900' },
       },
+      {
+        id: 'n-m6',
+        kind: 'group-invite',
+        person: COACH_PERSON,
+        title: 'Sam invited you to Summer strength',
+        body: 'You are not in it until you say yes.',
+        when: '6d',
+        unread: false,
+        // Straight to the decision rather than to the list holding it.
+        destination: { kind: 'screen', route: '/community/invite/inv-1' },
+      },
     ],
   },
 ];

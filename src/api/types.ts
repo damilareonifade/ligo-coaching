@@ -860,7 +860,12 @@ export type NotificationKind =
   /** Asked, and told no. Nothing was taken away, because nothing was given. */
   | 'access-declined'
   | 'attached'
-  | 'detached';
+  | 'detached'
+  /**
+   * Asked into a group. Not a membership — `respond_to_group_invite` is still
+   * the only thing that makes one, and it needs an answer first.
+   */
+  | 'group-invite';
 
 /**
  * Where tapping a notification goes.

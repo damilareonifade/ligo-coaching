@@ -5,7 +5,7 @@ import { AppState } from 'react-native';
 import { supabase } from '@/api/supabase';
 import { env } from '@/lib/env';
 
-export interface LiveMessagesOptions {
+export interface LiveRowsOptions {
   /**
    * Names the channel. One per subscription on screen — an open thread uses
    * its own id, the inbox uses a constant — because two channels sharing a
@@ -13,6 +13,16 @@ export interface LiveMessagesOptions {
    * over the first's.
    */
   readonly key: string;
+  /**
+   * What to listen to. `messages` by default, because that is what this
+   * started as and what most of its callers want; `notifications` is the
+   * other, so the bell's dot hears about a row written while Today was
+   * already on screen.
+   *
+   * It is part of the channel name as well as the subscription: two screens
+   * listening to different tables under one key would be one channel.
+   */
+  readonly table?: 'messages' | 'notifications';
   /**
    * Narrows what arrives, e.g. `thread_id=eq.<id>`. Left out, every message
    * the caller is allowed to see arrives — which is what the inbox wants, and
@@ -26,7 +36,7 @@ export interface LiveMessagesOptions {
 }
 
 /**
- * Tells a screen when somebody has spoken.
+ * Tells a screen that a row it cares about has appeared.
  *
  * It invalidates rather than appending the row it was handed. TanStack Query
  * is the one thing that decides what a thread holds, and a listener writing
@@ -39,12 +49,13 @@ export interface LiveMessagesOptions {
  * already only what this person may read. The filter narrows; it does not
  * protect.
  */
-export function useLiveMessages({
+export function useLiveRows({
   key,
+  table = 'messages',
   filter,
   enabled = true,
   invalidate,
-}: LiveMessagesOptions): void {
+}: LiveRowsOptions): void {
   const queryClient = useQueryClient();
 
   /**
@@ -76,10 +87,10 @@ export function useLiveMessages({
     if (env.useMocks || !enabled) return;
 
     const channel = supabase
-      .channel(`messages:${key}`)
+      .channel(`${table}:${key}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', ...(filter ? { filter } : {}) },
+        { event: 'INSERT', schema: 'public', table, ...(filter ? { filter } : {}) },
         () => {
           for (const queryKey of JSON.parse(keys) as QueryKey[]) {
             void queryClient.invalidateQueries({ queryKey });
@@ -91,5 +102,5 @@ export function useLiveMessages({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [enabled, filter, generation, key, keys, queryClient]);
+  }, [enabled, filter, generation, key, keys, queryClient, table]);
 }

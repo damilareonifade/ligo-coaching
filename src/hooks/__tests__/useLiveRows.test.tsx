@@ -3,7 +3,7 @@ import { act, render } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { useLiveMessages } from '@/hooks/useLiveMessages';
+import { useLiveRows } from '@/hooks/useLiveRows';
 
 const mockOn = jest.fn().mockReturnThis();
 const mockSubscribe = jest.fn().mockReturnThis();
@@ -32,13 +32,19 @@ function Harness({ children }: { readonly children: ReactNode }) {
 }
 
 function Subject({ enabled = true, keys = [['a']] }: { enabled?: boolean; keys?: string[][] }) {
-  useLiveMessages({ key: 't1', filter: 'thread_id=eq.t1', enabled, invalidate: keys });
+  useLiveRows({ key: 't1', filter: 'thread_id=eq.t1', enabled, invalidate: keys });
+  return null;
+}
+
+/** The bell's use of it: a whole table, unfiltered, scoped by RLS alone. */
+function BellSubject() {
+  useLiveRows({ key: 'notifications', table: 'notifications', invalidate: [['notifications']] });
   return null;
 }
 
 beforeEach(() => jest.clearAllMocks());
 
-describe('useLiveMessages', () => {
+describe('useLiveRows', () => {
   it('opens one channel for the thread it was given', async () => {
     await render(
       <Harness>
@@ -53,6 +59,37 @@ describe('useLiveMessages', () => {
       filter: 'thread_id=eq.t1',
     });
     expect(mockSubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('listens to the table it was given, not always to messages', async () => {
+    // It was hardcoded to `messages`, which is why the bell had no way to hear
+    // about a notification: nothing subscribed on its behalf, so the dot was
+    // whatever the count said when Today mounted.
+    await render(
+      <Harness>
+        <BellSubject />
+      </Harness>,
+    );
+
+    expect(mockOn.mock.calls[0][1]).toMatchObject({
+      event: 'INSERT',
+      table: 'notifications',
+    });
+    // No filter at all: `notifications_select_own` already delivers only the
+    // reader's own, and a filter here would be that rule restated.
+    expect(mockOn.mock.calls[0][1]).not.toHaveProperty('filter');
+  });
+
+  it('puts the table in the channel name, so two tables are two channels', async () => {
+    // Same key, different tables. Sharing a name would make them one channel
+    // and the second subscriber would silently take over the first.
+    await render(
+      <Harness>
+        <BellSubject />
+      </Harness>,
+    );
+
+    expect(mockChannel).toHaveBeenCalledWith('notifications:notifications');
   });
 
   it('listens to nothing until there is something to listen about', async () => {

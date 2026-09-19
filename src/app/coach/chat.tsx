@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 
 import { useClientChatQuery } from '@/api/clientChat';
 import { queryKeys } from '@/api/queryKeys';
-import { useLiveMessages } from '@/hooks/useLiveMessages';
+import { useLiveRows } from '@/hooks/useLiveRows';
 import { LIErrorState, LISafeArea } from '@/components/ui';
 import ScreenHeader from '@/components/chrome/ScreenHeader';
 import ChatSkeleton from '@/components/chat/ChatSkeleton';
@@ -25,7 +25,7 @@ export default function CoachChatScreen() {
 
   // Nothing to listen to until the thread is known, which is why `enabled`
   // exists rather than the hook guessing from an empty string.
-  useLiveMessages({
+  useLiveRows({
     key: data?.threadId ?? 'pending',
     filter: data ? `thread_id=eq.${data.threadId}` : undefined,
     enabled: Boolean(data?.threadId),

@@ -1345,7 +1345,7 @@ export function mockToggleHealthShare(shared: boolean): void {
  * ------------------------------------------------------------------ */
 
 const initialChat: ApiClientChat = {
-  // Mocks never subscribe — `useLiveMessages` is a no-op under them — so this
+  // Mocks never subscribe — `useLiveRows` is a no-op under them — so this
   // only has to be present and stable, not real.
   threadId: 'thread-mock-client',
   coachName: 'Sam Okafor',

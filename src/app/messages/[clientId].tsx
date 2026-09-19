@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 
 import { useCoachThreadQuery } from '@/api/coachMessages';
 import { queryKeys } from '@/api/queryKeys';
-import { useLiveMessages } from '@/hooks/useLiveMessages';
+import { useLiveRows } from '@/hooks/useLiveRows';
 import { LIErrorState, LISafeArea } from '@/components/ui';
 import ScreenHeader from '@/components/chrome/ScreenHeader';
 import ChatSkeleton from '@/components/chat/ChatSkeleton';
@@ -27,7 +27,7 @@ export default function CoachThreadScreen() {
 
   // Both lists: the thread it lands in, and the inbox row above it showing
   // the last thing said. `inboxAll` is the prefix over every search variant.
-  useLiveMessages({
+  useLiveRows({
     key: data?.threadId ?? 'pending',
     filter: data ? `thread_id=eq.${data.threadId}` : undefined,
     enabled: Boolean(data?.threadId),

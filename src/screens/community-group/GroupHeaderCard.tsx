@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import type { ApiCommunityMember } from '@/api/types';
@@ -12,13 +11,6 @@ interface GroupHeaderCardProps {
   readonly onManage?: () => void;
   /** Already worded for the seat reading it — see `GroupContent`. */
   readonly context: string;
-/**
-   * What this reader can do to the group — in practice `GroupLeaveAction`,
-   * which is every member's and words itself for whoever is holding it. A node
-   * rather than a handler because the action owns its own confirmation, and
-   * this card should not know what leaving costs.
-   */
-  readonly action?: ReactNode;
 }
 
 /**
@@ -31,7 +23,6 @@ interface GroupHeaderCardProps {
 export default function GroupHeaderCard({
   members,
   context,
-  action,
   onManage,
 }: GroupHeaderCardProps) {
   return (
@@ -53,8 +44,6 @@ export default function GroupHeaderCard({
           />
           <LIText size="caption" color="muted" text={context} className="font-geist" />
         </View>
-
-        {action}
       </View>
     </LICard>
   );

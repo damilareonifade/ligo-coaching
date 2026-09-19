@@ -22,7 +22,7 @@ export default function GroupManageScreen() {
     <LISafeArea edges={['top', 'bottom']}>
       <ScreenHeader
         title={data?.name ?? 'Group'}
-        eyebrow="Members and rankings"
+        eyebrow="Group details"
         backLabel="Group"
       />
 

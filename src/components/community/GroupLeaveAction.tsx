@@ -12,32 +12,28 @@ import { useThemeTokens } from '@/theme/tokens';
 
 interface GroupLeaveActionProps {
   readonly group: ApiCommunityGroup;
-  /**
-   * The small link on the group's own header, beside the faces. Without it,
-   * the full card — which is what the manage screen wants, and what somebody
-   * looking for a way out will actually find.
-   */
-  readonly compact?: boolean;
 }
 
 /**
- * The way out of a group, wherever somebody goes looking for it.
+ * The way out of a group, on the one screen that holds everything else you can
+ * do to one.
  *
- * Shared because there are two such places and only one set of words. It is
- * on the conversation, where you are when you decide you have had enough of
- * it, and on the manage screen, which is where anybody hunting for a setting
- * looks first — and where, until now, they found members, rankings and a join
- * code but no way to leave.
+ * It sits with the members, the rankings and the join code rather than on the
+ * conversation, and that is the whole point: the group screen is for talking,
+ * and an irreversible act one tap from the composer is an accident waiting for
+ * a thumb. Somebody looking for a way out goes to the group's details, which
+ * is also where they went to add a ranking or copy the code.
  *
- * Every member has this. Leaving is not an admin power: `leave_group` asks
- * only that you are in the group, and a group you cannot get out of is not
- * one anybody should join.
+ * Every member has it. Leaving is not an admin power: `leave_group` asks only
+ * that you are in the group — not that you run it, made it, or are a client
+ * rather than a coach — and a group you cannot get out of is not one anybody
+ * should join.
  *
  * For the last admin it is not leaving at all — it deletes the group, the
- * thread and every message by cascade — so the word, the sheet and the button
- * all say so first. See `would_orphan_group`, which decides that.
+ * thread and every message by cascade — so the heading, the button and the
+ * sheet all say so first. See `would_orphan_group`, which decides that.
  */
-export default function GroupLeaveAction({ group, compact = false }: GroupLeaveActionProps) {
+export default function GroupLeaveAction({ group }: GroupLeaveActionProps) {
   const tokens = useThemeTokens();
   const router = useRouter();
   const showToast = useUiStore((state) => state.showToast);
@@ -110,41 +106,28 @@ export default function GroupLeaveAction({ group, compact = false }: GroupLeaveA
 
   return (
     <>
-      {compact ? (
+      <LICard className="gap-3">
+        <LIText size="h5" color="primary" text={label} className="font-geist-semibold" />
+        <LIText
+          size="caption"
+          color="muted"
+          text={
+            deletes
+              ? 'You are its only admin, so leaving ends the group for everybody in it.'
+              : 'You stop receiving and sending messages here. What you already said stays in the thread.'
+          }
+          className="font-geist"
+        />
         <LIButton
-          title={deletes ? 'Delete' : 'Leave'}
+          title={label}
           onPress={() => setOpen(true)}
-          variant="outline"
-          size="sm"
+          variant="danger"
+          size="lg"
           shape="rounded"
-          labelClassName="text-danger"
-          accessibilityLabel={label}
+          fullWidth
           testID="group-leave"
         />
-      ) : (
-        <LICard className="gap-3">
-          <LIText size="h5" color="primary" text={label} className="font-geist-semibold" />
-          <LIText
-            size="caption"
-            color="muted"
-            text={
-              deletes
-                ? 'You are its only admin, so leaving ends the group for everybody in it.'
-                : 'You stop receiving and sending messages here. What you already said stays in the thread.'
-            }
-            className="font-geist"
-          />
-          <LIButton
-            title={label}
-            onPress={() => setOpen(true)}
-            variant="danger"
-            size="lg"
-            shape="rounded"
-            fullWidth
-            testID="group-leave"
-          />
-        </LICard>
-      )}
+      </LICard>
 
       <LeaveSheet
         visible={open}

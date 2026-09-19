@@ -1,19 +1,15 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 
 import type { ApiCommunityGroup, ApiCommunityMember } from '@/api/types';
 import GroupContent from '@/screens/community-group/GroupContent';
 import { useAuthStore } from '@/store/authStore';
 
-const mockLeave = jest.fn();
-const mockReplace = jest.fn();
-
 jest.mock('expo-router', () => ({
   ...jest.requireActual('expo-router'),
-  useRouter: () => ({ push: jest.fn(), replace: mockReplace, back: jest.fn() }),
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
 }));
 
 jest.mock('@/api/community', () => ({
-  useLeaveGroupMutation: () => ({ mutate: mockLeave, isPending: false }),
   useSendGroupMessageMutation: () => ({ mutateAsync: jest.fn(), isPending: false }),
 }));
 
@@ -36,7 +32,7 @@ function group(overrides: Partial<ApiCommunityGroup> = {}): ApiCommunityGroup {
     name: 'Tuesday lifters',
     joinCode: 'KX7F2M',
     isAdmin: true,
-    leavingDeletes: false,
+    leavingDeletes: true,
     boards: [],
     ownerName: 'Sam O.',
     myIdentity: 'first',
@@ -53,73 +49,32 @@ beforeEach(() => {
 });
 
 /**
- * Leaving a group, and the one case where leaving is not what it does.
+ * The group's conversation, and what is deliberately not on it.
  *
- * Nothing in this app deletes a group. The last admin walking out is the only
- * thing that ends one — `leave_group` drops the row and the thread and every
- * message goes by cascade — and this sheet was telling that person the
- * opposite: "messages you already sent stay", "the thread keeps its history
- * for the members still in it", "you can be invited back". There were no
- * members still in it and nothing to be invited back to.
- *
- * `would_orphan_group` had been in the database since the feature shipped with
- * no caller anywhere.
+ * Leaving used to sit in the corner of the header card here — one caption-
+ * sized word, a tap away from the composer, for the act that deletes the
+ * group and every message in it when the last admin does it. It belongs with
+ * the members, the rankings and the join code on the manage screen, and the
+ * way through to that is the members count.
  */
-describe('GroupContent leaving', () => {
-  it('says leave, and means it, while somebody else can run the group', async () => {
-    await render(<GroupContent group={group({ leavingDeletes: false })} />);
+describe('GroupContent', () => {
+  it('keeps an irreversible act off the screen people are typing on', async () => {
+    await render(<GroupContent group={group()} />);
 
-    expect(screen.getByTestId('group-leave')).toHaveTextContent('Leave');
-
-    await fireEvent.press(screen.getByTestId('group-leave'));
-
-    expect(screen.getByText('Leave Tuesday lifters?')).toBeTruthy();
-    expect(screen.getByText('Messages you already sent stay')).toBeTruthy();
+    expect(screen.queryByTestId('group-leave')).toBeNull();
   });
 
-  it('says delete when the reader is the last admin', async () => {
-    await render(<GroupContent group={group({ leavingDeletes: true })} />);
-
-    // The word has to say which act it is before it is tapped.
-    expect(screen.getByTestId('group-leave')).toHaveTextContent('Delete');
-
-    await fireEvent.press(screen.getByTestId('group-leave'));
-
-    expect(screen.getByText('Delete Tuesday lifters?')).toBeTruthy();
-  });
-
-  it('tells the last admin what actually happens, not the opposite', async () => {
-    await render(<GroupContent group={group({ leavingDeletes: true })} />);
-    await fireEvent.press(screen.getByTestId('group-leave'));
-
-    expect(screen.getByText('The group goes, for everyone')).toBeTruthy();
-    expect(screen.getByText('Every message goes with it')).toBeTruthy();
-    // The reassurance that was false for this person, and is now absent.
-    expect(screen.queryByText('Messages you already sent stay')).toBeNull();
-  });
-
-  it('offers the handover instead, which is the way to keep the group', async () => {
-    await render(<GroupContent group={group({ leavingDeletes: true })} />);
-    await fireEvent.press(screen.getByTestId('group-leave'));
-
-    expect(screen.getByText('Or hand it over instead')).toBeTruthy();
-  });
-
-  it('gives a coach a way out of their own group', async () => {
-    // A coach is a thread member like anybody else — `create_group` puts its
-    // maker in as first member and first admin. This seat used to get no
-    // action at all, so a coach who made a group could never end it.
+  it('is the same for a coach, who is a member of their own group', async () => {
     useAuthStore.setState({ user: { role: 'coach' } as never });
-    await render(<GroupContent group={group({ leavingDeletes: true })} />);
+    await render(<GroupContent group={group()} />);
 
-    expect(screen.getByTestId('group-leave')).toBeTruthy();
+    expect(screen.queryByTestId('group-leave')).toBeNull();
   });
 
-  it('leaves through the one function that decides which it was', async () => {
-    await render(<GroupContent group={group({ leavingDeletes: true })} />);
-    await fireEvent.press(screen.getByTestId('group-leave'));
-    await fireEvent.press(screen.getByTestId('leave-confirm'));
+  it('offers the members count as the way into everything else', async () => {
+    await render(<GroupContent group={group()} />);
 
-    expect(mockLeave).toHaveBeenCalledWith('grp-1', expect.anything());
+    // Where leaving, the rankings and the join code all are.
+    expect(screen.getByTestId('group-manage')).toHaveTextContent('2 members');
   });
 });

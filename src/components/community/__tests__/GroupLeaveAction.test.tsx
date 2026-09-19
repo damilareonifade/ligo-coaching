@@ -46,13 +46,13 @@ function group(overrides: Partial<ApiCommunityGroup> = {}): ApiCommunityGroup {
 beforeEach(() => jest.clearAllMocks());
 
 /**
- * The way out, which for a while was a 12px word.
+ * The way out, which for a while was a 12px word on the wrong screen.
  *
  * Leaving was one caption-sized link wedged beside the faces on the group's
- * header, and nothing at all on the manage screen — which is where anybody
- * looking for a setting looks first, and which offered members, rankings and
- * a join code but no door. A group you cannot find your way out of is not one
- * anybody should join.
+ * header — a tap from the composer, for something that cannot be undone — and
+ * nothing at all on the manage screen, which is where the rest of what you can
+ * do to a group already lives. It is now only there, beside the members, the
+ * rankings and the join code.
  *
  * Leaving is nobody's privilege: `leave_group` asks only that you are in the
  * group. Not an admin, not the maker, not a client rather than a coach.
@@ -99,13 +99,12 @@ describe('GroupLeaveAction', () => {
     ).toBeTruthy();
   });
 
-  it('shrinks to a link for the conversation header without changing its mind', async () => {
-    await render(<GroupLeaveAction group={group({ leavingDeletes: true })} compact />);
-
-    // One word up there, but the same act and the same sheet behind it.
-    expect(screen.getByTestId('group-leave')).toHaveTextContent('Delete');
+  it('says what it does before it is tapped, not only in the sheet', async () => {
+    await render(<GroupLeaveAction group={group({ isAdmin: true, leavingDeletes: true })} />);
 
     await fireEvent.press(screen.getByTestId('group-leave'));
+
     expect(screen.getByText('Delete Tuesday lifters?')).toBeTruthy();
+    expect(screen.getByText('The group goes, for everyone')).toBeTruthy();
   });
 });

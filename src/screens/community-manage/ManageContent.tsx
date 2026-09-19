@@ -10,6 +10,7 @@ import {
   useSetGroupAdminMutation,
 } from '@/api/community';
 import type { ApiCommunityGroup, BoardMetric } from '@/api/types';
+import GroupLeaveAction from '@/components/community/GroupLeaveAction';
 import { useAuthStore } from '@/store/authStore';
 import { useUiStore } from '@/store/uiStore';
 
@@ -32,6 +33,11 @@ interface ManageContentProps {
  *
  * Five database functions had no caller before this screen: a group could be
  * created and then never changed.
+ *
+ * Leaving is last, under everything else, because it is the one thing here
+ * that cannot be undone — and it is on this screen at all because this is
+ * where somebody hunting for a way out looks first. The small link on the
+ * conversation's header is easy to miss and was, for a while, the only one.
  */
 export default function ManageContent({ group }: ManageContentProps) {
   const router = useRouter();
@@ -108,6 +114,8 @@ export default function ManageContent({ group }: ManageContentProps) {
       />
 
       <ManageJoinCode code={group.joinCode} />
+
+      <GroupLeaveAction group={group} />
     </ScrollView>
   );
 }

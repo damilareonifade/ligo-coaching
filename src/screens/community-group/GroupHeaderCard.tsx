@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
 import type { ApiCommunityMember } from '@/api/types';
@@ -11,14 +12,13 @@ interface GroupHeaderCardProps {
   readonly onManage?: () => void;
   /** Already worded for the seat reading it — see `GroupContent`. */
   readonly context: string;
-  /** Omitted for the coach, who runs the group rather than belongs to it. */
-  readonly onLeave?: () => void;
-  /**
-   * "Leave", or "Delete" when the reader is the last admin and leaving ends
-   * the group — the same act, and the word has to say which one it is before
-   * it is tapped, not in the sheet behind it.
+/**
+   * What this reader can do to the group — in practice `GroupLeaveAction`,
+   * which is every member's and words itself for whoever is holding it. A node
+   * rather than a handler because the action owns its own confirmation, and
+   * this card should not know what leaving costs.
    */
-  readonly leaveLabel?: string;
+  readonly action?: ReactNode;
 }
 
 /**
@@ -31,8 +31,7 @@ interface GroupHeaderCardProps {
 export default function GroupHeaderCard({
   members,
   context,
-  onLeave,
-  leaveLabel = 'Leave',
+  action,
   onManage,
 }: GroupHeaderCardProps) {
   return (
@@ -55,16 +54,7 @@ export default function GroupHeaderCard({
           <LIText size="caption" color="muted" text={context} className="font-geist" />
         </View>
 
-        {onLeave ? (
-          <LIText
-            size="caption"
-            color="danger"
-            text={leaveLabel}
-            className="font-geist-medium"
-            handleClick={onLeave}
-            testID="group-leave"
-          />
-        ) : null}
+        {action}
       </View>
     </LICard>
   );
